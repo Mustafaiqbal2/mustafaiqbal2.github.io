@@ -1,4 +1,30 @@
 document.addEventListener('DOMContentLoaded', function() {
+    // Ensure navbar stays solid and has proper styling
+    const navbar = document.getElementById('navbar');
+    
+    // Apply initial styles
+    if (navbar) {
+        if (document.body.classList.contains('dark-mode')) {
+            navbar.style.backgroundColor = 'rgba(13, 27, 42, 0.95)';
+            navbar.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.3)';
+        } else {
+            navbar.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+            navbar.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.1)';
+        }
+    }
+    
+    // Update navbar on scroll
+    window.addEventListener('scroll', function() {
+        if (navbar) {
+            // Always maintain the solid background
+            if (document.body.classList.contains('dark-mode')) {
+                navbar.style.backgroundColor = 'rgba(13, 27, 42, 0.95)';
+            } else {
+                navbar.style.backgroundColor = 'rgba(255, 255, 255, 0.95)';
+            }
+        }
+    });
+    
     // Smooth scrolling for anchor links
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {

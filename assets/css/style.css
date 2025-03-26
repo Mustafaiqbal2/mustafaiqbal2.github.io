@@ -1,7 +1,8 @@
-/* Base Styles */
+/* Base Styles with blue color scheme */
 :root {
     --primary-color: #0077b6;
-    --secondary-color: #6c757d;
+    --secondary-color: #4361ee;
+    --accent-color: #023e8a;
     --background-light: #ffffff;
     --text-dark: #212529;
     --card-bg-light: #ffffff;
@@ -20,12 +21,14 @@ body {
 
 /* Navbar */
 .navbar {
+    background-color: #ffffff !important; /* Force white background */
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
     transition: var(--transition);
     padding: 15px 0;
 }
 
 .navbar-brand {
+    color: var(--primary-color) !important;
     font-weight: 700;
     font-size: 1.5rem;
 }
@@ -36,27 +39,65 @@ body {
     transition: var(--transition);
 }
 
-.nav-link:hover {
+.nav-link:hover,
+.nav-link.active {
     color: var(--primary-color) !important;
 }
 
-/* Hero Section */
+/* Dark Mode Toggle Button - blue theme */
+#dark-mode-toggle {
+    background-color: transparent;
+    border: 2px solid #0077b6;
+    border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    margin-left: 10px;
+    transition: all 0.3s ease;
+    padding: 0;
+}
+
+#dark-mode-toggle:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 0 10px rgba(0, 119, 182, 0.5);
+}
+
+#dark-mode-toggle i {
+    font-size: 18px;
+    color: #0077b6;
+}
+
+/* Hero Section - Clean white background */
 .hero {
     min-height: 90vh;
     display: flex;
     align-items: center;
-    background-color: var(--section-light);
+    background-color: var(--background-light); /* White background */
+    position: relative;
+    padding: 100px 0;
 }
 
 .hero h1 {
     font-weight: 700;
     font-size: 3rem;
+    color: var(--primary-color); /* Blue text for name */
 }
 
 .hero h2 {
     font-weight: 300;
     font-size: 1.8rem;
     color: var(--secondary-color);
+}
+
+/* Remove gradient from text */
+.text-gradient {
+    color: var(--primary-color) !important;
+    -webkit-text-fill-color: initial !important;
+    background: none !important;
+    font-weight: 700;
 }
 
 /* Sections */
@@ -79,34 +120,38 @@ h2:after {
     transform: translateX(-50%);
     width: 80px;
     height: 3px;
-    background-color: var(--primary-color);
+    background: var(--primary-color); /* Solid color instead of gradient */
 }
 
-/* Cards */
+/* Cards with blue accent */
 .card {
     border: none;
-    transition: var(--transition);
-    border-radius: 10px;
+    border-radius: 8px;
+    border-left: 4px solid var(--primary-color);
+    transition: all 0.3s ease;
     overflow: hidden;
     height: 100%;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
 }
 
 .card:hover {
     transform: translateY(-5px);
-    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+    border-left-color: var(--secondary-color);
 }
 
-/* Buttons */
+/* Buttons - Consistent across themes */
 .btn-primary {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
-    transition: var(--transition);
+    transition: all 0.3s ease;
 }
 
 .btn-primary:hover {
-    background-color: #005a8c;
-    border-color: #005a8c;
-    transform: translateY(-2px);
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 119, 182, 0.3);
 }
 
 /* Skills & Projects */
