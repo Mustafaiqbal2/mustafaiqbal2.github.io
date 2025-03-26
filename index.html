@@ -1,38 +1,369 @@
-<!doctype html>
-
-<!-- this is a comment for human! -->
-
+// filepath: index.html
+<!DOCTYPE html>
 <html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mustafa Iqbal | CS Undergraduate</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/dark-mode.css">
+    <link rel="icon" type="image/x-icon" href="assets/img/favicon.ico">
+</head>
+<body data-bs-spy="scroll" data-bs-target="#navbar" class="light-mode">
+    <!-- Navbar -->
+    <nav id="navbar" class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="#">Mustafa Iqbal</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#home">Home</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about">About</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#education">Education</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#skills">Skills</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#projects">Projects</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#experience">Experience</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#achievements">Achievements</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#contact">Contact</a>
+                    </li>
+                    <li class="nav-item">
+                        <button id="dark-mode-toggle" class="btn btn-sm">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
 
-  <header>
-<title> Mustafa Iqbal's Website</title>
-<link rel="stylesheet" href="css/master.css">
-<link rel="FaviconIcon" href="favicon.ico" type="image/x-icon">
-<link rel="shortcut" href="favicon.ico" type="image/x-icon">
-<meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="name" content="Mustafa Iqbal's Portal">
-<meta name="robots" content="noindex, nofollow">
-  </header>
+    <!-- Home Section -->
+    <section id="home" class="hero d-flex align-items-center">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center">
+                    <h1 class="mb-3">Mustafa Iqbal</h1>
+                    <h2 class="mb-4">Undergraduate Computer Science Student</h2>
+                    <p class="lead mb-4">Karachi | Islamabad | Lahore, Pakistan</p>
+                    <div class="contact-info mb-5">
+                        <a href="mailto:mustafa_rao@hotmail.com" class="mx-2"><i class="fas fa-envelope"></i> mustafa_rao@hotmail.com</a>
+                        <a href="mailto:i221139@nu.edu.pk" class="mx-2"><i class="fas fa-envelope-open"></i> i221139@nu.edu.pk</a>
+                        <a href="https://github.com/Mustafaiqbal2" target="_blank" class="mx-2"><i class="fab fa-github"></i> github.com/Mustafaiqbal2</a>
+                    </div>
+                    <a href="#about" class="btn btn-primary btn-lg">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </section>
 
-  <body>
-    <img src="images/banner.jpg" width="75%" alt="banner">
-    <h1> Mustafa Iqbal's Website<h1>
-    <h2> About Me</h2>
-    <p>I am a student at FAST NUCES in Islamabad</p>
-    <p>Currently I am in the process of attaining a Computer Science Degree</p>
-    <p>At this point I am unemployed </p>
+    <!-- About/Objective Section -->
+    <section id="about" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">Objective</h2>
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <p class="lead">
+                                Highly motivated Computer Science undergraduate with a strong foundation in 
+                                <strong>Artificial Intelligence, Machine Learning, and software development</strong>. 
+                                Passionate about <strong>Generative AI</strong> and contributing to innovative projects 
+                                through <strong>rapid prototyping and experimentation</strong>.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-    <h2>Credentials and Portfolio</h2>
-    <p><a href="resume.html">My resume</a> | <a href="https://github.com/Mustafaiqbal2">My Github</a></p>
-    <h2>Contact</h2>
-    <p>Email: <a href="mailto:i221139@nu.du.pk">i221139@nu.edu.pk</a></p>
+    <!-- Education Section -->
+    <section id="education" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">Education</h2>
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <h3>National University of Computer and Emerging Sciences (FAST-NUCES), Islamabad</h3>
+                            <p class="text-muted">BS Computer Science (2022 - Present)</p>
+                            <p><strong>CGPA:</strong> 3.38</p>
+                            <h4 class="mt-4">Relevant Courses:</h4>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check me-2"></i> Artificial Intelligence</li>
+                                <li><i class="fas fa-check me-2"></i> Computer Networks</li>
+                                <li><i class="fas fa-check me-2"></i> High Processing Computing with GPUs</li>
+                                <li><i class="fas fa-check me-2"></i> Parallel and Distributed Computing</li>
+                                <li><i class="fas fa-check me-2"></i> Operating Systems</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-  </body>
+    <!-- Technical Skills Section -->
+    <section id="skills" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">Technical Skills</h2>
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow h-100">
+                        <div class="card-body">
+                            <h4 class="card-title"><i class="fas fa-code me-2"></i> Programming Languages</h4>
+                            <p class="card-text">Python, C++, C#, SQL, JavaScript, HTML, CSS, Java, CUDA C++.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow h-100">
+                        <div class="card-body">
+                            <h4 class="card-title"><i class="fas fa-brain me-2"></i> AI & ML</h4>
+                            <p class="card-text">Neural Networks, Decision Trees, KNN, Naïve Bayes, Clustering, Genetic Algorithms, Reinforcement Learning.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow h-100">
+                        <div class="card-body">
+                            <h4 class="card-title"><i class="fas fa-laptop-code me-2"></i> Development Frameworks</h4>
+                            <p class="card-text">ASP.NET, Flask, NumPy, Pandas, OpenGL, SFML.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow h-100">
+                        <div class="card-body">
+                            <h4 class="card-title"><i class="fas fa-tools me-2"></i> Version Control & Tools</h4>
+                            <p class="card-text">Git, Jupyter Notebook, VS Code, Anaconda, Docker.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6 mb-4 mx-auto">
+                    <div class="card shadow h-100">
+                        <div class="card-body">
+                            <h4 class="card-title"><i class="fas fa-database me-2"></i> Databases</h4>
+                            <p class="card-text">SQL Server, SQLite, MongoDB, Oracle.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-  <footer>
-    <hr>
-    <code>Copyright (c) 2022 Mustafa Iqbal</code>
+    <!-- Projects Section -->
+    <section id="projects" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">Projects</h2>
+            <div class="row">
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card shadow h-100">
+                        <div class="card-body">
+                            <h4 class="card-title">Artificial Intelligence Course Projects</h4>
+                            <p class="card-text">
+                                Implemented Neural Networks (MLP, Backpropagation) for predictive modeling.
+                                Developed AI search algorithms (A*, BFS, DFS, Genetic Algorithms) for optimization problems.
+                                Built classification models (Naïve Bayes, Decision Trees, KNN) for text and image data.
+                            </p>
+                            <a href="https://github.com/Mustafaiqbal2" class="btn btn-primary" target="_blank">
+                                <i class="fab fa-github me-2"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card shadow h-100">
+                        <div class="card-body">
+                            <h4 class="card-title">Multithreaded Pac-Man</h4>
+                            <p class="card-text">
+                                Designed a multithreaded version of Pac-Man using C++ and semaphores.
+                            </p>
+                            <a href="https://github.com/Mustafaiqbal2/Multithreaded-Pacman" class="btn btn-primary" target="_blank">
+                                <i class="fab fa-github me-2"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card shadow h-100">
+                        <div class="card-body">
+                            <h4 class="card-title">ASP.NET OAuth Login</h4>
+                            <p class="card-text">
+                                Secure login system with GitHub OAuth and Twilio email verification.
+                            </p>
+                            <a href="https://github.com/Mustafaiqbal2/ASP-TaskAssist" class="btn btn-primary" target="_blank">
+                                <i class="fab fa-github me-2"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card shadow h-100">
+                        <div class="card-body">
+                            <h4 class="card-title">Distributed File System Conceptual Model</h4>
+                            <p class="card-text">
+                                Implemented a conceptual torrent-like file system using SHA-1 hashing & B-Trees.
+                            </p>
+                            <a href="https://github.com/Mustafaiqbal2/Distributed-File-System-Conceptual" class="btn btn-primary" target="_blank">
+                                <i class="fab fa-github me-2"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="card shadow h-100">
+                        <div class="card-body">
+                            <h4 class="card-title">DNA Matching using MPICH and Clusters</h4>
+                            <p class="card-text">
+                                Implemented DNA pattern matching algorithm using the MPICH library for distributed computing in a cluster.
+                            </p>
+                            <a href="https://github.com/Mustafaiqbal2/DNA-Matching-MPI" class="btn btn-primary" target="_blank">
+                                <i class="fab fa-github me-2"></i> GitHub
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
-  </footer>
+    <!-- Experience Section -->
+    <section id="experience" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">Internship & Experience</h2>
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card shadow mb-4">
+                        <div class="card-body">
+                            <h4>Freelance Developer (Fiverr, Upwork)</h4>
+                            <p class="text-muted">2022 - Present</p>
+                            <p>Delivered custom Python scripts and C++ game development projects.</p>
+                        </div>
+                    </div>
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <h4>AI/ML Self-Learning & Research</h4>
+                            <p>Studied AI through online courses and projects, now actively applying skills in coursework projects.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
 
+    <!-- Achievements Section -->
+    <section id="achievements" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">Certifications & Achievements</h2>
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fas fa-award me-2 text-primary"></i> <strong>Dean's List:</strong> Fall 2024, Spring 2024
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-medal me-2 text-primary"></i> <strong>Silver Medalist</strong> (O-Levels, 2020)
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-trophy me-2 text-primary"></i> <strong>Multiple Academic Excellence Awards</strong> in Mathematics, Accounting, and Economics
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Availability & Interests Section -->
+    <section id="interests" class="py-5">
+        <div class="container">
+            <h2 class="text-center mb-5">Availability & Interests</h2>
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <ul class="list-group list-group-flush">
+                                <li class="list-group-item">
+                                    <i class="fas fa-briefcase me-2 text-primary"></i> Open for <strong>AI/Generative AI internships and research roles</strong>.
+                                </li>
+                                <li class="list-group-item">
+                                    <i class="fas fa-atom me-2 text-primary"></i> Passionate about <strong>quantum computing, AI in physics, and innovative AI applications</strong>.
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="py-5 bg-light">
+        <div class="container">
+            <h2 class="text-center mb-5">Get In Touch</h2>
+            <div class="row">
+                <div class="col-lg-8 mx-auto">
+                    <div class="card shadow">
+                        <div class="card-body">
+                            <form id="contact-form">
+                                <div class="mb-3">
+                                    <label for="name" class="form-label">Name</label>
+                                    <input type="text" class="form-control" id="name" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="email" class="form-label">Email</label>
+                                    <input type="email" class="form-control" id="email" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="message" class="form-label">Message</label>
+                                    <textarea class="form-control" id="message" rows="4" required></textarea>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Send Message</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="py-4">
+        <div class="container text-center">
+            <div class="social-links mb-4">
+                <a href="https://github.com/Mustafaiqbal2" class="mx-2" target="_blank"><i class="fab fa-github fa-2x"></i></a>
+                <a href="https://www.linkedin.com/in/mustafa-iqbal-ba42b424b/" class="mx-2" target="_blank"><i class="fab fa-linkedin fa-2x"></i></a>
+                <a href="mailto:mustafa_rao@hotmail.com" class="mx-2"><i class="fas fa-envelope fa-2x"></i></a>
+            </div>
+            <p>&copy; 2025 Mustafa Iqbal. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="assets/js/script.js"></script>
+    <script src="assets/js/dark-mode.js"></script>
+</body>
 </html>
