@@ -7,25 +7,38 @@ document.addEventListener('DOMContentLoaded', function() {
                       (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches && 
                        localStorage.getItem('darkMode') === null);
     
-    // Set initial theme
-    if (isDarkMode) {
-        body.classList.add('dark-mode');
-        darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-    } else {
-        body.classList.remove('dark-mode');
-        darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-    }
+    // Apply initial theme
+    applyTheme(isDarkMode);
     
     // Toggle dark mode
     darkModeToggle.addEventListener('click', () => {
-        if (body.classList.contains('dark-mode')) {
-            body.classList.remove('dark-mode');
-            darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
-            localStorage.setItem('darkMode', 'false');
-        } else {
+        const isCurrentlyDark = body.classList.contains('dark-mode');
+        localStorage.setItem('darkMode', (!isCurrentlyDark).toString());
+        applyTheme(!isCurrentlyDark);
+    });
+    
+    // Function to apply theme
+    function applyTheme(isDarkMode) {
+        if (isDarkMode) {
             body.classList.add('dark-mode');
+            body.classList.remove('light-mode');
             darkModeToggle.innerHTML = '<i class="fas fa-sun"></i>';
-            localStorage.setItem('darkMode', 'true');
+            console.log('Dark mode applied');
+        } else {
+            body.classList.remove('dark-mode');
+            body.classList.add('light-mode');
+            darkModeToggle.innerHTML = '<i class="fas fa-moon"></i>';
+            console.log('Light mode applied');
+        }
+    }
+    
+    // Listen for system theme changes
+    window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
+        if (localStorage.getItem('darkMode') === null) {
+            applyTheme(e.matches);
         }
     });
+    
+    // For debugging
+    console.log('Dark mode initialized. Current state:', isDarkMode);
 });
