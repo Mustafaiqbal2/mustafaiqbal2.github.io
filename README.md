@@ -1,31 +1,47 @@
-# Mustafa Iqbal's Portfolio
+# Mustafa Iqbal Portfolio
 
-This is the repository for my personal portfolio website. The site showcases my skills, projects, and experiences as an undergraduate Computer Science student.
+Evidence-driven portfolio for Mustafa Iqbal, a software engineer focused on AI automation, full-stack product systems, RAG workflows, OAuth-heavy integrations, and systems depth.
 
-## Features
+## Stack
 
-- Responsive design that works on all devices
-- Dark/Light theme toggle
-- Smooth scrolling navigation
-- Project showcase with GitHub links
-- Contact form
-- Modern UI with animations
+- Next.js + TypeScript
+- Static export compatible with GitHub Pages
+- Vercel-ready with no server dependency
+- Local typed content model for projects, experience, skills, and SEO
+- System-aware light/dark theme with manual override
+- Branded GitHub/LinkedIn links and optimized static assets
 
-## Technologies Used
+## Commands
 
-- HTML5
-- CSS3
-- JavaScript
-- Bootstrap 5
-- Font Awesome icons
+```bash
+npm install
+npm run prepare:media
+npm run typecheck
+npm run dev
+npm run build
+npm run verify:site
+```
 
-## View the Website
+`npm run build` emits the static site to `out/`.
 
-Visit [mustafaiqbal2.github.io](https://mustafaiqbal2.github.io) to view the live website.
+## Content
 
-## Contact
+Primary content lives in `data/portfolio.ts`. Update that file for project/case-study edits instead of changing section markup directly.
 
-Feel free to reach out to me:
-- Email: [mustafa_rao@hotmail.com](mailto:mustafa_rao@hotmail.com)
-- GitHub: [github.com/Mustafaiqbal2](https://github.com/Mustafaiqbal2)
-- LinkedIn: [linkedin.com/in/mustafa-iqbal-ba42b424b](https://www.linkedin.com/in/mustafa-iqbal-ba42b424b/)
+## Deployment
+
+Vercel can import this repository directly.
+
+GitHub Pages is supported for the `mustafaiqbal2.github.io` user site:
+
+1. Push to the `main` branch.
+2. In GitHub, set Pages source to **GitHub Actions**.
+3. `.github/workflows/pages.yml` runs `npm ci`, `npm run build`, and deploys the static `out/` artifact.
+
+The current Next config uses `output: "export"`, `trailingSlash: true`, and unoptimized images, so the exported site works on GitHub Pages without a server.
+
+## Links
+
+- Site: https://mustafaiqbal2.github.io
+- GitHub: https://github.com/Mustafaiqbal2
+- LinkedIn: https://www.linkedin.com/in/mustafa-iqbal-ba42b424b/

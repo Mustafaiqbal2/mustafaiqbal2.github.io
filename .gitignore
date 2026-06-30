@@ -14,3 +14,80 @@ Thumbs.db
 *.ntvs*
 *.njsproj
 *.sln
+*.swp
+*.swo
+
+# Dependencies
+node_modules/
+.pnp
+.pnp.*
+
+# Next.js
+.next/
+out/
+build/
+dist/
+*.tsbuildinfo
+.turbo/
+.swc/
+
+# Vercel / deployment
+.vercel/
+
+# Test and analysis output
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+lighthouse-*.json
+.lighthouseci/
+analysis-shots/
+audit-shots/
+tmp/
+tmp-media/
+media-scratch/
+public/projects/_imagegen/
+public/projects/**/thesis-page-*.png
+public/projects/**/revvy-poster.png
+.eslintcache
+.stylelintcache
+
+# Local env
+.env
+.env*.local
+*.local
+!.env.example
+
+# Local data and secrets
+*.db
+*.sqlite
+*.sqlite3
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+secrets/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.serve.log
+.static-serve.log
+.static-serve-*.log
+.next-dev.log
+
+# Package manager caches
+.npm/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnpm-store/
+
+# Build artifacts from local packaging tools
+*.tgz
+storybook-static/
