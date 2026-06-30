@@ -133,6 +133,7 @@ export default function RootLayout({
         updateActiveNav();
         setupReveals();
         setupCarousels();
+        setupCarouselRails();
         updateScrollProgress();
         window.addEventListener("scroll", updateScrollProgress, { passive: true });
         window.addEventListener("resize", updateScrollProgress);
@@ -384,6 +385,126 @@ export default function RootLayout({
           carousel.addEventListener("pointerleave", start);
           carousel.addEventListener("focusin", stop);
           carousel.addEventListener("focusout", start);
+          update();
+          start();
+        });
+      }
+
+      function setupCarouselRails() {
+        var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        var rails = Array.prototype.slice.call(document.querySelectorAll("[data-carousel-rail]"));
+
+        rails.forEach(function (rail) {
+          var track = rail.querySelector("[data-carousel-rail-track]");
+          var items = Array.prototype.slice.call(rail.querySelectorAll("[data-carousel-rail-item]"));
+          var prev = rail.querySelector("[data-carousel-rail-prev]");
+          var next = rail.querySelector("[data-carousel-rail-next]");
+          var current = rail.querySelector("[data-carousel-rail-current]");
+          var timer = null;
+          var raf = null;
+
+          if (!track || !items.length) {
+            return;
+          }
+
+          function pad(value) {
+            return String(value).padStart(2, "0");
+          }
+
+          function stepSize() {
+            if (!items[0]) {
+              return track.clientWidth;
+            }
+            var rect = items[0].getBoundingClientRect();
+            var style = window.getComputedStyle(track);
+            var gap = parseFloat(style.columnGap || style.gap || "0") || 0;
+            return Math.max(rect.width + gap, 1);
+          }
+
+          function activeIndex() {
+            return Math.min(items.length - 1, Math.max(0, Math.round(track.scrollLeft / stepSize())));
+          }
+
+          function update() {
+            var maxScroll = Math.max(track.scrollWidth - track.clientWidth, 0);
+            var canScroll = maxScroll > 2;
+            var index = activeIndex();
+            rail.dataset.canScroll = canScroll ? "true" : "false";
+            rail.dataset.atStart = track.scrollLeft <= 2 ? "true" : "false";
+            rail.dataset.atEnd = track.scrollLeft >= maxScroll - 2 ? "true" : "false";
+            if (current) {
+              current.textContent = pad(index + 1);
+            }
+            if (prev) {
+              prev.disabled = !canScroll || track.scrollLeft <= 2;
+            }
+            if (next) {
+              next.disabled = !canScroll || track.scrollLeft >= maxScroll - 2;
+            }
+          }
+
+          function scheduleUpdate() {
+            if (raf) {
+              window.cancelAnimationFrame(raf);
+            }
+            raf = window.requestAnimationFrame(update);
+          }
+
+          function move(direction) {
+            var maxScroll = Math.max(track.scrollWidth - track.clientWidth, 0);
+            var target = track.scrollLeft + direction * stepSize();
+            if (direction > 0 && track.scrollLeft >= maxScroll - 2) {
+              target = 0;
+            }
+            if (direction < 0 && track.scrollLeft <= 2) {
+              target = maxScroll;
+            }
+            track.scrollTo({ left: Math.min(Math.max(target, 0), maxScroll), behavior: reduceMotion ? "auto" : "smooth" });
+          }
+
+          function stop() {
+            if (timer) {
+              window.clearInterval(timer);
+              timer = null;
+            }
+          }
+
+          function start() {
+            if (reduceMotion || rail.getAttribute("data-carousel-auto") !== "true") {
+              return;
+            }
+            stop();
+            timer = window.setInterval(function () { move(1); }, 5200);
+          }
+
+          if (prev) {
+            prev.addEventListener("click", function () {
+              move(-1);
+              start();
+            });
+          }
+          if (next) {
+            next.addEventListener("click", function () {
+              move(1);
+              start();
+            });
+          }
+          track.addEventListener("scroll", scheduleUpdate, { passive: true });
+          track.addEventListener("keydown", function (event) {
+            if (event.key === "ArrowRight") {
+              event.preventDefault();
+              move(1);
+            }
+            if (event.key === "ArrowLeft") {
+              event.preventDefault();
+              move(-1);
+            }
+          });
+          rail.addEventListener("pointerenter", stop);
+          rail.addEventListener("pointerleave", start);
+          rail.addEventListener("focusin", stop);
+          rail.addEventListener("focusout", start);
+          window.addEventListener("resize", scheduleUpdate);
           update();
           start();
         });

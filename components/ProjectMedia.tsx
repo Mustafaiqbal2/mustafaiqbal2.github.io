@@ -1,4 +1,5 @@
 import type { MediaAsset } from "@/data/portfolio";
+import { CarouselRail } from "@/components/CarouselRail";
 
 export function ProjectMedia({ media, featured = false }: { media: MediaAsset[]; featured?: boolean }) {
   if (media.length === 0) {
@@ -6,7 +7,11 @@ export function ProjectMedia({ media, featured = false }: { media: MediaAsset[];
   }
 
   return (
-    <div className={featured ? "media-grid featured-media-grid" : "media-grid"}>
+    <CarouselRail
+      label={featured ? "Featured project media" : "Project media"}
+      className={featured ? "media-carousel featured-media-carousel" : "media-carousel"}
+      itemClassName={featured ? "featured-media-item" : "media-carousel-item"}
+    >
       {media.map((asset) => (
         <figure className="media-frame" key={asset.src}>
           {asset.type === "video" ? (
@@ -38,6 +43,6 @@ export function ProjectMedia({ media, featured = false }: { media: MediaAsset[];
           </figcaption>
         </figure>
       ))}
-    </div>
+    </CarouselRail>
   );
 }

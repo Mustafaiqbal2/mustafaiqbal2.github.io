@@ -162,11 +162,11 @@ export const featuredProjects: Project[] = [
     icon: Sparkles,
     links: [],
     thumbnail: {
-      src: "/projects/simplabots/thumb-light.webp",
-      darkSrc: "/projects/simplabots/thumb-dark.webp",
-      alt: "Repo-derived topology visual for the Simplabots private AI SaaS platform",
+      src: "/projects/simplabots/platform-topology-light.webp",
+      darkSrc: "/projects/simplabots/platform-topology-dark.webp",
+      alt: "Layered architecture visual for the Simplabots private AI SaaS platform",
       type: "image",
-      caption: "Repo-derived platform topology based on local Simplabots documentation.",
+      caption: "Layered architecture visual generated from the local Simplabots schema and architecture notes.",
       sourceKind: "repo-derived-visualization",
       isGenerated: true,
       isSanitized: true
@@ -175,9 +175,29 @@ export const featuredProjects: Project[] = [
       {
         src: "/projects/simplabots/platform-topology-light.webp",
         darkSrc: "/projects/simplabots/platform-topology-dark.webp",
-        alt: "Simplabots multi-tenant platform topology visualization",
+        alt: "Simplabots layered SaaS architecture with product surface, control plane, data model, AI retrieval, and external services",
         type: "image",
-        caption: "Platform topology generated from README, Prisma schema, and architecture docs.",
+        caption: "Layered SaaS topology generated from the local Simplabots schema and architecture notes.",
+        sourceKind: "repo-derived-visualization",
+        isGenerated: true,
+        isSanitized: true
+      },
+      {
+        src: "/projects/simplabots/platform-flow-light.webp",
+        darkSrc: "/projects/simplabots/platform-flow-dark.webp",
+        alt: "Simplabots platform flow generated with Mermaid from local architecture evidence",
+        type: "image",
+        caption: "Mermaid-rendered platform flow generated during media preparation.",
+        sourceKind: "repo-derived-visualization",
+        isGenerated: true,
+        isSanitized: true
+      },
+      {
+        src: "/projects/simplabots/prisma-erd-light.webp",
+        darkSrc: "/projects/simplabots/prisma-erd-dark.webp",
+        alt: "Simplabots Prisma ERD generated from the local schema",
+        type: "image",
+        caption: "Prisma ERD generated from the local Simplabots schema.",
         sourceKind: "repo-derived-visualization",
         isGenerated: true,
         isSanitized: true
@@ -275,13 +295,11 @@ export const featuredProjects: Project[] = [
     icon: Bot,
     links: [],
     thumbnail: {
-      src: "/projects/revvy/thumb-light.webp",
-      darkSrc: "/projects/revvy/thumb-dark.webp",
-      alt: "Repo-derived performance pipeline visual for Revvy review automation",
+      src: "/projects/revvy/revvy-poster.webp",
+      alt: "Revvy review automation product demo frame",
       type: "image",
-      caption: "Repo-derived workflow visual based on Revvy performance notes.",
-      sourceKind: "repo-derived-visualization",
-      isGenerated: true,
+      caption: "Real product demo frame from the local Revvy recording.",
+      sourceKind: "real-product-media",
       isSanitized: true
     },
     media: [
@@ -311,11 +329,30 @@ export const featuredProjects: Project[] = [
         sourceKind: "repo-derived-visualization",
         isGenerated: true,
         isSanitized: true
+      },
+      {
+        src: "/projects/revvy/review-flow-light.webp",
+        darkSrc: "/projects/revvy/review-flow-dark.webp",
+        alt: "Revvy OAuth, import, sync, filtering, draft, cache, and publish workflow",
+        type: "image",
+        caption: "Mermaid workflow generated from the Revvy product architecture.",
+        sourceKind: "repo-derived-visualization",
+        isGenerated: true,
+        isSanitized: true
+      },
+      {
+        src: "/projects/revvy/review-erd-light.webp",
+        darkSrc: "/projects/revvy/review-erd-dark.webp",
+        alt: "Revvy Prisma ERD for workspace, connection, location, review, draft, and automation settings",
+        type: "image",
+        caption: "Prisma ERD generated from the local Revvy schema.",
+        sourceKind: "repo-derived-visualization",
+        isGenerated: true,
+        isSanitized: true
       }
     ],
     featuredMetric: { value: "6-10x", label: "documented speedup for large review workflows" },
     metrics: [
-      { value: "6-10x", label: "large review workflow speedup" },
       { value: "50-200ms", label: "cached review page loads" },
       { value: "30-50%", label: "cost reduction path from smart filtering" },
       { value: "Google GBP", label: "OAuth, locations, reviews, replies" }
@@ -395,13 +432,11 @@ export const featuredProjects: Project[] = [
     icon: MailCheck,
     links: [],
     thumbnail: {
-      src: "/projects/emmy/thumb-light.webp",
-      darkSrc: "/projects/emmy/thumb-dark.webp",
-      alt: "Repo-derived email classification loop visual for Emmy",
+      src: "/projects/emmy/emmy-screenshot.webp",
+      alt: "Emmy email categorization interface screenshot",
       type: "image",
-      caption: "Repo-derived classification loop from local Emmy source and updates.",
-      sourceKind: "repo-derived-visualization",
-      isGenerated: true,
+      caption: "Real product screenshot from the local Work folder.",
+      sourceKind: "real-product-media",
       isSanitized: true
     },
     media: [
@@ -418,7 +453,27 @@ export const featuredProjects: Project[] = [
         darkSrc: "/projects/emmy/classification-loop-dark.webp",
         alt: "Emmy Gmail sync, contact groups, AI classification, logs, and label update loop",
         type: "image",
-        caption: "Classification loop generated from Emmy source and weekly update notes.",
+        caption: "Routing and correction loop generated from Emmy source and weekly update notes.",
+        sourceKind: "repo-derived-visualization",
+        isGenerated: true,
+        isSanitized: true
+      },
+      {
+        src: "/projects/emmy/email-flow-light.webp",
+        darkSrc: "/projects/emmy/email-flow-dark.webp",
+        alt: "Emmy Gmail sync, contact rules, thread context, structured routing, logs, labels, and correction workflow",
+        type: "image",
+        caption: "Mermaid workflow generated from the Emmy implementation model.",
+        sourceKind: "repo-derived-visualization",
+        isGenerated: true,
+        isSanitized: true
+      },
+      {
+        src: "/projects/emmy/email-erd-light.webp",
+        darkSrc: "/projects/emmy/email-erd-dark.webp",
+        alt: "Emmy Prisma ERD for Gmail accounts, emails, categories, labels, contact groups, categorizations, and training data",
+        type: "image",
+        caption: "Prisma ERD generated from the local Emmy schema.",
         sourceKind: "repo-derived-visualization",
         isGenerated: true,
         isSanitized: true
@@ -434,7 +489,6 @@ export const featuredProjects: Project[] = [
     ],
     featuredMetric: { value: "2-3x", label: "email processing speedup after concurrency work" },
     metrics: [
-      { value: "2-3x", label: "email processing speedup" },
       { value: "12", label: "default onboarding categories" },
       { value: "100-1000", label: "initial processing range selectable during setup" },
       { value: "Hybrid", label: "contact rules plus AI classification" }
@@ -515,13 +569,11 @@ export const featuredProjects: Project[] = [
     icon: Building2,
     links: [],
     thumbnail: {
-      src: "/projects/cad-understanding/thumb-light.webp",
-      darkSrc: "/projects/cad-understanding/thumb-dark.webp",
-      alt: "Repo-derived CAD blueprint and reconstruction artifact collage",
+      src: "/projects/cad-understanding/drawing-contexts.webp",
+      alt: "Exact CAD drawing contexts extracted from architectural drawings",
       type: "image",
-      caption: "Repo-derived CAD artifact collage from local reconstruction outputs.",
-      sourceKind: "repo-derived-visualization",
-      isGenerated: true,
+      caption: "Real CAD artifact showing extracted drawing contexts.",
+      sourceKind: "sanitized-artifact",
       isSanitized: true
     },
     media: [
@@ -562,7 +614,6 @@ export const featuredProjects: Project[] = [
     ],
     featuredMetric: { value: "28", label: "exact drawing contexts discovered in current artifact" },
     metrics: [
-      { value: "28", label: "exact drawing contexts discovered" },
       { value: "283", label: "evidence groups" },
       { value: "51", label: "reused semantic evidence hypotheses" },
       { value: "AI off", label: "external calls require explicit capped permission" }
@@ -642,13 +693,11 @@ export const featuredProjects: Project[] = [
     icon: Music2,
     links: [],
     thumbnail: {
-      src: "/projects/melodymind/thumb-light.webp",
-      darkSrc: "/projects/melodymind/thumb-dark.webp",
-      alt: "Thesis-derived MelodyMind waveform and retrieval visual",
+      src: "/projects/melodymind/thesis-page-40.webp",
+      alt: "MelodyMind thesis screenshot showing image query and playlist results",
       type: "image",
-      caption: "Thesis-derived music retrieval visual.",
-      sourceKind: "repo-derived-visualization",
-      isGenerated: true,
+      caption: "Thesis screenshot showing the product flow.",
+      sourceKind: "thesis-evidence",
       isSanitized: true
     },
     media: [
@@ -762,16 +811,38 @@ export const featuredProjects: Project[] = [
     icon: Network,
     links: [],
     thumbnail: {
-      src: "/projects/recruitment-rag/thumb-light.webp",
-      darkSrc: "/projects/recruitment-rag/thumb-dark.webp",
-      alt: "Repo-derived recruitment RAG vector-search workflow visual",
+      src: "/projects/recruitment-rag/job-automation-frame-1.webp",
+      alt: "Job automation demo frame from the local recruitment platform video",
       type: "image",
-      caption: "Resume-backed workflow visual for internal lab work.",
-      sourceKind: "repo-derived-visualization",
-      isGenerated: true,
+      caption: "Frame extracted from the local job automation video.",
+      sourceKind: "sanitized-artifact",
       isSanitized: true
     },
     media: [
+      {
+        src: "/projects/recruitment-rag/interview-demo-frame-1.webp",
+        alt: "Recruitment interview automation demo frame from the local video",
+        type: "image",
+        caption: "Frame extracted from the local interview automation demo video.",
+        sourceKind: "sanitized-artifact",
+        isSanitized: true
+      },
+      {
+        src: "/projects/recruitment-rag/interview-demo-frame-2.webp",
+        alt: "Recruitment platform demo frame showing the interview workflow",
+        type: "image",
+        caption: "Second frame extracted from the local interview automation demo video.",
+        sourceKind: "sanitized-artifact",
+        isSanitized: true
+      },
+      {
+        src: "/projects/recruitment-rag/job-automation-frame-1.webp",
+        alt: "Job automation demo frame from the local complete video",
+        type: "image",
+        caption: "Frame extracted from the local job automation video.",
+        sourceKind: "sanitized-artifact",
+        isSanitized: true
+      },
       {
         src: "/projects/recruitment-rag/recruitment-flow-light.webp",
         darkSrc: "/projects/recruitment-rag/recruitment-flow-dark.webp",

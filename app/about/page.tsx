@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ArrowRight, CheckCircle2, Gauge, GitBranch, Layers3, Workflow } from "lucide-react";
+import { CarouselRail } from "@/components/CarouselRail";
 import { Reveal } from "@/components/Reveal";
 import { focusAreas, principles, siteUrl } from "@/data/portfolio";
 
@@ -110,18 +111,20 @@ export default function AboutPage() {
               engineering loop is similar.
             </p>
           </Reveal>
-          <Reveal className="build-loop" delay={0.08}>
-            {buildLoop.map(([title, text], index) => {
-              const icons = [Workflow, GitBranch, Gauge, Layers3];
-              const Icon = icons[index];
-              return (
-                <div key={title}>
-                  <Icon size={22} aria-hidden="true" />
-                  <strong>{title}</strong>
-                  <span>{text}</span>
-                </div>
-              );
-            })}
+          <Reveal className="build-loop-shell" delay={0.08}>
+            <CarouselRail label="Build loop" className="build-loop-carousel" itemClassName="build-loop-item">
+              {buildLoop.map(([title, text], index) => {
+                const icons = [Workflow, GitBranch, Gauge, Layers3];
+                const Icon = icons[index];
+                return (
+                  <article className="build-step" key={title}>
+                    <Icon size={22} aria-hidden="true" />
+                    <strong>{title}</strong>
+                    <span>{text}</span>
+                  </article>
+                );
+              })}
+            </CarouselRail>
           </Reveal>
         </div>
       </section>
@@ -149,14 +152,14 @@ export default function AboutPage() {
             <p className="eyebrow">Engineering principles</p>
             <h2 id="principles-title">The standards I use when AI touches real workflows.</h2>
           </Reveal>
-          <div className="principles-grid">
+          <CarouselRail label="Engineering principles" className="principles-carousel" itemClassName="principle-carousel-item">
             {principles.map((principle, index) => (
               <Reveal as="article" className="principle-card" key={principle} delay={index * 0.04}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 <p>{principle}</p>
               </Reveal>
             ))}
-          </div>
+          </CarouselRail>
         </div>
       </section>
     </main>

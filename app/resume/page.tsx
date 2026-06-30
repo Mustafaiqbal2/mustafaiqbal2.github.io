@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ArrowRight, Download, GraduationCap, MapPin } from "lucide-react";
+import { CarouselRail } from "@/components/CarouselRail";
 import { Reveal } from "@/components/Reveal";
 import { education, experience, featuredProjects, profile, proofMetrics, secondaryProjects, siteUrl, skillGroups } from "@/data/portfolio";
 
@@ -102,32 +103,50 @@ export default function ResumePage() {
         <div className="section-inner">
           <Reveal className="section-heading wide-heading">
             <p className="eyebrow">Project evidence</p>
-            <h2 id="resume-projects-title">The projects I would use to defend the resume in an interview.</h2>
+            <h2 id="resume-projects-title">Project evidence behind the resume.</h2>
             <p>
-              Each item links to a case study with source-backed implementation details, media, architecture, and tradeoffs.
+              Each item links to a case study with implementation details, media, architecture, and tradeoffs that can be evaluated quickly.
             </p>
           </Reveal>
-          <div className="achievement-board">
-            {featuredProjects.map((project, index) => (
-              <Reveal as="article" className="achievement-card" key={project.slug} delay={index * 0.035}>
-                <span>{project.category}</span>
-                <h3>{project.title}</h3>
-                <p>{project.summary}</p>
-                <div className="achievement-meta">
-                  <strong>{project.featuredMetric.value}</strong>
-                  <small>{project.featuredMetric.label}</small>
-                </div>
-                <div className="resume-project-meta">
-                  <span>{project.role}</span>
-                  <span>{project.stack.slice(0, 4).join(" / ")}</span>
-                </div>
-                <a className="text-link" href={`/work/${project.slug}/`}>
-                  Case study
-                  <ArrowRight size={17} aria-hidden="true" />
-                </a>
-              </Reveal>
-            ))}
-          </div>
+          <CarouselRail label="Project evidence" className="achievement-carousel" itemClassName="achievement-carousel-item">
+            {featuredProjects.map((project, index) => {
+              const media = project.thumbnail || project.media[0];
+
+              return (
+                <Reveal as="article" className="achievement-card" key={project.slug} delay={index * 0.035}>
+                  {media ? (
+                    <a className="achievement-media" href={`/work/${project.slug}/`} aria-label={`Open ${project.title} case study`}>
+                      {media.darkSrc ? (
+                        <>
+                          <img className="theme-media-light" src={media.src} alt={media.alt} loading="lazy" decoding="async" />
+                          <img className="theme-media-dark" src={media.darkSrc} alt="" loading="lazy" decoding="async" />
+                        </>
+                      ) : (
+                        <img src={media.type === "video" ? media.poster || media.src : media.src} alt={media.alt} loading="lazy" decoding="async" />
+                      )}
+                    </a>
+                  ) : null}
+                  <div className="achievement-content">
+                    <span>{project.category}</span>
+                    <h3>{project.title}</h3>
+                    <p>{project.summary}</p>
+                    <div className="achievement-meta">
+                      <strong>{project.featuredMetric.value}</strong>
+                      <small>{project.featuredMetric.label}</small>
+                    </div>
+                    <div className="resume-project-meta">
+                      <span>{project.role}</span>
+                      <span>{project.stack.slice(0, 4).join(" / ")}</span>
+                    </div>
+                    <a className="text-link" href={`/work/${project.slug}/`}>
+                      Case study
+                      <ArrowRight size={17} aria-hidden="true" />
+                    </a>
+                  </div>
+                </Reveal>
+              );
+            })}
+          </CarouselRail>
         </div>
       </section>
 
@@ -160,9 +179,9 @@ export default function ResumePage() {
         <div className="section-inner">
           <Reveal className="section-heading">
             <p className="eyebrow">Skills</p>
-            <h2 id="skills-title">Grouped by engineering leverage.</h2>
+            <h2 id="skills-title">Technical range.</h2>
           </Reveal>
-          <div className="skills-grid">
+          <CarouselRail label="Skill groups" className="skills-carousel" itemClassName="skill-carousel-item" auto>
             {skillGroups.map((group, index) => (
               <Reveal as="article" className="skill-card" key={group.title} delay={index * 0.04}>
                 <h3>{group.title}</h3>
@@ -173,7 +192,7 @@ export default function ResumePage() {
                 </div>
               </Reveal>
             ))}
-          </div>
+          </CarouselRail>
         </div>
       </section>
 
@@ -186,15 +205,15 @@ export default function ResumePage() {
               These projects are compact on the site, but they matter because they show lower-level engineering range.
             </p>
           </Reveal>
-          <div className="compact-table">
+          <CarouselRail label="Systems depth projects" className="systems-carousel" itemClassName="systems-carousel-item" auto>
             {secondaryProjects.slice(0, 6).map((project) => (
-              <div className="compact-row" key={project.title}>
+              <article className="compact-row systems-card" key={project.title}>
                 <span>{project.signal}</span>
                 <strong>{project.title}</strong>
                 <p>{project.summary}</p>
-              </div>
+              </article>
             ))}
-          </div>
+          </CarouselRail>
         </div>
       </section>
     </main>

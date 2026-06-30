@@ -8,7 +8,6 @@ import {
   CalendarDays,
   CheckCircle2,
   Database,
-  FileText,
   Gauge,
   GitBranch,
   Layers3,
@@ -17,6 +16,7 @@ import {
   Sparkles,
   Workflow
 } from "lucide-react";
+import { CarouselRail } from "@/components/CarouselRail";
 import { ProjectLinks } from "@/components/ProjectLinks";
 import { ProjectMedia } from "@/components/ProjectMedia";
 import { Reveal } from "@/components/Reveal";
@@ -155,39 +155,28 @@ function CaseStudyBody({ project }: { project: Project }) {
   }
 }
 
-function EvidenceSources({ project }: { project: Project }) {
-  return (
-    <Reveal as="aside" className="evidence-sources">
-      <span className="status-label">Evidence used</span>
-      <h2>What this page is grounded in.</h2>
+function TechnicalPanels({ project, className = "" }: { project: Project; className?: string }) {
+  const panels = project.caseStudy.technicalPanels.map((panel, index) => (
+    <Reveal as="article" className="tech-panel" key={panel.title} delay={index * 0.04}>
+      <span>{panel.eyebrow}</span>
+      <h3>{panel.title}</h3>
+      <p>{panel.text}</p>
       <ul>
-        {project.caseStudy.evidenceSources.map((source) => (
-          <li key={source}>
-            <FileText size={17} aria-hidden="true" />
-            <span>{source}</span>
-          </li>
+        {panel.items.map((item) => (
+          <li key={item}>{item}</li>
         ))}
       </ul>
     </Reveal>
-  );
-}
+  ));
 
-function TechnicalPanels({ project, className = "" }: { project: Project; className?: string }) {
+  if (className.includes("vertical-panels")) {
+    return <div className={`technical-panels ${className}`}>{panels}</div>;
+  }
+
   return (
-    <div className={`technical-panels ${className}`}>
-      {project.caseStudy.technicalPanels.map((panel, index) => (
-        <Reveal as="article" className="tech-panel" key={panel.title} delay={index * 0.04}>
-          <span>{panel.eyebrow}</span>
-          <h3>{panel.title}</h3>
-          <p>{panel.text}</p>
-          <ul>
-            {panel.items.map((item) => (
-              <li key={item}>{item}</li>
-            ))}
-          </ul>
-        </Reveal>
-      ))}
-    </div>
+    <CarouselRail label={`${project.title} technical panels`} className={`technical-carousel ${className}`} itemClassName="technical-carousel-item">
+      {panels}
+    </CarouselRail>
   );
 }
 
@@ -212,12 +201,12 @@ function StackStrip({ project }: { project: Project }) {
 }
 
 function PlatformCase({ project }: { project: Project }) {
-  const domains = [
-    ["Users", "accounts, profiles, profile groups, roles"],
-    ["Agents", "Chattie, Revvy, Dominic, Hunter, Pixie, Audra"],
-    ["Commercial", "Stripe, subscriptions, credits, invoices"],
-    ["Knowledge", "assets, Pinecone, questions, responses"],
-    ["Operations", "S3, SES, SQS, notifications, integrations"]
+  const platformLayers = [
+    ["Product surface", ["Dashboard", "Agent modules", "Admin tools", "Operations views"]],
+    ["Control plane", ["Accounts", "Profiles", "Profile groups", "Agent access"]],
+    ["Commercial", ["Stripe", "Credits", "Invoices", "Usage records"]],
+    ["AI + data", ["Pinecone", "Knowledge base", "Assets", "Responses"]],
+    ["External services", ["S3", "SES", "SQS", "Google APIs", "LLM providers"]]
   ];
 
   return (
@@ -225,12 +214,16 @@ function PlatformCase({ project }: { project: Project }) {
       <section className="section case-platform-overview" aria-labelledby="platform-title">
         <div className="section-inner platform-grid">
           <CaseIntro project={project} label="Platform evidence" />
-          <Reveal className="platform-domain-map" delay={0.08}>
-            {domains.map(([title, text], index) => (
-              <div key={title} style={{ "--domain-index": index } as CSSProperties}>
+          <Reveal className="platform-stack-map" delay={0.08}>
+            {platformLayers.map(([title, items], index) => (
+              <div className="platform-stack-layer" key={title as string} style={{ "--layer-index": index } as CSSProperties}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
                 <strong>{title}</strong>
-                <p>{text}</p>
+                <ul>
+                  {(items as string[]).map((item) => (
+                    <li key={item}>{item}</li>
+                  ))}
+                </ul>
               </div>
             ))}
           </Reveal>
@@ -249,16 +242,13 @@ function PlatformCase({ project }: { project: Project }) {
       </section>
 
       <section className="section case-media-section" aria-labelledby="platform-media-title">
-        <div className="section-inner case-media-grid">
-          <div>
-            <Reveal className="section-heading">
-              <p className="eyebrow">Sanitized visuals</p>
-              <h2 id="platform-media-title">Architecture without private customer data.</h2>
-              <p>These visuals are generated from the local docs and schema so the product structure is clear without exposing source code.</p>
-            </Reveal>
-            <EvidenceSources project={project} />
-          </div>
-          <ProjectMedia media={project.media.slice(1)} />
+        <div className="section-inner case-documentation">
+          <Reveal className="section-heading wide-heading">
+            <p className="eyebrow">Project documentation</p>
+            <h2 id="platform-media-title">Schema and workflow diagrams generated from the local product code.</h2>
+            <p>Private product details are represented through generated ERDs, workflow diagrams, and sanitized architecture media.</p>
+          </Reveal>
+          <ProjectMedia media={project.media} />
         </div>
       </section>
     </>
@@ -300,7 +290,7 @@ function PerformanceCase({ project }: { project: Project }) {
             <p className="eyebrow">Workflow compression</p>
             <h2 id="workflow-title">The important work happens before the model call.</h2>
           </Reveal>
-          <div className="performance-timeline">
+          <CarouselRail label="Revvy workflow stages" className="performance-stage-carousel" itemClassName="performance-stage-item">
             {stages.map(([title, text], index) => (
               <Reveal as="article" className="perf-stage" key={title} delay={index * 0.035}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
@@ -308,7 +298,7 @@ function PerformanceCase({ project }: { project: Project }) {
                 <p>{text}</p>
               </Reveal>
             ))}
-          </div>
+          </CarouselRail>
         </div>
       </section>
 
@@ -331,9 +321,13 @@ function PerformanceCase({ project }: { project: Project }) {
       </section>
 
       <section className="section section-muted case-media-section" aria-labelledby="revvy-media-title">
-        <div className="section-inner case-media-grid">
-          <EvidenceSources project={project} />
-          <ProjectMedia media={project.media.slice(1)} />
+        <div className="section-inner case-documentation">
+          <Reveal className="section-heading wide-heading">
+            <p className="eyebrow">Project documentation</p>
+            <h2 id="revvy-media-title">Real product media, schema, and workflow diagrams.</h2>
+            <p>The gallery combines the local demo assets with source-derived diagrams for the Google Business Profile workflow.</p>
+          </Reveal>
+          <ProjectMedia media={project.media} />
         </div>
       </section>
     </>
@@ -342,6 +336,12 @@ function PerformanceCase({ project }: { project: Project }) {
 
 function ClassificationCase({ project }: { project: Project }) {
   const loop = ["Gmail sync", "Contact groups", "Thread context", "LLM JSON log", "Gmail labels", "User correction"];
+  const routing = [
+    ["Known sender", "Contact group rule applies before any model call."],
+    ["Ambiguous thread", "Subject, sender, recipients, and recent context go to structured AI routing."],
+    ["Low confidence", "Decision stays inspectable through categorization logs."],
+    ["Correction", "User fixes update the label path instead of hiding the miss."]
+  ];
   const categories = ["Priority", "Financial", "Scheduling", "Team", "Orders", "Newsletters", "FYI/CC", "Uncategorized"];
 
   return (
@@ -349,13 +349,15 @@ function ClassificationCase({ project }: { project: Project }) {
       <section className="section case-classification" aria-labelledby="classification-title">
         <div className="section-inner classification-grid">
           <CaseIntro project={project} label="Email classification loop" />
-          <Reveal className="classification-loop" delay={0.08}>
-            {loop.map((item, index) => (
-              <div key={item}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <strong>{item}</strong>
-              </div>
-            ))}
+          <Reveal className="classification-loop-shell" delay={0.08}>
+            <CarouselRail label="Emmy classification loop" className="classification-loop-carousel" itemClassName="classification-loop-item">
+              {loop.map((item, index) => (
+                <article className="classification-step" key={item}>
+                  <span>{String(index + 1).padStart(2, "0")}</span>
+                  <strong>{item}</strong>
+                </article>
+              ))}
+            </CarouselRail>
           </Reveal>
         </div>
       </section>
@@ -367,10 +369,20 @@ function ClassificationCase({ project }: { project: Project }) {
             <h2 id="taxonomy-title">Rules, context, and logs instead of blind classification.</h2>
             <p>Emmy works because the system has places for deterministic routing, model reasoning, and user correction.</p>
           </Reveal>
-          <Reveal className="category-board" delay={0.08}>
-            {categories.map((category) => (
-              <span key={category}>{category}</span>
-            ))}
+          <Reveal className="email-routing-board" delay={0.08}>
+            <div className="routing-rule-grid">
+              {routing.map(([title, text]) => (
+                <article key={title}>
+                  <strong>{title}</strong>
+                  <p>{text}</p>
+                </article>
+              ))}
+            </div>
+            <div className="category-ribbon" aria-label="Emmy default categories">
+              {categories.map((category) => (
+                <span key={category}>{category}</span>
+              ))}
+            </div>
           </Reveal>
         </div>
       </section>
@@ -393,8 +405,12 @@ function ClassificationCase({ project }: { project: Project }) {
       </section>
 
       <section className="section section-muted case-media-section" aria-labelledby="emmy-media-title">
-        <div className="section-inner case-media-grid">
-          <EvidenceSources project={project} />
+        <div className="section-inner case-documentation">
+          <Reveal className="section-heading wide-heading">
+            <p className="eyebrow">Project documentation</p>
+            <h2 id="emmy-media-title">Screenshots, ERD, and workflow diagrams for the Gmail automation loop.</h2>
+            <p>The diagrams are generated from the local Prisma schema and implementation model, then paired with the real local product screenshot.</p>
+          </Reveal>
           <ProjectMedia media={project.media} />
         </div>
       </section>
@@ -445,7 +461,6 @@ function CadCase({ project }: { project: Project }) {
             <h2 id="cad-artifacts-title">The page uses reconstruction outputs, not fake screenshots.</h2>
           </Reveal>
           <ProjectMedia media={project.media} />
-          <EvidenceSources project={project} />
         </div>
       </section>
     </>
@@ -466,7 +481,8 @@ function MusicCase({ project }: { project: Project }) {
       <section className="section case-music" aria-labelledby="music-title">
         <div className="section-inner music-grid">
           <CaseIntro project={project} label="Thesis-backed product" />
-          <Reveal className="music-model-journey" delay={0.08}>
+          <Reveal className="music-model-journey-shell" delay={0.08}>
+            <CarouselRail label="MelodyMind model journey" className="music-journey-carousel" itemClassName="music-journey-item">
             {modelSteps.map(([title, text], index) => (
               <div key={title}>
                 <span>{String(index + 1).padStart(2, "0")}</span>
@@ -474,6 +490,7 @@ function MusicCase({ project }: { project: Project }) {
                 <p>{text}</p>
               </div>
             ))}
+            </CarouselRail>
           </Reveal>
         </div>
       </section>
@@ -497,8 +514,12 @@ function MusicCase({ project }: { project: Project }) {
       </section>
 
       <section className="section case-media-section" aria-labelledby="music-media-title">
-        <div className="section-inner case-media-grid">
-          <EvidenceSources project={project} />
+        <div className="section-inner case-documentation">
+          <Reveal className="section-heading wide-heading">
+            <p className="eyebrow">Project documentation</p>
+            <h2 id="music-media-title">Thesis screenshots and system architecture.</h2>
+            <p>The gallery keeps the product screenshots and architecture artifacts together so the research path and product surface are visible in one place.</p>
+          </Reveal>
           <ProjectMedia media={project.media} />
         </div>
       </section>
@@ -534,7 +555,7 @@ function RagCase({ project }: { project: Project }) {
             <p className="eyebrow">System flow</p>
             <h2 id="rag-flow-title">A recruitment workflow, not a standalone chatbot.</h2>
           </Reveal>
-          <div className="rag-lanes">
+          <CarouselRail label="Recruitment RAG flow" className="rag-lane-carousel" itemClassName="rag-lane-item">
             {lanes.map((lane, index) => {
               const LaneIcon = lane.icon;
               return (
@@ -545,7 +566,7 @@ function RagCase({ project }: { project: Project }) {
                 </Reveal>
               );
             })}
-          </div>
+          </CarouselRail>
         </div>
       </section>
 
@@ -554,7 +575,7 @@ function RagCase({ project }: { project: Project }) {
           <TechnicalPanels project={project} className="vertical-panels" />
           <Reveal className="implementation-ledger" delay={0.08}>
             <p className="eyebrow">Resume-backed outcomes</p>
-            <h2 id="rag-panels-title">What I can say publicly.</h2>
+            <h2 id="rag-panels-title">Public outcome summary.</h2>
             <ul>
               {project.outcomes.map((item) => (
                 <li key={item}>
@@ -568,8 +589,12 @@ function RagCase({ project }: { project: Project }) {
       </section>
 
       <section className="section section-muted case-media-section" aria-labelledby="rag-media-title">
-        <div className="section-inner case-media-grid">
-          <EvidenceSources project={project} />
+        <div className="section-inner case-documentation">
+          <Reveal className="section-heading wide-heading">
+            <p className="eyebrow">Project documentation</p>
+            <h2 id="rag-media-title">Demo frames and recruitment workflow architecture.</h2>
+            <p>These frames come from the local automation videos and sit beside the workflow diagram for the lab project.</p>
+          </Reveal>
           <ProjectMedia media={project.media} />
         </div>
       </section>

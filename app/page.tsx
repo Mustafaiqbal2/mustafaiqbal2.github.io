@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { ArrowLeft, ArrowRight, BriefcaseBusiness, Download, Sparkles } from "lucide-react";
+import { CarouselRail } from "@/components/CarouselRail";
 import { ContactActions } from "@/components/ContactActions";
 import { ProjectCard } from "@/components/ProjectCard";
 import { Reveal } from "@/components/Reveal";
@@ -143,13 +144,13 @@ export default function Home() {
               from local project evidence rather than decorative filler.
             </p>
           </Reveal>
-          <div className="project-grid">
+          <CarouselRail label="Selected work" className="project-card-carousel" itemClassName="project-carousel-item" auto>
             {selectedProjects.map((project, index) => (
               <Reveal key={project.slug} delay={index * 0.06}>
                 <ProjectCard project={project} priority={index === 0} />
               </Reveal>
             ))}
-          </div>
+          </CarouselRail>
           <Reveal className="center-cta">
             <a className="button primary" href="/work/">
               View all work

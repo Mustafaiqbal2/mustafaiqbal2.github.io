@@ -1,14 +1,19 @@
 import { execFileSync } from "node:child_process";
 import fs from "node:fs/promises";
+import { createRequire } from "node:module";
 import path from "node:path";
+import { chromium } from "playwright-core";
 import sharp from "sharp";
 
+const require = createRequire(import.meta.url);
 const repoRoot = process.cwd();
 const workRoot = process.env.SOURCE_WORK_ROOT || "C:\\Users\\musta\\OneDrive\\Desktop\\WORK";
 const startupRoot = process.env.SOURCE_STARTUP_ROOT || "C:\\Users\\musta\\OneDrive\\Desktop\\Start-up";
 const thesisPdf = process.env.SOURCE_MELODY_THESIS || "C:\\Users\\musta\\Downloads\\thesis.pdf";
 const outputRoot = path.join(repoRoot, "public", "projects");
 const imagesRoot = path.join(repoRoot, "public", "images");
+const chromePath = process.env.CHROME_EXECUTABLE_PATH || "C:/Program Files/Google/Chrome/Application/chrome.exe";
+const mermaidBundle = require.resolve("mermaid/dist/mermaid.min.js");
 
 const fileExists = async (filePath) => {
   try {
@@ -90,6 +95,225 @@ const writeSvgWebp = async (svg, output, width = 1600, height = 1000) => {
   await sharp(Buffer.from(svg)).resize(width, height).webp({ quality: 88 }).toFile(output);
 };
 
+const renderMermaid = async (diagram, output, dark = false, width = 2200, height = 1500) => {
+  await ensureDir(path.dirname(output));
+  const p = paletteFor(dark);
+  const browser = await chromium.launch({ executablePath: chromePath, headless: true });
+  const tmp = output.replace(/\.webp$/i, ".mermaid.png");
+  try {
+    const page = await browser.newPage({ viewport: { width, height }, deviceScaleFactor: 1 });
+    await page.setContent(
+      `<!doctype html>
+      <html>
+        <head>
+          <style>
+            html,
+            body {
+              width: ${width}px;
+              height: ${height}px;
+              margin: 0;
+              overflow: hidden;
+              background: ${p.bg};
+            }
+            #diagram {
+              width: ${width}px;
+              height: ${height}px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              padding: 54px;
+              box-sizing: border-box;
+              background:
+                radial-gradient(circle at 78% 16%, ${dark ? "rgba(45, 212, 191, .12)" : "rgba(15, 118, 110, .09)"}, transparent 34%),
+                radial-gradient(circle at 16% 82%, ${dark ? "rgba(167, 139, 250, .11)" : "rgba(124, 58, 237, .08)"}, transparent 36%),
+                ${p.bg};
+            }
+            #diagram svg {
+              max-width: 100%;
+              max-height: 100%;
+              overflow: visible;
+            }
+          </style>
+        </head>
+        <body><div id="diagram"></div></body>
+      </html>`,
+      { waitUntil: "domcontentloaded" }
+    );
+    await page.addScriptTag({ path: mermaidBundle });
+    const svg = await page.evaluate(
+      async ({ diagramText, palette, isDark }) => {
+        mermaid.initialize({
+          startOnLoad: false,
+          securityLevel: "loose",
+          theme: "base",
+          themeVariables: {
+            background: palette.bg,
+            mainBkg: palette.panelSolid,
+            primaryColor: palette.panelSolid,
+            primaryTextColor: palette.ink,
+            primaryBorderColor: palette.lineStrong,
+            lineColor: palette.primary,
+            secondaryColor: palette.panel,
+            tertiaryColor: palette.bg2,
+            textColor: palette.ink,
+            fontFamily: "Inter, Arial, sans-serif",
+            fontSize: "18px",
+            edgeLabelBackground: isDark ? "#101827" : "#ffffff"
+          },
+          er: {
+            diagramPadding: 32,
+            entityPadding: 14,
+            stroke: palette.lineStrong,
+            fill: palette.panelSolid,
+            fontSize: 17,
+            useMaxWidth: false
+          },
+          flowchart: {
+            useMaxWidth: false,
+            htmlLabels: true,
+            curve: "basis",
+            nodeSpacing: 52,
+            rankSpacing: 58
+          }
+        });
+        const id = `diagram-${Date.now()}-${Math.round(Math.random() * 100000)}`;
+        const result = await mermaid.render(id, diagramText);
+        return result.svg;
+      },
+      { diagramText: diagram, palette: p, isDark: dark }
+    );
+    await page.evaluate((renderedSvg) => {
+      const root = document.getElementById("diagram");
+      if (!root) return;
+      root.innerHTML = renderedSvg;
+      const svgElement = root.querySelector("svg");
+      if (!svgElement) return;
+      svgElement.setAttribute("width", "100%");
+      svgElement.setAttribute("height", "100%");
+      svgElement.setAttribute("preserveAspectRatio", "xMidYMid meet");
+      svgElement.style.width = "100%";
+      svgElement.style.height = "100%";
+      svgElement.style.maxWidth = "100%";
+      svgElement.style.maxHeight = "100%";
+    }, svg);
+    await page.waitForTimeout(180);
+    await page.locator("#diagram").screenshot({ path: tmp });
+    await sharp(tmp).webp({ quality: 90 }).toFile(output);
+  } finally {
+    await fs.rm(tmp, { force: true });
+    await browser.close();
+  }
+};
+
+const parsePrismaModels = async (schemaPath) => {
+  if (!(await fileExists(schemaPath))) {
+    console.warn(`missing Prisma schema: ${schemaPath}`);
+    return { models: new Map(), relations: [] };
+  }
+
+  const source = await fs.readFile(schemaPath, "utf8");
+  const modelMatches = source.matchAll(/model\s+(\w+)\s+\{([\s\S]*?)\n\}/g);
+  const models = new Map();
+
+  for (const match of modelMatches) {
+    const [, name, body] = match;
+    const fields = [];
+    const relationFields = [];
+    for (const rawLine of body.split(/\r?\n/)) {
+      const line = rawLine.replace(/\/\/.*$/, "").trim();
+      if (!line || line.startsWith("@@")) continue;
+      const parts = line.split(/\s+/);
+      if (parts.length < 2) continue;
+      const field = parts[0];
+      const type = parts[1];
+      fields.push({ name: field, type, raw: line });
+      if (line.includes("@relation")) {
+        relationFields.push({ name: field, type, raw: line });
+      }
+    }
+    models.set(name, { name, fields, relationFields });
+  }
+
+  const relations = [];
+  for (const model of models.values()) {
+    for (const field of model.relationFields) {
+      const target = field.type.replace(/[?\[\]]/g, "");
+      if (target && models.has(target)) {
+        relations.push({ from: target, to: model.name, label: field.name });
+      }
+    }
+  }
+
+  return { models, relations };
+};
+
+const scalarTypes = new Set(["String", "Int", "Float", "Boolean", "DateTime", "Json", "Decimal", "Bytes", "BigInt"]);
+
+const prismaTypeForMermaid = (type) => {
+  const clean = type.replace("[]", "_list").replace("?", "");
+  return clean.replace(/[^A-Za-z0-9_]/g, "_");
+};
+
+const prismaErd = async (schemaPath, selectedModels, title) => {
+  const { models, relations } = await parsePrismaModels(schemaPath);
+  const selected = selectedModels.filter((name) => models.has(name));
+  const selectedSet = new Set(selected);
+  const chunks = ["erDiagram"];
+  chunks.push(`%% ${title}`);
+
+  for (const name of selected) {
+    const model = models.get(name);
+    chunks.push(`  ${name} {`);
+    const scalarFields = model.fields
+      .filter((field) => scalarTypes.has(field.type.replace(/[?\[\]]/g, "")) || field.raw.includes("@id") || field.raw.includes("@unique"))
+      .slice(0, 7);
+    for (const field of scalarFields) {
+      const flags = [];
+      if (field.raw.includes("@id")) flags.push("PK");
+      if (field.raw.includes("@unique")) flags.push("UK");
+      chunks.push(`    ${prismaTypeForMermaid(field.type)} ${field.name}${flags.length ? ` "${flags.join(",")}"` : ""}`);
+    }
+    chunks.push("  }");
+  }
+
+  const seen = new Set();
+  for (const relation of relations) {
+    if (!selectedSet.has(relation.from) || !selectedSet.has(relation.to)) continue;
+    const key = `${relation.from}-${relation.to}-${relation.label}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    chunks.push(`  ${relation.from} ||--o{ ${relation.to} : "${relation.label}"`);
+  }
+
+  return chunks.join("\n");
+};
+
+const mermaidFlow = (title, nodes, edges) => [
+  "flowchart LR",
+  `  %% ${title}`,
+  ...nodes.map(([id, label]) => `  ${id}["${label}"]`),
+  ...edges.map(([from, to, label]) => `  ${from} -->${label ? `|"${label}"|` : ""} ${to}`)
+].join("\n");
+
+const extractVideoFrame = async (videoPath, output, timestamp, width = 1500) => {
+  if (!(await fileExists(videoPath))) {
+    console.warn(`missing video source: ${videoPath}`);
+    return;
+  }
+  await ensureDir(path.dirname(output));
+  const tmp = output.replace(/\.webp$/i, ".png");
+  try {
+    execFileSync("ffmpeg", ["-y", "-ss", timestamp, "-i", videoPath, "-frames:v", "1", "-vf", `scale=${width}:-1`, tmp], {
+      stdio: "ignore"
+    });
+    await writeWebp(tmp, output, { resize: { width, withoutEnlargement: true }, quality: 86 });
+  } catch (error) {
+    console.warn(`could not extract video frame from ${videoPath}: ${error.message}`);
+  } finally {
+    await fs.rm(tmp, { force: true });
+  }
+};
+
 const text = (x, y, content, size, fill, weight = 500, attrs = "") =>
   `<text x="${x}" y="${y}" font-family="Arial, Helvetica, sans-serif" font-size="${size}" font-weight="${weight}" fill="${fill}" ${attrs}>${escapeXml(content)}</text>`;
 
@@ -131,58 +355,84 @@ const shell = (dark, body, title = "") => {
 
 const topologyVisual = (dark) => {
   const p = paletteFor(dark);
+  const layers = [
+    ["PRODUCT SURFACE", ["Dashboard", "Agent modules", "Admin", "Operations"]],
+    ["CONTROL PLANE", ["Accounts", "Profiles", "Roles", "Agent access", "Usage"]],
+    ["DATA MODEL", ["Prisma", "Postgres", "Assets", "Knowledge", "Logs"]],
+    ["AI + RETRIEVAL", ["OpenAI", "Anthropic", "Gemini", "Pinecone", "Embeddings"]],
+    ["EXTERNAL SERVICES", ["Stripe", "S3", "SES", "SQS", "Google APIs"]]
+  ];
+  const layerSvg = layers
+    .map((layer, index) => {
+      const y = 185 + index * 136;
+      const color = index % 2 ? p.accent : p.primary;
+      return `
+      <g transform="translate(140 ${y})">
+        <rect width="1320" height="98" rx="26" fill="${p.panel}" stroke="${p.lineStrong}"/>
+        <rect width="250" height="98" rx="26" fill="${color}" opacity="${dark ? ".18" : ".12"}"/>
+        ${text(34, 58, layer[0], 23, color, 760)}
+        ${layer[1]
+          .map(
+            (item, itemIndex) => `
+          <g transform="translate(${320 + itemIndex * 184} 24)">
+            <rect width="148" height="50" rx="16" fill="${p.panelSolid}" stroke="${p.line}"/>
+            ${text(18, 32, item, 18, p.ink, 560)}
+          </g>`
+          )
+          .join("")}
+      </g>`;
+    })
+    .join("");
   return shell(
     dark,
     `
-    <path d="M320 500 C470 250, 760 250, 920 500 S1240 760, 1390 500" fill="none" stroke="${p.primary}" stroke-width="4" opacity=".5"/>
-    <path d="M250 670 C520 430, 820 780, 1130 430" fill="none" stroke="${p.accent}" stroke-width="3" opacity=".38"/>
-    <circle cx="800" cy="500" r="128" fill="${p.panel}" stroke="${p.lineStrong}"/>
-    <circle cx="800" cy="500" r="74" fill="none" stroke="${p.primary}" stroke-width="2" opacity=".7"/>
-    ${text(724, 492, "Agents", 36, p.ink, 650)}
-    ${text(707, 533, "shared control plane", 18, p.muted, 400)}
-    ${panel(135, 235, 315, 132, "Tenancy", "users, accounts, profiles", p)}
-    ${panel(1115, 235, 330, 132, "Commercial", "Stripe, credits, invoices", p, p.accent)}
-    ${panel(120, 650, 330, 132, "Knowledge", "assets, vectors, retrieval", p, p.accent)}
-    ${panel(1120, 650, 330, 132, "Cloud ops", "S3, SES, SQS, Google APIs", p)}
-    ${panel(610, 760, 380, 132, "Admin and observability", "settings, notifications, usage", p, p.warm)}
+    ${layerSvg}
+    <path d="M800 282V321M800 418V457M800 554V593M800 690V729" stroke="${p.primary}" stroke-width="5" opacity=".52"/>
+    <g transform="translate(1075 842)">
+      <rect width="385" height="72" rx="24" fill="${p.panelSolid}" stroke="${p.line}"/>
+      ${text(28, 45, "Private product: architecture only", 23, p.muted, 560)}
+    </g>
     `,
-    "SIMPLABOTS PLATFORM TOPOLOGY"
+    "SIMPLABOTS MULTI-TENANT SAAS ARCHITECTURE"
   );
 };
 
 const domainModelVisual = (dark) => {
   const p = paletteFor(dark);
-  const tables = [
-    ["User", "Account", "ProfileGroup", "Profile"],
-    ["Agent", "AIEngine", "Transaction", "UserAssets"],
-    ["Subscription", "Invoice", "CreditStorage", "PaymentMethod"],
-    ["Integration", "BusinessLocation", "BusinessReview", "ReviewDraft"]
+  const groups = [
+    ["TENANCY", 95, 190, ["User", "Account", "ProfileGroup", "Profile", "ProfileGroupAgent"]],
+    ["COMMERCIAL", 600, 190, ["PricingPlan", "Subscription", "Invoice", "Transaction", "CreditStorage"]],
+    ["AGENTS", 1105, 190, ["Agent", "AIEngine", "Response", "Question", "Notification"]],
+    ["ASSETS + KNOWLEDGE", 250, 600, ["UserAsset", "KnowledgeBase", "Document", "VectorRecord"]],
+    ["INTEGRATIONS", 840, 600, ["Integration", "BusinessLocation", "BusinessReview", "ReviewDraft"]]
   ];
+  const groupSvg = groups
+    .map(
+      ([title, x, y, rows], index) => `
+      <g transform="translate(${x} ${y})">
+        <rect width="400" height="${index < 3 ? 320 : 245}" rx="28" fill="${p.panel}" stroke="${p.lineStrong}"/>
+        ${text(28, 46, title, 22, index % 2 ? p.accent : p.primary, 760)}
+        ${(rows)
+          .map(
+            (row, rowIndex) => `
+          <g transform="translate(28 ${78 + rowIndex * 43})">
+            <rect width="344" height="30" rx="10" fill="${p.panelSolid}" stroke="${p.line}"/>
+            <circle cx="18" cy="15" r="5" fill="${rowIndex % 2 ? p.accent : p.primary}"/>
+            ${text(36, 21, row, 17, p.ink, 560)}
+          </g>`
+          )
+          .join("")}
+      </g>`
+    )
+    .join("");
   return shell(
     dark,
     `
-    <g transform="translate(110 210)">
-      ${tables
-        .map(
-          (row, rowIndex) => `
-        <g transform="translate(0 ${rowIndex * 150})">
-          ${row
-            .map(
-              (item, colIndex) => `
-            <g transform="translate(${colIndex * 350} 0)">
-              <rect width="285" height="96" rx="18" fill="${p.panel}" stroke="${p.line}"/>
-              <circle cx="34" cy="48" r="9" fill="${(rowIndex + colIndex) % 2 ? p.accent : p.primary}"/>
-              ${text(58, 54, item, 23, p.ink, 650)}
-            </g>`
-            )
-            .join("")}
-        </g>`
-        )
-        .join("")}
-    </g>
-    <path d="M394 258H466M744 258H816M1094 258H1166M254 408V462M604 408V462M954 408V462M1304 408V462M254 558V612M604 558V612M954 558V612M1304 558V612" stroke="${p.primary}" stroke-width="3" opacity=".42"/>
+    ${groupSvg}
+    <path d="M495 350H600M1000 350H1105M800 510V600M450 600L675 510M1040 600L925 510" fill="none" stroke="${p.primary}" stroke-width="4" opacity=".38"/>
+    <path d="M1305 510C1390 570 1390 660 1240 720" fill="none" stroke="${p.accent}" stroke-width="4" opacity=".34"/>
     `,
-    "SIMPLABOTS PRISMA DOMAIN MODEL"
+    "SIMPLABOTS DOMAIN MODEL GROUPS"
   );
 };
 
@@ -233,36 +483,44 @@ const performancePipelineVisual = (dark) => {
 
 const classificationVisual = (dark) => {
   const p = paletteFor(dark);
-  const lane = (x, title, detail, accent = p.primary) => `
-    <g transform="translate(${x} 265)">
-      <rect width="205" height="320" rx="26" fill="${p.panel}" stroke="${p.line}"/>
-      <circle cx="42" cy="52" r="15" fill="${accent}"/>
-      ${text(72, 58, title, 25, p.ink, 650)}
-      ${text(28, 108, detail[0], 16, p.muted)}
-      ${text(28, 140, detail[1], 16, p.muted)}
-      ${text(28, 172, detail[2], 16, p.muted)}
-    </g>`;
+  const nodes = [
+    ["Gmail sync", "OAuth, messages, threads", 90, 250, p.primary],
+    ["Contact rules", "known senders first", 405, 170, p.accent],
+    ["Thread context", "subject, recipients, history", 720, 250, p.primary],
+    ["Structured LLM", "JSON category + reason", 1035, 170, p.accent],
+    ["Decision log", "inspectable evidence", 405, 570, p.warm],
+    ["Gmail labels", "apply, review, correct", 1035, 570, p.primary]
+  ];
+  const nodeSvg = nodes
+    .map(
+      ([title, detail, x, y, accent]) => `
+      <g transform="translate(${x} ${y})">
+        <rect width="250" height="118" rx="24" fill="${p.panel}" stroke="${p.lineStrong}"/>
+        <circle cx="36" cy="40" r="12" fill="${accent}"/>
+        ${text(60, 45, title, 24, p.ink, 650)}
+        ${text(28, 82, detail, 17, p.muted, 400)}
+      </g>`
+    )
+    .join("");
   return shell(
     dark,
     `
-    <g transform="translate(96 0)">
-      ${lane(0, "Gmail API", ["OAuth account", "message sync", "label writes"])}
-      ${lane(235, "Rules", ["contact groups", "sender first", "category bounds"], p.accent)}
-      ${lane(470, "Thread", ["conversation", "addressing", "context pack"])}
-      ${lane(705, "LLM router", ["structured JSON", "reasoning", "confidence"], p.accent)}
-      ${lane(940, "Logs", ["decision record", "review modal", "training data"])}
-      ${lane(1175, "Labels", ["apply Gmail", "sync thread", "corrections"], p.warm)}
-      <path d="M205 425H235M440 425H470M675 425H705M910 425H940M1145 425H1175" stroke="${p.primary}" stroke-width="4" opacity=".62"/>
-      <path d="M1330 585C1170 780 760 805 530 605" fill="none" stroke="${p.accent}" stroke-width="4" opacity=".35"/>
-      <path d="M520 604l28 -10l-9 29" fill="none" stroke="${p.accent}" stroke-width="4" opacity=".5"/>
-    </g>
-    <g transform="translate(180 700)">
-      <rect width="1240" height="112" rx="26" fill="${p.panel}" stroke="${p.line}"/>
-      ${text(36, 48, "Design constraint", 24, p.ink, 650)}
-      ${text(36, 84, "Deterministic routes handle obvious senders; model calls handle ambiguity; correction writes back to product state.", 21, p.muted, 400)}
+    ${nodeSvg}
+    <path d="M340 309C380 258 396 238 405 229M655 229C690 242 705 263 720 309M970 309C1008 255 1022 235 1035 229M845 368C780 480 670 540 655 570M1285 229C1390 342 1390 525 1285 629M655 688C755 780 1010 776 1110 688" fill="none" stroke="${p.primary}" stroke-width="4" opacity=".48"/>
+    <g transform="translate(128 780)">
+      <rect width="1344" height="84" rx="26" fill="${p.panel}" stroke="${p.line}"/>
+      ${["Priority", "Financial", "Scheduling", "Team", "Orders", "Newsletters", "FYI/CC", "Uncategorized"]
+        .map(
+          (item, index) => `
+        <g transform="translate(${28 + index * 160} 22)">
+          <rect width="132" height="40" rx="14" fill="${p.panelSolid}" stroke="${p.line}"/>
+          ${text(17, 26, item, 15, p.ink, 560)}
+        </g>`
+        )
+        .join("")}
     </g>
     `,
-    "EMMY EMAIL CLASSIFICATION ARCHITECTURE"
+    "EMMY ROUTING AND CORRECTION LOOP"
   );
 };
 
@@ -465,10 +723,15 @@ await ensureDir(outputRoot);
 await ensureDir(imagesRoot);
 
 const simplabotsImages = path.join(workRoot, "AutoButt", "spbots", "simplabots", "public", "images");
+const simplabotsSchema = path.join(workRoot, "AutoButt", "spbots", "simplabots", "prisma", "schema.prisma");
+const revvySchema = path.join(workRoot, "AutoButt", "Revvy", "revvy", "prisma", "schema.prisma");
+const emmySchema = path.join(workRoot, "AutoButt", "Emmy", "Emmy", "prisma", "schema.prisma");
 const cadFinal = path.join(startupRoot, "artifacts", "architectural_reconstruction_final");
 const profilePhoto = path.join(workRoot, "me.jpeg");
 const emmyPng = path.join(workRoot, "emmy.png");
 const revvyPng = path.join(workRoot, "revvy.png");
+const recruitmentInterviewVideo = path.join(workRoot, "Interview Demo - Made with Clipchamp.mp4");
+const recruitmentCompleteVideo = path.join(workRoot, "Complete Vedio.mp4");
 
 await Promise.all([
   copyIfExists(profilePhoto, path.join(imagesRoot, "me.jpeg")),
@@ -516,6 +779,126 @@ await Promise.all([
   writePair("melodymind", "music-architecture", musicArchitectureVisual),
   writePair("recruitment-rag", "recruitment-flow", recruitmentFlowVisual),
   writePair("systems", "systems-depth", systemsVisual)
+]);
+
+try {
+  const simplabotsErd = await prismaErd(
+    simplabotsSchema,
+    [
+      "User",
+      "Account",
+      "Profile",
+      "ProfileUser",
+      "ProfileGroup",
+      "ProfileGroupUser",
+      "ProfileGroupAgent",
+      "Agent",
+      "Transaction",
+      "Subscription",
+      "Invoice",
+      "CreditStorage",
+      "PricingPlan"
+    ],
+    "Simplabots tenancy and billing ERD"
+  );
+  const revvyErd = await prismaErd(
+    revvySchema,
+    ["User", "Workspace", "WorkspaceUser", "Connection", "Location", "AutomationSetting", "Review", "Draft", "Job", "UserPreferences"],
+    "Revvy review automation ERD"
+  );
+  const emmyErd = await prismaErd(
+    emmySchema,
+    ["GmailAccount", "ContactGroup", "ContactGroupCategory", "Category", "Email", "EmailCategorization", "TrainingData", "GmailLabel"],
+    "Emmy Gmail categorization ERD"
+  );
+
+  const simplabotsFlow = mermaidFlow(
+    "Simplabots platform architecture",
+    [
+      ["U", "Users / accounts / profiles"],
+      ["UI", "Next.js dashboard + agent modules"],
+      ["CP", "Control plane: roles, groups, access"],
+      ["B", "Stripe billing + credits + usage"],
+      ["A", "Agent runtime: Chattie, Revvy, Emmy, Dominic, Hunter"],
+      ["K", "Assets + knowledge base + Pinecone"],
+      ["C", "Cloud services: S3, SES, SQS, Google APIs"]
+    ],
+    [
+      ["U", "UI", "auth context"],
+      ["UI", "CP", "profile/account scope"],
+      ["CP", "A", "agent access"],
+      ["B", "A", "usage gates"],
+      ["A", "K", "retrieval"],
+      ["A", "C", "side effects"]
+    ]
+  );
+  const revvyFlow = mermaidFlow(
+    "Revvy Google Business Profile workflow",
+    [
+      ["O", "Google OAuth"],
+      ["L", "Account + location import"],
+      ["S", "Review sync + batch upserts"],
+      ["F", "Skip replied / low priority / existing drafts"],
+      ["D", "AI draft generation"],
+      ["C", "Tagged cache invalidation"],
+      ["P", "Manual approval + publish reply"]
+    ],
+    [
+      ["O", "L", "offline token"],
+      ["L", "S", "locations"],
+      ["S", "F", "reviews"],
+      ["F", "D", "eligible only"],
+      ["D", "C", "draft writes"],
+      ["C", "P", "fast review UI"]
+    ]
+  );
+  const emmyFlow = mermaidFlow(
+    "Emmy categorization workflow",
+    [
+      ["G", "Gmail OAuth + sync"],
+      ["R", "Contact groups + category constraints"],
+      ["T", "Thread context builder"],
+      ["M", "Structured LLM router"],
+      ["L", "Categorization log"],
+      ["A", "Gmail label apply"],
+      ["C", "User correction + training data"]
+    ],
+    [
+      ["G", "R", "known sender"],
+      ["R", "T", "ambiguous"],
+      ["T", "M", "context pack"],
+      ["M", "L", "JSON evidence"],
+      ["L", "A", "label decision"],
+      ["A", "C", "manual move"],
+      ["C", "R", "feedback"]
+    ]
+  );
+
+  const mermaidJobs = [
+    [simplabotsErd, path.join(outputRoot, "simplabots", "prisma-erd-light.webp"), false, 2400, 1700],
+    [simplabotsErd, path.join(outputRoot, "simplabots", "prisma-erd-dark.webp"), true, 2400, 1700],
+    [simplabotsFlow, path.join(outputRoot, "simplabots", "platform-flow-light.webp"), false, 2200, 1300],
+    [simplabotsFlow, path.join(outputRoot, "simplabots", "platform-flow-dark.webp"), true, 2200, 1300],
+    [revvyErd, path.join(outputRoot, "revvy", "review-erd-light.webp"), false, 2200, 1450],
+    [revvyErd, path.join(outputRoot, "revvy", "review-erd-dark.webp"), true, 2200, 1450],
+    [revvyFlow, path.join(outputRoot, "revvy", "review-flow-light.webp"), false, 2200, 1300],
+    [revvyFlow, path.join(outputRoot, "revvy", "review-flow-dark.webp"), true, 2200, 1300],
+    [emmyErd, path.join(outputRoot, "emmy", "email-erd-light.webp"), false, 2200, 1450],
+    [emmyErd, path.join(outputRoot, "emmy", "email-erd-dark.webp"), true, 2200, 1450],
+    [emmyFlow, path.join(outputRoot, "emmy", "email-flow-light.webp"), false, 2200, 1300],
+    [emmyFlow, path.join(outputRoot, "emmy", "email-flow-dark.webp"), true, 2200, 1300]
+  ];
+  for (const job of mermaidJobs) {
+    await renderMermaid(...job);
+  }
+} catch (error) {
+  console.warn(`could not render Mermaid diagrams: ${error.message}`);
+}
+
+await Promise.all([
+  extractVideoFrame(recruitmentInterviewVideo, path.join(outputRoot, "recruitment-rag", "interview-demo-frame-1.webp"), "00:00:03"),
+  extractVideoFrame(recruitmentInterviewVideo, path.join(outputRoot, "recruitment-rag", "interview-demo-frame-2.webp"), "00:00:13"),
+  extractVideoFrame(recruitmentCompleteVideo, path.join(outputRoot, "recruitment-rag", "job-automation-frame-1.webp"), "00:00:05")
 ]);
 
 await renderThesisPages();

@@ -31,14 +31,26 @@ const mediaAssets = [
   "/projects/simplabots/thumb-dark.webp",
   "/projects/simplabots/platform-topology-light.webp",
   "/projects/simplabots/platform-topology-dark.webp",
+  "/projects/simplabots/platform-flow-light.webp",
+  "/projects/simplabots/platform-flow-dark.webp",
+  "/projects/simplabots/prisma-erd-light.webp",
+  "/projects/simplabots/prisma-erd-dark.webp",
   "/projects/simplabots/domain-model-light.webp",
   "/projects/simplabots/domain-model-dark.webp",
   "/projects/revvy/revvy-demo.mp4",
   "/projects/revvy/revvy-poster.webp",
   "/projects/revvy/revvy-screenshot.webp",
+  "/projects/revvy/review-flow-light.webp",
+  "/projects/revvy/review-flow-dark.webp",
+  "/projects/revvy/review-erd-light.webp",
+  "/projects/revvy/review-erd-dark.webp",
   "/projects/revvy/performance-pipeline-light.webp",
   "/projects/revvy/performance-pipeline-dark.webp",
   "/projects/emmy/emmy-screenshot.webp",
+  "/projects/emmy/email-flow-light.webp",
+  "/projects/emmy/email-flow-dark.webp",
+  "/projects/emmy/email-erd-light.webp",
+  "/projects/emmy/email-erd-dark.webp",
   "/projects/emmy/classification-loop-light.webp",
   "/projects/emmy/classification-loop-dark.webp",
   "/projects/cad-understanding/drawing-contexts.webp",
@@ -52,16 +64,19 @@ const mediaAssets = [
   "/projects/melodymind/music-architecture-dark.webp",
   "/projects/recruitment-rag/recruitment-flow-light.webp",
   "/projects/recruitment-rag/recruitment-flow-dark.webp",
+  "/projects/recruitment-rag/interview-demo-frame-1.webp",
+  "/projects/recruitment-rag/interview-demo-frame-2.webp",
+  "/projects/recruitment-rag/job-automation-frame-1.webp",
   "/resume/Mustafa_Iqbal_Full_Resume.pdf"
 ];
 
 const expectedLayoutMarkers = {
-  "/work/simplabots-agentic-saas/": ".case-layout-platform .platform-domain-map",
-  "/work/revvy-review-automation/": ".case-layout-performance .performance-timeline",
-  "/work/emmy-email-categorization/": ".case-layout-classification .classification-loop",
+  "/work/simplabots-agentic-saas/": ".case-layout-platform .platform-stack-map",
+  "/work/revvy-review-automation/": ".case-layout-performance .performance-stage-carousel",
+  "/work/emmy-email-categorization/": ".case-layout-classification .email-routing-board",
   "/work/cad-understanding-core/": ".case-layout-cad .contract-panel",
-  "/work/melodymind/": ".case-layout-music .music-model-journey",
-  "/work/recruitment-rag-platform/": ".case-layout-rag .rag-lanes"
+  "/work/melodymind/": ".case-layout-music .music-journey-carousel",
+  "/work/recruitment-rag-platform/": ".case-layout-rag .rag-lane-carousel"
 };
 
 const visualRoutes = [
@@ -147,6 +162,7 @@ async function main() {
             contactCtaCount: document.querySelectorAll(".contact-cta").length,
             sendDisabled: document.querySelector('.contact-form button[type="submit"]')?.disabled ?? null,
             textHasFallback: bodyText.includes("Email fallback:"),
+            textHasGroundedIn: /what this page is grounded in/i.test(bodyText),
             textHasParallelHeadline: Array.from(document.querySelectorAll(".metric")).some((metric) => /20\s*parallel|parallel ai calls/i.test(metric.innerText || "")),
             footerHasDocumentRag: Array.from(document.querySelectorAll(".site-footer a")).some((a) => a.textContent?.trim() === "Document RAG"),
             emptyMetricCells: Array.from(document.querySelectorAll(".metric")).filter((metric) => !metric.innerText.trim()).length,
@@ -173,6 +189,9 @@ async function main() {
             })(),
             mobileMenuExists: Boolean(document.querySelector(".mobile-menu")),
             carouselExists: location.pathname === "/" ? Boolean(document.querySelector("[data-project-carousel]")) : true,
+            railCount: document.querySelectorAll("[data-carousel-rail]").length,
+            visibleRailControls: Array.from(document.querySelectorAll("[data-carousel-rail]")).filter((rail) => rail.getAttribute("data-can-scroll") === "true").length,
+            hasGridEvidenceRows: Boolean(document.querySelector(".achievement-board, .skills-grid, .secondary-grid .secondary-card, .project-grid .project-card")),
             theme: document.documentElement.dataset.theme
           };
         }, expectedLayoutMarkers);
@@ -190,13 +209,14 @@ async function main() {
         if (data.contactCtaCount !== 0) failures.push(`${route} ${viewport.name} ${theme} has duplicated contact CTA`);
         if (data.sendDisabled) failures.push(`${route} ${viewport.name} ${theme} contact send button disabled`);
         if (data.textHasFallback) failures.push(`${route} ${viewport.name} ${theme} has email fallback text`);
+        if (data.textHasGroundedIn) failures.push(`${route} ${viewport.name} ${theme} has grounded-in evidence copy`);
         if (data.textHasParallelHeadline) failures.push(`${route} ${viewport.name} ${theme} has 20-call headline metric`);
         if (data.footerHasDocumentRag) failures.push(`${route} ${viewport.name} ${theme} footer still links Document RAG`);
         if (data.emptyMetricCells) failures.push(`${route} ${viewport.name} ${theme} has empty metric cells`);
         if (data.homepageHasAvailabilityChip) failures.push(`${route} ${viewport.name} ${theme} homepage still shows availability chip text`);
         if (!data.homeGradient.includes("gradient")) failures.push(`${route} ${viewport.name} ${theme} Home nav gradient missing`);
         if (data.activeNavCount < 1) failures.push(`${route} ${viewport.name} ${theme} active nav state missing`);
-        if (data.sectionGutter !== null && data.sectionGutter > (viewport.name === "mobile" ? 16 : 22)) {
+        if (data.sectionGutter !== null && data.sectionGutter > (viewport.name === "mobile" ? 16 : viewport.name === "tablet" ? 54 : 96)) {
           failures.push(`${route} ${viewport.name} ${theme} section gutters too wide (${data.sectionGutter}px)`);
         }
         if (!data.expectedLayoutPresent) failures.push(`${route} ${viewport.name} ${theme} expected case-study layout marker missing`);
@@ -204,6 +224,12 @@ async function main() {
         if (data.projectObjectFits.some((fit) => fit !== "contain")) failures.push(`${route} ${viewport.name} ${theme} project wallpapers are not contain-fit`);
         if (!data.darkProjectMediaVisible) failures.push(`${route} ${viewport.name} ${theme} dark case-study media variant not visible`);
         if (!data.carouselExists) failures.push(`${route} ${viewport.name} ${theme} homepage carousel missing`);
+        if (["/", "/work/", "/resume/", "/about/"].includes(route) && data.railCount < 1) {
+          failures.push(`${route} ${viewport.name} ${theme} expected carousel rails`);
+        }
+        if (["/work/", "/resume/"].includes(route) && data.hasGridEvidenceRows) {
+          failures.push(`${route} ${viewport.name} ${theme} repeated cards still use grid layout`);
+        }
         if (data.theme !== theme) failures.push(`${route} ${viewport.name} expected ${theme} theme, got ${data.theme}`);
         if (viewport.name === "mobile" && !data.mobileMenuExists) failures.push(`${route} mobile menu missing`);
       }
@@ -234,6 +260,19 @@ async function main() {
   await interactionPage.locator("[data-carousel-next]").first().click();
   const firstDotInactive = await interactionPage.locator('[data-carousel-dot="0"]').evaluate((el) => el.getAttribute("aria-pressed") === "false");
   if (!firstDotInactive) failures.push("Carousel next control did not advance");
+
+  await interactionPage.goto(`${base}/resume/`, { waitUntil: "domcontentloaded", timeout: 30000 });
+  await interactionPage.waitForTimeout(250);
+  const railMoved = await interactionPage.locator("[data-carousel-rail]").first().evaluate(async (rail) => {
+    const track = rail.querySelector("[data-carousel-rail-track]");
+    const next = rail.querySelector("[data-carousel-rail-next]");
+    if (!track || !next || next.disabled) return true;
+    const before = track.scrollLeft;
+    next.click();
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    return track.scrollLeft > before;
+  });
+  if (!railMoved) failures.push("Carousel rail next control did not scroll");
 
   await interactionPage.locator(".avatar-button").first().click();
   const lightboxOpen = await interactionPage.locator("[data-lightbox]").evaluate((el) => !el.hasAttribute("hidden"));

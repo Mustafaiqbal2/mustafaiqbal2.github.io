@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ArrowRight, Lock } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
+import { CarouselRail } from "@/components/CarouselRail";
 import { ProjectCard } from "@/components/ProjectCard";
 import { Reveal } from "@/components/Reveal";
 import { featuredProjects, profile, secondaryProjects, siteUrl } from "@/data/portfolio";
@@ -45,13 +46,13 @@ export default function WorkPage() {
             <p className="eyebrow">Featured case studies</p>
             <h2 id="featured-projects-title">Product work, implementation constraints, and outcomes.</h2>
           </Reveal>
-          <div className="project-grid">
+          <CarouselRail label="Featured case studies" className="project-card-carousel" itemClassName="project-carousel-item" auto>
             {featuredProjects.map((project, index) => (
               <Reveal key={project.slug} delay={index * 0.04}>
                 <ProjectCard project={project} priority={index === 0} />
               </Reveal>
             ))}
-          </div>
+          </CarouselRail>
         </div>
       </section>
 
@@ -65,7 +66,7 @@ export default function WorkPage() {
               with lower-level performance, distributed compute, compiler construction, and retrieval infrastructure.
             </p>
           </Reveal>
-          <div className="secondary-grid">
+          <CarouselRail label="Secondary systems projects" className="secondary-carousel" itemClassName="secondary-carousel-item" auto>
             {secondaryProjects.map((project, index) => (
               <Reveal as="article" className="secondary-card" key={project.title} delay={index * 0.035}>
                 <span className="status-label">{project.signal}</span>
@@ -89,7 +90,7 @@ export default function WorkPage() {
                 )}
               </Reveal>
             ))}
-          </div>
+          </CarouselRail>
         </div>
       </section>
     </main>

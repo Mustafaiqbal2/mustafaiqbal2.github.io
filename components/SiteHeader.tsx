@@ -7,7 +7,13 @@ export function SiteHeader() {
   return (
     <header className="site-header">
       <div className="brand">
-        <button className="avatar-button" type="button" data-image-lightbox={profile.photo} aria-label="Open Mustafa Iqbal photo">
+        <button
+          className="avatar-button"
+          type="button"
+          data-image-lightbox={profile.photo}
+          data-image-alt="Mustafa Iqbal"
+          aria-label="Open Mustafa Iqbal photo"
+        >
           <img className="brand-avatar" src={profile.photo} alt="" width={48} height={48} />
         </button>
         <span className="brand-copy">
