@@ -68,6 +68,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const Icon = project.icon;
   const documentation = getProjectDocumentation(project.slug);
   const heroMedia = project.media.length ? project.media.slice(0, 1) : project.thumbnail ? [project.thumbnail] : [];
+  const heroTags = Array.from(new Set([project.category, project.status, project.confidentiality].filter(Boolean)));
 
   return (
     <main className={`project-page project-page-${project.slug} case-layout-${project.caseStudy.layoutKind}`}>
@@ -79,9 +80,9 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
               Work index
             </a>
             <div className="metadata-row">
-              <span>{project.category}</span>
-              <span>{project.status}</span>
-              <span>{project.confidentiality}</span>
+              {heroTags.map((tag) => (
+                <span key={tag}>{tag}</span>
+              ))}
             </div>
             <h1>{project.title}</h1>
             <p>{project.pitch}</p>
@@ -277,7 +278,7 @@ function PerformanceCase({ project, documentation }: { project: Project; documen
       <section className="section case-performance" aria-labelledby="performance-title">
         <div className="section-inner performance-grid">
           <div>
-            <CaseIntro project={project} label="Performance case study" />
+            <CaseIntro project={project} label="Performance engineering" />
             <StackStrip project={project} />
           </div>
           <Reveal className="performance-meter" delay={0.08}>
@@ -511,7 +512,7 @@ function MusicCase({ project, documentation }: { project: Project; documentation
           <TechnicalPanels project={project} className="vertical-panels" />
           <Reveal className="music-module-card" delay={0.08}>
             <p className="eyebrow">Delivered modules</p>
-            <h2 id="music-implementation-title">The thesis describes a full product surface.</h2>
+            <h2 id="music-implementation-title">Research model behind a complete product surface.</h2>
             <ul>
               <li>Sentiment and context analysis</li>
               <li>Interactive playlist generation</li>
@@ -552,7 +553,7 @@ function RagCase({ project, documentation }: { project: Project; documentation?:
     <>
       <section className="section case-rag" aria-labelledby="rag-title">
         <div className="section-inner rag-grid">
-          <CaseIntro project={project} label="Research lab case study" />
+          <CaseIntro project={project} label="Research lab platform" />
           <Reveal className="leadership-card" delay={0.08}>
             <span>Team lead</span>
             <strong>4-person AI research team</strong>
@@ -586,8 +587,8 @@ function RagCase({ project, documentation }: { project: Project; documentation?:
         <div className="section-inner split-case">
           <TechnicalPanels project={project} className="vertical-panels" />
           <Reveal className="implementation-ledger" delay={0.08}>
-            <p className="eyebrow">Resume-backed outcomes</p>
-            <h2 id="rag-panels-title">Public outcome summary.</h2>
+            <p className="eyebrow">Outcomes</p>
+            <h2 id="rag-panels-title">Delivered research platform capabilities.</h2>
             <ul>
               {project.outcomes.map((item) => (
                 <li key={item}>

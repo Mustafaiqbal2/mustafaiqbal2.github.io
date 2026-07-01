@@ -22,10 +22,10 @@ export default function WorkPage() {
         <div className="section-inner">
           <Reveal className="section-heading wide-heading">
             <p className="eyebrow">Work</p>
-            <h1>Selected software engineering work with enough detail to evaluate the build.</h1>
+            <h1>AI automation, product systems, and engineering fundamentals.</h1>
             <p>
-              Featured case studies cover product and architecture decisions. Secondary projects show systems depth
-              across RAG, CUDA, OpenCL, MPI, and compiler work.
+              Featured projects cover shipped workflows, architecture decisions, implementation constraints, and
+              outcomes. Secondary projects show systems depth across RAG, CUDA, OpenCL, MPI, and compiler work.
             </p>
             <div className="button-row">
               <a className="button primary" href={profile.resume}>
@@ -43,10 +43,10 @@ export default function WorkPage() {
       <section className="section section-muted" aria-labelledby="featured-projects-title">
         <div className="section-inner">
           <Reveal className="section-heading">
-            <p className="eyebrow">Featured case studies</p>
-            <h2 id="featured-projects-title">Product work, implementation constraints, and outcomes.</h2>
+            <p className="eyebrow">Featured work</p>
+            <h2 id="featured-projects-title">Featured product and systems work.</h2>
           </Reveal>
-          <CarouselRail label="Featured case studies" className="project-card-carousel" itemClassName="project-carousel-item" auto>
+          <CarouselRail label="Featured work" className="project-card-carousel" itemClassName="project-carousel-item" auto>
             {featuredProjects.map((project, index) => (
               <Reveal key={project.slug} delay={index * 0.04}>
                 <ProjectCard project={project} priority={index === 0} />
@@ -60,10 +60,10 @@ export default function WorkPage() {
         <div className="section-inner">
           <Reveal className="section-heading">
             <p className="eyebrow">Systems depth</p>
-            <h2 id="secondary-projects-title">Secondary projects that round out the engineering profile.</h2>
+            <h2 id="secondary-projects-title">Additional systems projects.</h2>
             <p>
-              These are compact because the hiring story is AI product engineering, but they matter: they show comfort
-              with lower-level performance, distributed compute, compiler construction, and retrieval infrastructure.
+              These projects show engineering range across performance, distributed compute, compiler construction,
+              document retrieval, and parallel programming.
             </p>
           </Reveal>
           <CarouselRail label="Secondary systems projects" className="secondary-carousel" itemClassName="secondary-carousel-item" auto>
@@ -85,7 +85,7 @@ export default function WorkPage() {
                 ) : (
                   <span className="private-link">
                     <Lock size={16} aria-hidden="true" />
-                    Private or local work
+                    Not publicly linked
                   </span>
                 )}
               </Reveal>

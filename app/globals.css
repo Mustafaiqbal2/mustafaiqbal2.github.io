@@ -4817,15 +4817,15 @@ code {
   .landing-hero,
   .page-hero,
   .project-hero {
-    padding: 72px 0;
+    padding: 60px 0;
   }
 
   h1 {
-    font-size: 3rem;
+    font-size: 2.75rem;
   }
 
   h2 {
-    font-size: 2.05rem;
+    font-size: 1.95rem;
   }
 
   .proof-band-grid {
@@ -5106,13 +5106,36 @@ code {
   }
 
   h1 {
-    font-size: 2.35rem;
-    line-height: 1.05;
+    font-size: clamp(2rem, 8.3vw, 2.22rem);
+    line-height: 1.07;
+    margin-bottom: 18px;
   }
 
   h2 {
-    font-size: 1.75rem;
+    font-size: clamp(1.48rem, 6.3vw, 1.7rem);
     line-height: 1.12;
+  }
+
+  .section,
+  .landing-hero,
+  .page-hero,
+  .project-hero {
+    padding: 46px 0;
+  }
+
+  .compact-page-hero {
+    padding: 40px 0 32px;
+  }
+
+  .section-heading {
+    margin-bottom: 26px;
+  }
+
+  .section-heading p:not(.eyebrow),
+  .hero-summary,
+  .project-hero-copy > p {
+    font-size: 0.98rem;
+    line-height: 1.58;
   }
 
   .site-header {
@@ -5450,7 +5473,7 @@ code {
   }
 
   .documentation-preview-button {
-    min-height: 460px;
+    min-height: 390px;
     padding: 13px;
   }
 
@@ -5556,6 +5579,40 @@ code {
     padding: 18px;
   }
 
+  .metadata-row {
+    gap: 6px;
+  }
+
+  .metadata-row span {
+    min-height: 26px;
+    padding: 4px 8px;
+    font-size: 0.68rem;
+  }
+
+  .role-grid {
+    gap: 8px;
+    margin: 18px 0;
+  }
+
+  .role-grid div,
+  .resume-fact-panel div {
+    min-height: 0;
+    padding: 13px;
+  }
+
+  .media-frame figcaption {
+    display: block;
+    padding: 10px 12px;
+  }
+
+  .media-frame figcaption span,
+  .media-frame figcaption small {
+    display: block;
+    min-width: 0;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
   .project-card-footer {
     align-items: flex-start;
     flex-direction: column;
@@ -5589,7 +5646,7 @@ code {
 
 @media (max-width: 390px) {
   h1 {
-    font-size: 2.1rem;
+    font-size: 1.95rem;
   }
 
   .section-inner {

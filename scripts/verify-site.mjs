@@ -227,7 +227,7 @@ async function main() {
             sendDisabled: document.querySelector('.contact-form button[type="submit"]')?.disabled ?? null,
             textHasFallback: bodyText.includes("Email fallback:"),
             textHasInternalBuildCopy:
-              /what this page is grounded in|local docs|local evidence|local Work folder|source signals|project sources|source-backed graph|generated from sanitized|generated from local|Live diagrams|Source-generated|project evidence behind/i.test(
+              /what this page is grounded in|local docs|local evidence|local Work folder|source signals|project sources|source-backed graph|generated from sanitized|generated from local|Live diagrams|Source-generated|project evidence behind|hiring story|behind the resume|enough detail to evaluate|private or local work|form below posts through Web3Forms|public outcome summary|resume-backed outcomes|compact because|defend the resume/i.test(
                 bodyText
               ),
             textHasParallelHeadline: Array.from(document.querySelectorAll(".metric")).some((metric) => /20\s*parallel|parallel ai calls/i.test(metric.innerText || "")),
@@ -254,6 +254,10 @@ async function main() {
               const themed = Array.from(document.querySelectorAll(".media-frame .theme-media-dark"));
               return themed.length === 0 || themed.some((img) => getComputedStyle(img).display !== "none");
             })(),
+            largestH1FontSize: Math.max(
+              0,
+              ...Array.from(document.querySelectorAll("h1")).map((heading) => parseFloat(getComputedStyle(heading).fontSize) || 0)
+            ),
             docPreviewCount: document.querySelectorAll(".documentation-preview-card").length,
             docExpandCount: document.querySelectorAll(".documentation-preview-button").length,
             reactFlowPreviewCount: document.querySelectorAll("[data-project-documentation] .react-flow").length,
@@ -352,6 +356,9 @@ async function main() {
           }
           if (data.railCount > 0 && !data.mobileContentRailsReadable) {
             failures.push(`${route} ${viewport.name} content carousel cards are not readable stacked mobile cards`);
+          }
+          if (data.largestH1FontSize > 34) {
+            failures.push(`${route} ${viewport.name} mobile h1 too large (${data.largestH1FontSize}px)`);
           }
         }
       }

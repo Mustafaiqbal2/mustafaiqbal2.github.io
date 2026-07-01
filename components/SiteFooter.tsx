@@ -21,7 +21,7 @@ export function SiteFooter() {
           <a href="/contact/">Contact</a>
         </nav>
         <nav aria-label="Featured project links">
-          <h3>Case Studies</h3>
+          <h3>Featured Work</h3>
           {featuredProjects.slice(0, 5).map((project) => (
             <a href={`/work/${project.slug}/`} key={project.slug}>
               {project.title}

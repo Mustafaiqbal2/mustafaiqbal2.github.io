@@ -15,16 +15,16 @@ export const metadata: Metadata = {
 
 const operatingNotes = [
   {
-    title: "I build around workflows, not model demos.",
+    title: "I build around workflows, not isolated model calls.",
     text: "Before touching prompts, I map the user action, owned data, external API state, failure modes, retry path, and what the user needs to inspect."
   },
   {
-    title: "I like systems where product polish and backend reliability meet.",
+    title: "I focus on systems where product polish and backend reliability meet.",
     text: "The work I keep returning to involves OAuth, queues, caches, vector search, model cost, UI states, and the small details that make automation feel safe."
   },
   {
     title: "I present private work through architecture.",
-    text: "If code or customer data cannot be public, I show the domain model, constraints, technical decisions, and sanitized product media."
+    text: "If code or customer data cannot be public, I show the domain model, constraints, technical decisions, and approved product media."
   }
 ];
 
@@ -48,10 +48,10 @@ export default function AboutPage() {
         <div className="section-inner about-hero-grid">
           <Reveal className="section-heading wide-heading">
             <p className="eyebrow">About</p>
-            <h1>I own the path from ambiguous product problem to working system.</h1>
+            <h1>I work best where product, AI, and systems meet.</h1>
             <p>
-              My best work is not tied to one layer of the stack. I move across product UI, APIs, data models,
-              integrations, AI workflows, mobile surfaces, deployment, and debugging until the workflow is real.
+              I move across product UI, APIs, data models, integrations, AI workflows, mobile surfaces, deployment,
+              and debugging until the workflow is usable.
             </p>
             <div className="button-row">
               <a className="button primary" href="/work/">
@@ -84,8 +84,8 @@ export default function AboutPage() {
             <p className="eyebrow">Operating mode</p>
             <h2 id="operating-title">Useful software is measured by behavior, observability, and recovery paths.</h2>
             <p>
-              I focus on product behavior, architecture, constraints, and implementation details because those are the
-              parts that make engineering judgment visible quickly.
+              The details around state, failure, permissions, latency, and recovery determine whether an automation
+              system can be trusted by users and maintained by a team.
             </p>
           </Reveal>
           <div className="about-note-row">

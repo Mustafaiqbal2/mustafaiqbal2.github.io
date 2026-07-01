@@ -9,7 +9,7 @@ export function ProjectCard({ project, priority = false }: { project: Project; p
   return (
     <article className={priority ? "project-card project-card-featured" : "project-card"}>
       {leadMedia ? (
-        <a className="project-card-media" href={`/work/${project.slug}/`} aria-label={`Open ${project.title} case study`}>
+        <a className="project-card-media" href={`/work/${project.slug}/`} aria-label={`Open ${project.title} details`}>
           {leadMedia.darkSrc ? (
             <>
               <img
@@ -62,7 +62,7 @@ export function ProjectCard({ project, priority = false }: { project: Project; p
         <div className="project-card-footer">
           <ProjectLinks project={project} />
           <a className="text-link" href={`/work/${project.slug}/`}>
-            Case study
+            Details
             <ArrowRight size={17} aria-hidden="true" />
           </a>
         </div>

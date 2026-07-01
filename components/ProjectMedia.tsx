@@ -1,6 +1,14 @@
 import type { MediaAsset } from "@/data/portfolio";
 import { CarouselRail } from "@/components/CarouselRail";
 
+function mediaLabel(asset: MediaAsset) {
+  if (asset.sourceKind === "thesis-evidence") return "Thesis figure";
+  if (asset.sourceKind === "sanitized-artifact") return "Technical artifact";
+  if (asset.sourceKind === "repo-derived-visualization" || asset.isGenerated) return "Architecture visualization";
+  if (asset.type === "video") return "Product recording";
+  return "Product media";
+}
+
 export function ProjectMedia({ media, featured = false }: { media: MediaAsset[]; featured?: boolean }) {
   if (media.length === 0) {
     return null;
@@ -43,10 +51,7 @@ export function ProjectMedia({ media, featured = false }: { media: MediaAsset[];
           )}
           <figcaption>
             <span>{asset.caption}</span>
-            <small>
-              {asset.isGenerated ? "Visualization" : "Project media"}
-              {asset.isSanitized ? " / sanitized" : ""}
-            </small>
+            <small>{mediaLabel(asset)}</small>
           </figcaption>
         </figure>
       ))}

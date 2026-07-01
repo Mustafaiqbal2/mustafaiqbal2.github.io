@@ -115,9 +115,9 @@ export const profile: ContactProfile = {
   resume: "/resume/Mustafa_Iqbal_Full_Resume.pdf",
   photo: "/images/me.jpeg",
   elevatorPitch:
-    "I build full-stack AI automation products where the hard part is not just calling a model, but making the workflow reliable: auth, data, queues, retrieval, UI, evaluation, and recovery paths.",
+    "I work across product UI, APIs, data models, queues, retrieval, evaluation, and recovery paths so AI workflows behave predictably in real use.",
   summary:
-    "Software engineer focused on AI automation, full-stack product delivery, retrieval workflows, external API integrations, and performance-sensitive systems work."
+    "Software engineer building AI automation, retrieval workflows, external API integrations, full-stack product surfaces, and systems projects."
 };
 
 export const proofMetrics = [
@@ -156,7 +156,7 @@ export const featuredProjects: Project[] = [
     summary:
       "Private multi-tenant AI SaaS platform tying together agents, account hierarchy, billing, credits, file assets, vector knowledge, cloud services, and operations workflows.",
     pitch:
-      "I worked on Simplabots as a product-system problem: making many specialized AI agents share tenancy, billing, assets, knowledge, usage tracking, and cloud integrations without becoming disconnected demos.",
+      "Simplabots is a private multi-tenant AI platform where specialized agents share tenancy, billing, assets, knowledge, usage tracking, and cloud integrations.",
     role: "Full-stack product and AI engineer",
     dates: "2025",
     icon: Sparkles,
@@ -182,7 +182,7 @@ export const featuredProjects: Project[] = [
     problem:
       "A broad AI SaaS platform needs product infrastructure around the models: tenancy, permissions, credits, billing, cloud assets, knowledge retrieval, and operational controls.",
     constraints: [
-      "The codebase is private, so public presentation has to use architecture and sanitized visuals instead of source or customer data.",
+      "The product is private, so public material uses approved architecture summaries and media rather than raw records or customer data.",
       "Multiple agent modules needed to share account state, usage rules, billing, and cloud services.",
       "AI workflows had to coexist with Stripe, S3, SES, SQS, Pinecone, OAuth, notifications, and admin operations."
     ],
@@ -198,14 +198,14 @@ export const featuredProjects: Project[] = [
       "Used internal docs and schema-driven reasoning to keep product, data, and operations decisions aligned."
     ],
     outcomes: [
-      "Shows experience inside a larger proprietary AI SaaS codebase, not only isolated class projects.",
+      "Worked inside a larger proprietary AI SaaS codebase with shared platform, billing, and agent infrastructure.",
       "Provides the platform context behind the Revvy, Emmy, Dominic, Hunter, and other specialized automation agents.",
-      "Demonstrates product engineering across tenancy, billing, AI orchestration, retrieval, cloud services, and admin workflows."
+      "Covers tenancy, billing, AI orchestration, retrieval, cloud services, and admin workflows in one platform context."
     ],
     stack: ["Next.js", "React", "TypeScript", "Prisma", "PostgreSQL", "Stripe", "AWS S3/SES/SQS", "Pinecone", "OpenAI"],
     lessons: [
-      "Agent products become credible when model calls are wrapped in tenancy, billing, assets, usage control, and recovery paths.",
-      "Private work should be explained with architecture, constraints, and verifiable implementation details, not vague claims."
+      "Agent products need tenancy, billing, assets, usage control, and recovery paths around model calls.",
+      "Private product work still needs clear architecture, constraints, and implementation boundaries."
     ],
     caseStudy: {
       layoutKind: "platform",
@@ -248,23 +248,23 @@ export const featuredProjects: Project[] = [
     summary:
       "Review-management automation for Google Business Profile with OAuth, location import, review sync, AI draft generation, smart filtering, caching, and reply publishing.",
     pitch:
-      "Revvy is a performance and workflow case study: I helped compress a slow review-response process by filtering unnecessary AI work, batching database writes, using cache invalidation, and keeping manual approval visible.",
+      "Revvy reduced slow review-response workflows by filtering unnecessary AI work, batching database writes, using cache invalidation, and keeping manual approval visible.",
     role: "Full-stack automation and product engineer",
     dates: "2025",
     icon: Bot,
     links: [],
     thumbnail: {
       src: "/projects/revvy/revvy-poster.webp",
-      alt: "Revvy review automation product demo frame",
+      alt: "Revvy review automation product workflow frame",
       type: "image",
-      caption: "Revvy review automation demo frame.",
+      caption: "Revvy review automation workflow frame.",
       sourceKind: "real-product-media",
       isSanitized: true
     },
     media: [
       {
         src: "/projects/revvy/revvy-demo.mp4",
-        alt: "Revvy product demo video",
+        alt: "Revvy product workflow recording",
         type: "video",
         poster: "/projects/revvy/revvy-poster.webp",
         caption: "Revvy product recording showing review workflow automation.",
@@ -355,7 +355,7 @@ export const featuredProjects: Project[] = [
     summary:
       "Gmail workflow automation combining account setup, contact groups, thread-aware classification, categorization logs, default categories, Inngest processing, Gmail labels, and correction loops.",
     pitch:
-      "Emmy shows how I design AI workflow reliability: known senders and contact groups route cheaply, ambiguous threads go through AI, and users can inspect logs or correct labels when the system is uncertain.",
+      "Emmy combines deterministic sender rules, thread-aware AI classification, categorization logs, Gmail labels, and user correction paths.",
     role: "Full-stack AI automation engineer",
     dates: "2025",
     icon: MailCheck,
@@ -454,7 +454,7 @@ export const featuredProjects: Project[] = [
     summary:
       "DWG/DXF-first reconstruction engine that extracts exact CAD facts, isolates drawing contexts, groups evidence, uses capped AI only for affordances, and keeps unresolved geometry visible.",
     pitch:
-      "This project is about engineering restraint: AI can interpret evidence, but accepted geometry must stay CAD-derived, reversible, and explicit about uncertainty.",
+      "The engineering constraint was restraint: AI can interpret evidence, but accepted geometry must stay CAD-derived, reversible, and explicit about uncertainty.",
     role: "Research and product prototyping engineer",
     dates: "2026",
     icon: Building2,
@@ -566,9 +566,9 @@ export const featuredProjects: Project[] = [
     status: "Academic product",
     confidentiality: "Academic",
     summary:
-      "Final-year AI music companion with CLAP-InfoNCE alignment, FastAPI services, Pinecone search, React Native/Expo mobile UX, LangChain agents, Whisper/TTS voice flow, Spotify export, and stem separation.",
+      "Academic AI music companion with CLAP-InfoNCE alignment, FastAPI services, Pinecone search, React Native/Expo mobile UX, LangChain agents, Whisper/TTS voice flow, Spotify export, and stem separation.",
     pitch:
-      "MelodyMind connects research and product delivery: emotion-aware audio/text embeddings became a mobile app that can turn text, images, and voice into playlist experiences.",
+      "MelodyMind connects model work with product delivery: emotion-aware audio/text embeddings became a mobile app for text, image, and voice-driven playlist generation.",
     role: "Co-builder, full-stack and AI systems",
     dates: "2025-2026",
     icon: Music2,
@@ -610,7 +610,7 @@ export const featuredProjects: Project[] = [
       "Music platforms often recommend by popularity or static mood labels, while users describe intent through emotion, context, images, and voice.",
     constraints: [
       "Naive text/audio models collapsed or failed to capture abstract cues like focus, nostalgia, celebration, and social context.",
-      "The app needed to feel like a product, not only a model experiment.",
+      "The app needed to connect the model path to a complete product workflow.",
       "Stem separation, voice interaction, Spotify export, embeddings, persistence, and mobile UX had to fit into one coherent system."
     ],
     architecture: [
@@ -620,7 +620,7 @@ export const featuredProjects: Project[] = [
       "Pinecone stores song embeddings for similarity search, mood filtering, and weighted-centroid playlist construction."
     ],
     implementation: [
-      "Integrated text, image, and voice flows into playlist generation rather than treating them as separate demos.",
+      "Integrated text, image, and voice flows into playlist generation rather than treating them as separate experiments.",
       "Built mobile screens for login, register, chat interface, Talk-to-DJ, API services, auth context, and chat context.",
       "Implemented health endpoints, JWT/refresh-token auth, image analysis, Whisper/Groq speech-to-text, streamed TTS, and Spotify playlist scaffolding.",
       "Included stem separation as an asynchronous educational/remix workflow with waveform visualization support."
@@ -632,7 +632,7 @@ export const featuredProjects: Project[] = [
     ],
     stack: ["FastAPI", "React Native", "Expo", "Supabase", "Pinecone", "LangChain", "Spotify API", "CLAP", "Nomic", "Whisper/TTS"],
     lessons: [
-      "A strong AI demo becomes more credible when the model path, UX, persistence, and operational endpoints are all shown.",
+      "The model path, UX, persistence, and operational endpoints need to be designed as one product system.",
       "Multimodal products need clear orchestration so text, image, voice, and retrieval feel like one experience."
     ],
     caseStudy: {
@@ -660,7 +660,7 @@ export const featuredProjects: Project[] = [
         },
         {
           eyebrow: "Mobile UX",
-          title: "The app demonstrates the core user flows.",
+          title: "The app covers the core user flows.",
           text: "React Native/Expo screens cover authentication, chat playlist generation, image upload, voice input, Talk-to-Your-DJ, and playlist results.",
           items: ["Login/register", "Chat interface", "Expo ImagePicker", "Waveform animation", "Spotify playlist export"]
         }
@@ -676,49 +676,49 @@ export const featuredProjects: Project[] = [
     summary:
       "Genesys Research Lab internship project for candidate ingestion, semantic matching, job-description enrichment, and conversational interviews using Weaviate, Nomic embeddings, Groq Llama 3, FastAPI, and Docker Compose.",
     pitch:
-      "This is the team-leadership case study: I led a four-person group building an end-to-end recruitment workflow that connected scraped candidate context, semantic matching, and structured AI interviews.",
+      "I led a four-person group building an end-to-end recruitment workflow that connected candidate context, semantic matching, and structured AI interviews.",
     role: "AI research intern, team lead",
     dates: "Jun 2025 - Aug 2025",
     icon: Network,
     links: [],
     thumbnail: {
       src: "/projects/recruitment-rag/job-automation-frame-1.webp",
-      alt: "Job automation demo frame from the recruitment platform",
+      alt: "Job automation workflow frame from the recruitment platform",
       type: "image",
-      caption: "Recruitment automation demo frame.",
+      caption: "Recruitment automation workflow frame.",
       sourceKind: "sanitized-artifact",
       isSanitized: true
     },
     media: [
       {
         src: "/projects/recruitment-rag/interview-demo-frame-1.webp",
-        alt: "Recruitment interview automation demo frame",
+        alt: "Recruitment interview automation workflow frame",
         type: "image",
-        caption: "Interview automation demo frame.",
+        caption: "Interview automation workflow frame.",
         sourceKind: "sanitized-artifact",
         isSanitized: true
       },
       {
         src: "/projects/recruitment-rag/interview-demo-frame-2.webp",
-        alt: "Recruitment platform demo frame showing the interview workflow",
+        alt: "Recruitment platform workflow frame showing the interview workflow",
         type: "image",
-        caption: "Second interview automation demo frame.",
+        caption: "Second interview automation workflow frame.",
         sourceKind: "sanitized-artifact",
         isSanitized: true
       },
       {
         src: "/projects/recruitment-rag/job-automation-frame-1.webp",
-        alt: "Job automation demo frame",
+        alt: "Job automation workflow frame",
         type: "image",
-        caption: "Job automation demo frame.",
+        caption: "Job automation workflow frame.",
         sourceKind: "sanitized-artifact",
         isSanitized: true
       },
       {
         src: "/projects/recruitment-rag/job-automation-frame-2.webp",
-        alt: "Second job automation demo frame",
+        alt: "Second job automation workflow frame",
         type: "image",
-        caption: "Second job automation demo frame.",
+        caption: "Second job automation workflow frame.",
         sourceKind: "sanitized-artifact",
         isSanitized: true
       }
@@ -728,7 +728,7 @@ export const featuredProjects: Project[] = [
       { value: "Weaviate", label: "candidate and job vector database" },
       { value: "Nomic", label: "semantic embeddings for matching" },
       { value: "Llama 3", label: "Groq-powered interview agent" },
-      { value: "<5s", label: "resume-documented interview response target" }
+      { value: "<5s", label: "interview response target" }
     ],
     problem:
       "Manual candidate screening is inconsistent when resumes, GitHub, LinkedIn, ORIC, personal websites, and job descriptions live in disconnected places.",
@@ -750,8 +750,8 @@ export const featuredProjects: Project[] = [
     ],
     outcomes: [
       "Reduced manual screening work by automating candidate evaluation and matching pipelines.",
-      "Created a structured interview agent with multi-agent behavior and no repeated questions in the resume-documented path.",
-      "Demonstrates technical leadership in a small AI engineering team."
+      "Created a structured interview agent with multi-agent behavior and no repeated questions in the documented path.",
+      "Led architecture and delivery across a small AI engineering team."
     ],
     stack: ["FastAPI", "Weaviate", "Nomic", "Groq", "Llama 3", "Docker Compose", "RAG", "Async jobs"],
     lessons: [
@@ -772,7 +772,7 @@ export const featuredProjects: Project[] = [
         {
           eyebrow: "Ingestion",
           title: "Candidate context came from multiple public and internal sources.",
-          text: "The resume documents CV, GitHub, LinkedIn, ORIC, and personal website ingestion into a semantic candidate store.",
+          text: "The platform ingested CV, GitHub, LinkedIn, ORIC, and personal website context into a semantic candidate store.",
           items: ["CV parsing", "GitHub profile signals", "LinkedIn/ORIC/web signals", "Candidate-job context objects"]
         },
         {
@@ -784,7 +784,7 @@ export const featuredProjects: Project[] = [
         {
           eyebrow: "Interview flow",
           title: "The interview agent needed structure and speed.",
-          text: "Groq-hosted Llama 3 supported dynamic questioning with a resume-documented sub-5-second response path and no repeated questions.",
+          text: "Groq-hosted Llama 3 supported dynamic questioning with a sub-5-second response path and no repeated questions.",
           items: ["Llama 3 8B via Groq", "Conversational interview agent", "No question repetition", "FastAPI + Docker Compose deployment"]
         }
       ]
@@ -795,7 +795,7 @@ export const featuredProjects: Project[] = [
 export const secondaryProjects = [
   {
     title: "Document RAG Summarizer",
-    summary: "Dual cloud/local document summarization pipeline with FAISS, SentenceTransformers, Groq, and TinyLlama.",
+    summary: "Cloud and offline document summarization pipeline with FAISS, SentenceTransformers, Groq, and TinyLlama.",
     stack: ["Python", "FAISS", "Groq", "TinyLlama"],
     href: "https://github.com/Mustafaiqbal2/BIG_Document_RAG",
     signal: "RAG depth"
@@ -919,10 +919,10 @@ export const skillGroups = [
 ];
 
 export const principles = [
-  "I start with the workflow, data ownership, failure modes, and user control before choosing the AI layer.",
+  "I start with workflow, data ownership, failure modes, and user control before choosing the AI layer.",
   "I use deterministic logic for obvious cases and models for ambiguity, then make the handoff inspectable.",
-  "I prefer measurable product behavior over demos that only work with clean data and unlimited API calls.",
-  "I document the implementation path clearly enough that founders, engineers, and future maintainers can reason about it."
+  "I prefer measurable product behavior over examples that only work with clean data and unlimited API calls.",
+  "I document implementation decisions clearly enough that founders, engineers, and future maintainers can reason about them."
 ];
 
 export const navigation = [

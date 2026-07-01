@@ -105,9 +105,9 @@ type ExplorerCopy = {
 
 const defaultExplorerCopy: ExplorerCopy = {
   eyebrow: "Architecture explorer",
-  title: "Architecture maps for the implementation.",
+  title: "System architecture views.",
   description:
-    "Use these views to inspect the product surface, system boundaries, data flow, integrations, and tradeoffs behind the case study.",
+    "Use these views to inspect the product surface, system boundaries, data flow, integrations, and tradeoffs.",
   insights: [
     "How the user workflow moves through the system.",
     "Where data is owned, transformed, and persisted.",
@@ -120,10 +120,10 @@ const explorerCopyBySlug: Record<string, ExplorerCopy> = {
     eyebrow: "Platform explorer",
     title: "A multi-tenant AI SaaS control plane.",
     description:
-      "The maps show how tenancy, agents, billing, credits, assets, vector knowledge, and cloud services fit into one private product platform.",
+      "This view connects tenancy, agents, billing, credits, assets, vector knowledge, and cloud services inside one private product platform.",
     insights: [
       "Account, profile, role, and agent access boundaries are modeled as first-class product infrastructure.",
-      "Specialized agents share billing, knowledge, assets, usage tracking, and cloud services instead of living as disconnected demos.",
+      "Specialized agents share billing, knowledge, assets, usage tracking, and cloud services through a common platform layer.",
       "Stripe, Pinecone, S3, SES, SQS, and provider APIs sit behind product workflows that need permissions and operational recovery."
     ]
   },
@@ -153,7 +153,7 @@ const explorerCopyBySlug: Record<string, ExplorerCopy> = {
     eyebrow: "Reconstruction explorer",
     title: "A CAD-first reconstruction system with explicit uncertainty.",
     description:
-      "The maps separate geometry extraction, drawing contexts, evidence groups, semantic affordances, safety rules, and review artifacts.",
+      "This view separates geometry extraction, drawing contexts, evidence groups, semantic affordances, safety rules, and review artifacts.",
     insights: [
       "Accepted geometry stays CAD-derived; AI can help interpret affordances but cannot create final coordinates.",
       "Drawing contexts, evidence groups, and unresolved geometry remain visible for review.",
@@ -175,11 +175,11 @@ const explorerCopyBySlug: Record<string, ExplorerCopy> = {
     eyebrow: "RAG workflow explorer",
     title: "A recruitment automation workflow with retrieval and interviews.",
     description:
-      "The maps show candidate ingestion, embeddings, vector retrieval, job enrichment, interview orchestration, and deployment boundaries.",
+      "This view connects candidate ingestion, embeddings, vector retrieval, job enrichment, interview orchestration, and deployment boundaries.",
     insights: [
       "Candidate data from CV, GitHub, LinkedIn, ORIC, and web sources feeds semantic matching.",
       "Weaviate, Nomic embeddings, Groq Llama 3, FastAPI, and Docker Compose are separated into clear service responsibilities.",
-      "The project demonstrates both AI workflow design and small-team technical leadership."
+      "The system combines AI workflow design with small-team technical leadership."
     ]
   }
 };
@@ -205,13 +205,21 @@ function visualizationStats(visualization: DocumentationVisualization) {
 }
 
 function insightFor(copy: ExplorerCopy, index: number) {
-  return copy.insights[index % copy.insights.length] || "Open the workspace to inspect the implementation.";
+  return copy.insights[index % copy.insights.length] || "Open the diagram to inspect the implementation.";
 }
 
 function normalizeInspectorText(value?: string) {
   return String(value || "")
     .trim()
     .toLowerCase();
+}
+
+function publicDocumentationText(value?: string) {
+  return String(value || "")
+    .replace(/rather than separate demos/gi, "inside one coherent workflow")
+    .replace(/\bdemo\b/gi, "workflow")
+    .replace(/\bdemos\b/gi, "workflows")
+    .trim();
 }
 
 function groupLabel(group?: string) {
@@ -403,15 +411,15 @@ function buildFlowElements(
         width: size.width,
         height: size.height,
         data: {
-          label: node.label,
+          label: publicDocumentationText(node.label),
           group,
-          subtitle: node.subtitle,
-          detail: node.detail,
+          subtitle: publicDocumentationText(node.subtitle),
+          detail: publicDocumentationText(node.detail),
           fields: node.fields,
           nodeType: node.nodeType || groupLabel(group),
-          summary: node.summary || node.detail || node.subtitle,
+          summary: publicDocumentationText(node.summary || node.detail || node.subtitle),
           metrics: node.metrics || [],
-          inspectDetails: node.inspectDetails || [],
+          inspectDetails: (node.inspectDetails || []).map(publicDocumentationText),
           cluster: node.cluster || group,
           faded,
           preview,
@@ -614,7 +622,7 @@ function VisualizationPreviewCard({
           <em>{stats}</em>
         </div>
         <h3>{visualization.title}</h3>
-        <p>{visualization.description}</p>
+        <p>{publicDocumentationText(visualization.description)}</p>
         <div className="documentation-preview-canvas" aria-hidden="true">
           <ReactFlowProvider>
             <DocumentationFlowCanvas visualization={visualization} preview />
@@ -671,17 +679,21 @@ function DocumentationExplorer({
   const selectedNode = visualization.nodes.find((node) => node.id === selectedNodeId) || null;
   const selectedSummary =
     selectedNode?.summary && selectedNode.summary !== selectedNode.subtitle && selectedNode.summary !== selectedNode.detail
-      ? selectedNode.summary
+      ? publicDocumentationText(selectedNode.summary)
       : null;
   const selectedDetail =
     selectedNode?.detail && selectedNode.detail !== selectedNode.subtitle && selectedNode.detail !== selectedNode.summary
-      ? selectedNode.detail
+      ? publicDocumentationText(selectedNode.detail)
       : null;
   const selectedNoteDenylist = new Set(
     [selectedNode?.subtitle, selectedNode?.summary, selectedNode?.detail].map(normalizeInspectorText).filter(Boolean)
   );
   const selectedNotes =
-    selectedNode?.inspectDetails?.filter((item) => !selectedNoteDenylist.has(normalizeInspectorText(item))).slice(0, 5) || [];
+    selectedNode?.inspectDetails
+      ?.filter((item) => !selectedNoteDenylist.has(normalizeInspectorText(item)))
+      .filter((item) => !/local folder|local docs|source file|source path|generated from|sanitized demo|resume evidence/i.test(item))
+      .map(publicDocumentationText)
+      .slice(0, 5) || [];
   const connectedIds = connectedNodeIds(selectedNode?.id || null, visualization.edges);
   const connectedNodes = selectedNode
     ? visualization.nodes.filter((node) => node.id !== selectedNode.id && connectedIds.has(node.id))
@@ -754,7 +766,7 @@ function DocumentationExplorer({
             </div>
 
             <div className="documentation-evidence-list">
-              <span className="documentation-panel-label">What to evaluate</span>
+              <span className="documentation-panel-label">Architecture notes</span>
               {copy.insights.map((item) => (
                 <p key={item}>{item}</p>
               ))}
@@ -767,7 +779,7 @@ function DocumentationExplorer({
                 <span>{readableKind(visualization.kind)}</span>
                 <h3>{visualization.title}</h3>
               </div>
-              <p>{visualization.description}</p>
+              <p>{publicDocumentationText(visualization.description)}</p>
             </div>
             <ReactFlowProvider>
               <DocumentationFlowCanvas
@@ -788,7 +800,7 @@ function DocumentationExplorer({
                 <div className="documentation-inspector-card" style={{ ["--node-tone" as string]: `var(--graph-${groupColorNames[colorIndex(selectedNode.group)]})` }}>
                   <span>{selectedNode.nodeType || groupLabel(selectedNode.group)}</span>
                   <h3>{selectedNode.label}</h3>
-                  {selectedNode.subtitle ? <p>{selectedNode.subtitle}</p> : null}
+                  {selectedNode.subtitle ? <p>{publicDocumentationText(selectedNode.subtitle)}</p> : null}
                   {selectedSummary ? <p>{selectedSummary}</p> : null}
                   {selectedDetail ? <p>{selectedDetail}</p> : null}
                 </div>
@@ -847,7 +859,7 @@ function DocumentationExplorer({
                 <div className="documentation-inspector-card">
                   <span>{readableKind(visualization.kind)}</span>
                   <h3>Pick a component</h3>
-                  <p>Select any entity, workflow step, integration, or control surface to inspect its role, implementation signals, and connected components.</p>
+                  <p>Select any entity, workflow step, integration, or control surface to inspect its role, technical signals, and connected components.</p>
                 </div>
                 <div className="documentation-inspector-section">
                   <span className="documentation-panel-label">Map summary</span>

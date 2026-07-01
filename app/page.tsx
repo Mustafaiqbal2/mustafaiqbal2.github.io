@@ -15,7 +15,7 @@ export default function Home() {
         <div className="section-inner landing-grid">
           <div className="hero-copy">
             <p className="eyebrow">AI workflow systems / full-stack product engineering</p>
-            <h1 id="hero-title">I turn ambiguous AI automation ideas into reliable product software.</h1>
+            <h1 id="hero-title">I build reliable AI automation software across product, data, and infrastructure.</h1>
             <p className="hero-summary">{profile.elevatorPitch}</p>
             <ContactActions links={profile} />
           </div>
@@ -112,11 +112,11 @@ export default function Home() {
       <section className="section" aria-labelledby="fit-title">
         <div className="section-inner split-intro">
           <Reveal className="section-heading">
-            <p className="eyebrow">Hiring story</p>
-            <h2 id="fit-title">Generalist software engineer who can own the path from product idea to working system.</h2>
+            <p className="eyebrow">Engineering focus</p>
+            <h2 id="fit-title">Generalist software engineer for product-heavy AI systems.</h2>
             <p>
-              The strongest work here connects product flows, AI behavior, OAuth, background jobs, cost controls,
-              data models, mobile surfaces, and interfaces that make automation usable.
+              I work across product surfaces, APIs, data models, async jobs, retrieval, cost controls, and UI states
+              so automation workflows remain understandable after the first successful run.
             </p>
           </Reveal>
           <Reveal className="focus-grid" delay={0.08}>
@@ -138,10 +138,10 @@ export default function Home() {
         <div className="section-inner">
           <Reveal className="section-heading wide-heading">
             <p className="eyebrow">Selected work</p>
-            <h2 id="selected-work-title">Selected systems with clear problem, role, architecture, and outcome.</h2>
+            <h2 id="selected-work-title">Selected work with role, architecture, and outcomes.</h2>
             <p>
-              Private product work is labeled clearly, with architecture maps and real media where it is safe to show
-              product context without exposing private code or customer data.
+              The featured projects show shipped automation, research systems, and implementation details across
+              integrations, retrieval, product UI, and performance-sensitive code.
             </p>
           </Reveal>
           <CarouselRail label="Selected work" className="project-card-carousel" itemClassName="project-carousel-item" auto>
@@ -163,8 +163,8 @@ export default function Home() {
       <section className="section" aria-labelledby="resume-preview-title">
         <div className="section-inner resume-preview">
           <Reveal className="resume-preview-copy">
-            <p className="eyebrow">Resume signal</p>
-            <h2 id="resume-preview-title">A software engineering profile built around shipped AI product work.</h2>
+            <p className="eyebrow">Background</p>
+            <h2 id="resume-preview-title">Engineering background across automation, research, and systems.</h2>
             <p>
               FAST-NUCES BS CS candidate with production-style automation work, a Genesys Research Lab internship,
               Dean's List recognition, and systems projects in CUDA, OpenCL, MPI, RAG, and compilers.

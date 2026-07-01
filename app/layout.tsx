@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     template: "%s | Mustafa Iqbal"
   },
   description:
-    "Portfolio for Mustafa Iqbal, a software engineer building AI automation products, full-stack apps, RAG workflows, mobile experiences, and systems projects.",
+    "Mustafa Iqbal is a software engineer building AI automation products, full-stack apps, RAG workflows, mobile experiences, and systems projects.",
   alternates: {
     canonical: "/"
   },
@@ -57,14 +57,14 @@ export const metadata: Metadata = {
     url: siteUrl,
     title: "Mustafa Iqbal | Software Engineer",
     description:
-      "Portfolio for AI products, automation systems, full-stack apps, mobile experiences, RAG workflows, and systems projects.",
-    siteName: "Mustafa Iqbal Portfolio",
+      "AI products, automation systems, full-stack apps, mobile experiences, RAG workflows, and systems projects.",
+    siteName: "Mustafa Iqbal",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "Mustafa Iqbal portfolio preview"
+        alt: "Mustafa Iqbal software engineering preview"
       }
     ]
   },
@@ -624,10 +624,10 @@ export default function RootLayout({
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      name: "Mustafa Iqbal Portfolio",
+      name: "Mustafa Iqbal",
       url: siteUrl,
       description:
-        "Portfolio for Mustafa Iqbal, an AI automation and full-stack engineer building LLM workflows, RAG systems, and startup product software."
+        "Mustafa Iqbal is an AI automation and full-stack engineer building LLM workflows, RAG systems, and startup product software."
     }
   ];
 

@@ -8,10 +8,10 @@ export function GlobalContact({ accessKey }: { accessKey: string }) {
       <div className="section-inner global-contact-grid">
         <div className="section-heading reveal">
           <p className="eyebrow">Contact</p>
-          <h2 id="global-contact-title">Send me the problem, the product, and what needs to ship.</h2>
+          <h2 id="global-contact-title">Send the role, product problem, and timeline.</h2>
           <p>
-            I am open to remote software engineering roles where the work spans AI, product, frontend, backend, mobile,
-            automation, and systems details.
+            I am open to remote software engineering roles across AI automation, product engineering, integrations,
+            retrieval systems, and full-stack delivery.
           </p>
           <ContactActions links={profile} />
         </div>

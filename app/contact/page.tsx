@@ -44,8 +44,8 @@ export default function ContactPage() {
             <p className="eyebrow">Contact</p>
             <h1>Send the role, product problem, and timeline.</h1>
             <p>
-              I am open to remote roles where a generalist software engineer can build across AI, product, frontend, backend,
-              mobile, and automation. Email is the most reliable path, and the form below posts through Web3Forms.
+              Use email or the form for roles, collaboration, or technical conversations. Include the role, product
+              area, and timeline so I can reply with useful context.
             </p>
             <ContactActions links={profile} />
           </Reveal>

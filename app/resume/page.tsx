@@ -22,8 +22,8 @@ export default function ResumePage() {
             <p className="eyebrow">Resume</p>
             <h1>Software engineer focused on AI automation, full-stack product work, and systems depth.</h1>
             <p>
-              My resume is strongest where product and infrastructure meet: OAuth-heavy integrations, async workflows,
-              RAG/vector systems, production-style SaaS, and performance-sensitive systems projects.
+              Experience spans OAuth-heavy integrations, async workflows, RAG/vector systems, SaaS-style product
+              surfaces, and performance-oriented systems projects.
             </p>
             <div className="button-row">
               <a className="button primary" href={profile.resume}>
@@ -103,9 +103,9 @@ export default function ResumePage() {
         <div className="section-inner">
           <Reveal className="section-heading wide-heading">
             <p className="eyebrow">Selected work</p>
-            <h2 id="resume-projects-title">Engineering work behind the resume.</h2>
+            <h2 id="resume-projects-title">Selected project work.</h2>
             <p>
-              Each item links to a case study with implementation details, media, architecture, and tradeoffs that can be evaluated quickly.
+              Each project lists my role, stack, outcome, and a detailed write-up with architecture and implementation notes.
             </p>
           </Reveal>
           <CarouselRail label="Selected engineering work" className="achievement-carousel" itemClassName="achievement-carousel-item">
@@ -115,7 +115,7 @@ export default function ResumePage() {
               return (
                 <Reveal as="article" className="achievement-card" key={project.slug} delay={index * 0.035}>
                   {media ? (
-                    <a className="achievement-media" href={`/work/${project.slug}/`} aria-label={`Open ${project.title} case study`}>
+                    <a className="achievement-media" href={`/work/${project.slug}/`} aria-label={`Open ${project.title} details`}>
                       {media.darkSrc ? (
                         <>
                           <img className="theme-media-light" src={media.src} alt={media.alt} loading="lazy" decoding="async" />
@@ -139,7 +139,7 @@ export default function ResumePage() {
                       <span>{project.stack.slice(0, 4).join(" / ")}</span>
                     </div>
                     <a className="text-link" href={`/work/${project.slug}/`}>
-                      Case study
+                      Details
                       <ArrowRight size={17} aria-hidden="true" />
                     </a>
                   </div>
@@ -202,7 +202,7 @@ export default function ResumePage() {
             <p className="eyebrow">Systems depth</p>
             <h2 id="systems-title">Performance and fundamentals behind the product work.</h2>
             <p>
-              These projects are compact on the site, but they matter because they show lower-level engineering range.
+              Additional projects across performance, distributed compute, compiler construction, and retrieval.
             </p>
           </Reveal>
           <CarouselRail label="Systems depth projects" className="systems-carousel" itemClassName="systems-carousel-item" auto>
