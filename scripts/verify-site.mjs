@@ -181,7 +181,13 @@ async function main() {
 
   for (const viewport of viewports) {
     for (const theme of ["light", "dark"]) {
-      const context = await browser.newContext({ viewport: { width: viewport.width, height: viewport.height } });
+      const mobileEmulation = viewport.width <= 430;
+      const context = await browser.newContext({
+        viewport: { width: viewport.width, height: viewport.height },
+        isMobile: mobileEmulation,
+        hasTouch: mobileEmulation,
+        deviceScaleFactor: mobileEmulation ? 2 : 1
+      });
       await context.addInitScript((themeName) => localStorage.setItem("theme-preference", themeName), theme);
       const page = await context.newPage();
 
@@ -209,6 +215,7 @@ async function main() {
 
           return {
             overflow: document.documentElement.scrollWidth - window.innerWidth,
+            layoutViewportWidth: window.innerWidth,
             avatarUsesNewPhoto: document.querySelector(".brand-avatar")?.currentSrc.includes("me.jpeg") ?? false,
             inViewportBroken,
             textHasEncodingArtifact: bodyText.includes(String.fromCharCode(65533)) || bodyText.includes(String.fromCharCode(194)),
@@ -266,9 +273,19 @@ async function main() {
               const toggle = document.querySelector(".site-header .header-actions > .theme-toggle");
               return !toggle || getComputedStyle(toggle).display === "none";
             })(),
-            firstRailControlsOrder: (() => {
-              const controls = document.querySelector(".carousel-rail-controls");
-              return controls ? getComputedStyle(controls).order : "";
+            mobileContentRailsReadable: (() => {
+              const rails = Array.from(document.querySelectorAll("[data-carousel-rail]")).filter((rail) => !rail.classList.contains("media-carousel"));
+              if (!rails.length) return true;
+              return rails.every((rail) => {
+                const track = rail.querySelector("[data-carousel-rail-track]");
+                const controls = rail.querySelector(".carousel-rail-controls");
+                const firstItem = rail.querySelector("[data-carousel-rail-item]");
+                if (!track || !firstItem) return false;
+                const trackStyle = getComputedStyle(track);
+                const controlsHidden = !controls || getComputedStyle(controls).display === "none";
+                const itemRect = firstItem.getBoundingClientRect();
+                return controlsHidden && trackStyle.gridAutoFlow === "row" && itemRect.width >= Math.min(window.innerWidth - 24, 320);
+              });
             })(),
             carouselExists: location.pathname === "/" ? Boolean(document.querySelector("[data-project-carousel]")) : true,
             railCount: document.querySelectorAll("[data-carousel-rail]").length,
@@ -279,6 +296,9 @@ async function main() {
         }, expectedLayoutMarkers);
 
         if (data.overflow > 2) failures.push(`${route} ${viewport.name} ${theme} horizontal overflow ${data.overflow}`);
+        if (viewport.width <= 430 && data.layoutViewportWidth > viewport.width + 4) {
+          failures.push(`${route} ${viewport.name} ${theme} mobile viewport meta not respected (${data.layoutViewportWidth}px)`);
+        }
         if (!data.avatarUsesNewPhoto) failures.push(`${route} ${viewport.name} ${theme} avatar is not using me.jpeg`);
         if (data.inViewportBroken.length) {
           failures.push(`${route} ${viewport.name} ${theme} broken in-viewport images ${data.inViewportBroken.join(", ")}`);
@@ -330,8 +350,8 @@ async function main() {
           if (!data.mobileMenuButtonSize || data.mobileMenuButtonSize.width < 44 || data.mobileMenuButtonSize.height < 44) {
             failures.push(`${route} ${viewport.name} mobile menu tap target too small`);
           }
-          if (data.railCount > 0 && data.firstRailControlsOrder !== "2") {
-            failures.push(`${route} ${viewport.name} carousel controls are not below the rail`);
+          if (data.railCount > 0 && !data.mobileContentRailsReadable) {
+            failures.push(`${route} ${viewport.name} content carousel cards are not readable stacked mobile cards`);
           }
         }
       }
@@ -342,7 +362,7 @@ async function main() {
 
   console.log("Visual checks complete");
 
-  const interactionContext = await browser.newContext({ viewport: { width: 390, height: 900 } });
+  const interactionContext = await browser.newContext({ viewport: { width: 390, height: 900 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
   await interactionContext.grantPermissions(["clipboard-write"], { origin: base });
   const interactionPage = await interactionContext.newPage();
   interactionPage.setDefaultTimeout(7000);
@@ -370,16 +390,20 @@ async function main() {
 
   await interactionPage.goto(`${base}/resume/`, { waitUntil: "domcontentloaded", timeout: 30000 });
   await interactionPage.waitForTimeout(250);
-  const railMoved = await interactionPage.locator("[data-carousel-rail]").first().evaluate(async (rail) => {
+  const mobileResumeRailReadable = await interactionPage.locator(".achievement-carousel").evaluate((rail) => {
     const track = rail.querySelector("[data-carousel-rail-track]");
-    const next = rail.querySelector("[data-carousel-rail-next]");
-    if (!track || !next || next.disabled) return true;
-    const before = track.scrollLeft;
-    next.click();
-    await new Promise((resolve) => setTimeout(resolve, 450));
-    return track.scrollLeft > before;
+    const controls = rail.querySelector(".carousel-rail-controls");
+    const firstItem = rail.querySelector("[data-carousel-rail-item]");
+    if (!track || !firstItem) return false;
+    const trackStyle = getComputedStyle(track);
+    const itemRect = firstItem.getBoundingClientRect();
+    return (
+      trackStyle.gridAutoFlow === "row" &&
+      (!controls || getComputedStyle(controls).display === "none") &&
+      itemRect.width >= Math.min(window.innerWidth - 24, 320)
+    );
   });
-  if (!railMoved) failures.push("Carousel rail next control did not scroll");
+  if (!mobileResumeRailReadable) failures.push("Resume evidence cards are not readable on mobile");
 
   await interactionPage.locator(".avatar-button").first().click();
   const lightboxOpen = await interactionPage.locator("[data-lightbox]").evaluate((el) => !el.hasAttribute("hidden"));
@@ -411,17 +435,37 @@ async function main() {
   const explorerClosed = await interactionPage.locator(".documentation-explorer-shell").count();
   if (explorerClosed) failures.push("Documentation explorer did not close");
 
-  await interactionPage.setViewportSize({ width: 1440, height: 1000 });
-  await interactionPage.goto(`${base}/work/revvy-review-automation/`, { waitUntil: "domcontentloaded", timeout: 30000 });
-  await interactionPage.waitForTimeout(250);
-  await interactionPage.locator(".documentation-preview-button").first().click();
-  const desktopMinimap = await interactionPage.locator(".documentation-explorer-shell .react-flow__minimap").count();
-  if (!desktopMinimap) failures.push("Documentation explorer minimap missing on desktop");
-  await interactionPage.locator(".documentation-explorer-close").click();
+  await interactionPage.close();
+  await interactionContext.close();
 
-  await interactionPage.goto(`${base}/contact/`, { waitUntil: "domcontentloaded", timeout: 30000 });
-  await interactionPage.waitForTimeout(250);
-  const statusLayoutOk = await interactionPage.evaluate(() => {
+  const desktopInteractionContext = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
+  await desktopInteractionContext.grantPermissions(["clipboard-write"], { origin: base });
+  const desktopPage = await desktopInteractionContext.newPage();
+  desktopPage.setDefaultTimeout(7000);
+
+  await desktopPage.goto(`${base}/resume/`, { waitUntil: "domcontentloaded", timeout: 30000 });
+  await desktopPage.waitForTimeout(250);
+  const desktopRailMoved = await desktopPage.locator(".achievement-carousel").evaluate(async (rail) => {
+    const track = rail.querySelector("[data-carousel-rail-track]");
+    const next = rail.querySelector("[data-carousel-rail-next]");
+    if (!track || !next || next.disabled) return true;
+    const before = track.scrollLeft;
+    next.click();
+    await new Promise((resolve) => setTimeout(resolve, 450));
+    return track.scrollLeft > before;
+  });
+  if (!desktopRailMoved) failures.push("Desktop carousel rail next control did not scroll");
+
+  await desktopPage.goto(`${base}/work/revvy-review-automation/`, { waitUntil: "domcontentloaded", timeout: 30000 });
+  await desktopPage.waitForTimeout(250);
+  await desktopPage.locator(".documentation-preview-button").first().click();
+  const desktopMinimap = await desktopPage.locator(".documentation-explorer-shell .react-flow__minimap").count();
+  if (!desktopMinimap) failures.push("Documentation explorer minimap missing on desktop");
+  await desktopPage.locator(".documentation-explorer-close").click();
+
+  await desktopPage.goto(`${base}/contact/`, { waitUntil: "domcontentloaded", timeout: 30000 });
+  await desktopPage.waitForTimeout(250);
+  const statusLayoutOk = await desktopPage.evaluate(() => {
     const status = document.querySelector("[data-form-status]");
     const message = document.querySelector("[data-form-status-message]");
     if (!status || !message) return false;
@@ -432,13 +476,13 @@ async function main() {
     return statusRect.width > 260 && messageRect.width > 220 && statusRect.height < 96;
   });
   if (!statusLayoutOk) failures.push("Contact form status banner layout collapsed");
-  await interactionPage.locator("[data-copy-email]").first().click();
-  const copiedText = await interactionPage.locator('[data-copy-email][data-copied="true"]').count();
+  await desktopPage.locator("[data-copy-email]").first().click();
+  const copiedText = await desktopPage.locator('[data-copy-email][data-copied="true"]').count();
   if (!copiedText) failures.push("Copy email button did not show copied state");
-  const toastCount = await interactionPage.locator(".toast").count();
+  const toastCount = await desktopPage.locator(".toast").count();
   if (!toastCount) failures.push("Copy email did not show a toast");
-  await interactionPage.close();
-  await interactionContext.close();
+  await desktopPage.close();
+  await desktopInteractionContext.close();
 
   await browser.close();
 

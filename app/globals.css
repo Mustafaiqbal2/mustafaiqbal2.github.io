@@ -5352,19 +5352,31 @@ code {
     display: none;
   }
 
-  .carousel-rail-track,
-  .project-card-carousel .carousel-rail-track,
-  .secondary-carousel .carousel-rail-track,
-  .systems-carousel .carousel-rail-track,
-  .skills-carousel .carousel-rail-track,
-  .achievement-carousel .carousel-rail-track,
-  .technical-carousel .carousel-rail-track,
-  .performance-stage-carousel .carousel-rail-track,
-  .rag-lane-carousel .carousel-rail-track,
-  .music-journey-carousel .carousel-rail-track,
-  .classification-loop-carousel .carousel-rail-track,
-  .principles-carousel .carousel-rail-track,
-  .build-loop-carousel .carousel-rail-track,
+  .carousel-rail:not(.media-carousel) {
+    overflow: visible;
+  }
+
+  .carousel-rail:not(.media-carousel) .carousel-rail-controls {
+    display: none;
+  }
+
+  .carousel-rail:not(.media-carousel) .carousel-rail-track {
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-columns: initial;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    overflow: visible;
+    padding: 0;
+    scroll-padding-inline: 0;
+    scroll-snap-type: none;
+  }
+
+  .carousel-rail:not(.media-carousel) .carousel-rail-item {
+    width: 100%;
+    scroll-snap-align: none;
+  }
+
   .media-carousel .carousel-rail-track {
     grid-auto-columns: minmax(0, calc(100vw - 54px));
     gap: 10px;
@@ -5388,6 +5400,7 @@ code {
   .project-card,
   .project-card-featured {
     grid-template-rows: 178px 1fr;
+    min-height: 0;
   }
 
   .project-card-body {
@@ -5412,6 +5425,18 @@ code {
   }
 
   .achievement-card {
+    min-height: 0;
+  }
+
+  .secondary-card,
+  .skill-card,
+  .systems-card,
+  .tech-panel,
+  .perf-stage,
+  .rag-lane,
+  .principle-card,
+  .classification-step,
+  .documentation-preview-button {
     min-height: 0;
   }
 
