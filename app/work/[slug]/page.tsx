@@ -296,7 +296,7 @@ function PerformanceCase({ project, documentation }: { project: Project; documen
         <div className="section-inner">
           <Reveal className="section-heading">
             <p className="eyebrow">Workflow compression</p>
-            <h2 id="workflow-title">The important work happens before the model call.</h2>
+            <h2 id="workflow-title">The important work moved before the model call.</h2>
           </Reveal>
           <CarouselRail label="Revvy workflow stages" className="performance-stage-carousel" itemClassName="performance-stage-item">
             {stages.map(([title, text], index) => (
@@ -375,8 +375,8 @@ function ClassificationCase({ project, documentation }: { project: Project; docu
         <div className="section-inner email-taxonomy-grid">
           <Reveal className="section-heading">
             <p className="eyebrow">Product model</p>
-            <h2 id="taxonomy-title">Rules, context, and logs instead of blind classification.</h2>
-            <p>Emmy works because the system has places for deterministic routing, model reasoning, and user correction.</p>
+            <h2 id="taxonomy-title">Rules, context, and logs replaced blind classification.</h2>
+            <p>Built Emmy with clear places for deterministic routing, model reasoning, and user correction.</p>
           </Reveal>
           <Reveal className="email-routing-board" delay={0.08}>
             <div className="routing-rule-grid">
@@ -557,7 +557,7 @@ function RagCase({ project, documentation }: { project: Project; documentation?:
           <Reveal className="leadership-card" delay={0.08}>
             <span>Team lead</span>
             <strong>4-person AI research team</strong>
-            <p>I led architecture and delivery across ingestion, retrieval, interview flow, and service deployment.</p>
+            <p>Led architecture and delivery across ingestion, retrieval, interview flow, and service deployment.</p>
           </Reveal>
         </div>
       </section>

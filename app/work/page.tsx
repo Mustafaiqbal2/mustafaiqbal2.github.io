@@ -24,8 +24,9 @@ export default function WorkPage() {
             <p className="eyebrow">Work</p>
             <h1>AI automation, product systems, and engineering fundamentals.</h1>
             <p>
-              Featured projects cover shipped workflows, architecture decisions, implementation constraints, and
-              outcomes. Secondary projects show systems depth across RAG, CUDA, OpenCL, MPI, and compiler work.
+              Selected systems with shipped workflows, architecture decisions, implementation constraints, and
+              outcomes. Secondary projects show systems depth across RAG, CUDA,
+              OpenCL, MPI, and compiler work.
             </p>
             <div className="button-row">
               <a className="button primary" href={profile.resume}>
@@ -62,7 +63,7 @@ export default function WorkPage() {
             <p className="eyebrow">Systems depth</p>
             <h2 id="secondary-projects-title">Additional systems projects.</h2>
             <p>
-              These projects show engineering range across performance, distributed compute, compiler construction,
+              Additional projects across performance, distributed compute, compiler construction,
               document retrieval, and parallel programming.
             </p>
           </Reveal>

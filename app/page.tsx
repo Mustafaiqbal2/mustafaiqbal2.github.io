@@ -96,15 +96,15 @@ export default function Home() {
         <div className="section-inner home-signal-grid">
           <div>
             <span>Product work</span>
-            <strong>Private AI SaaS, review automation, and email intelligence systems.</strong>
+            <strong>Built across private AI SaaS, review automation, and email intelligence systems.</strong>
           </div>
           <div>
             <span>Research lab</span>
-            <strong>Led a four-person team on a recruitment RAG and interview automation platform.</strong>
+            <strong>I led a four-person team on a recruitment RAG and interview automation platform.</strong>
           </div>
           <div>
             <span>Foundations</span>
-            <strong>FAST-NUCES CS with systems projects in CUDA, OpenCL, MPI, and compilers.</strong>
+            <strong>FAST-NUCES CS fundamentals with CUDA, OpenCL, MPI, and compiler projects.</strong>
           </div>
         </div>
       </section>
@@ -140,7 +140,7 @@ export default function Home() {
             <p className="eyebrow">Selected work</p>
             <h2 id="selected-work-title">Selected work with role, architecture, and outcomes.</h2>
             <p>
-              The featured projects show shipped automation, research systems, and implementation details across
+              These projects show shipped automation, research systems, and implementation details across
               integrations, retrieval, product UI, and performance-sensitive code.
             </p>
           </Reveal>

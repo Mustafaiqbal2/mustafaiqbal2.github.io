@@ -107,7 +107,7 @@ const defaultExplorerCopy: ExplorerCopy = {
   eyebrow: "Architecture explorer",
   title: "System architecture views.",
   description:
-    "Use these views to inspect the product surface, system boundaries, data flow, integrations, and tradeoffs.",
+    "These views explain the product surface, system boundaries, data flow, integrations, and tradeoffs.",
   insights: [
     "How the user workflow moves through the system.",
     "Where data is owned, transformed, and persisted.",
@@ -120,7 +120,7 @@ const explorerCopyBySlug: Record<string, ExplorerCopy> = {
     eyebrow: "Platform explorer",
     title: "A multi-tenant AI SaaS control plane.",
     description:
-      "This view connects tenancy, agents, billing, credits, assets, vector knowledge, and cloud services inside one private product platform.",
+      "Tenancy, agents, billing, credits, assets, vector knowledge, and cloud services connect inside one private product platform.",
     insights: [
       "Account, profile, role, and agent access boundaries are modeled as first-class product infrastructure.",
       "Specialized agents share billing, knowledge, assets, usage tracking, and cloud services through a common platform layer.",
@@ -142,44 +142,44 @@ const explorerCopyBySlug: Record<string, ExplorerCopy> = {
     eyebrow: "Decision explorer",
     title: "An email classification system with inspectable decisions.",
     description:
-      "The views connect Gmail sync, contact groups, thread context, structured AI output, labels, logs, and correction loops.",
+      "Gmail sync, contact groups, thread context, structured AI output, labels, logs, and correction loops are connected into one workflow.",
     insights: [
       "Known senders route through deterministic contact rules before the model is used.",
       "Thread context and categorization logs make ambiguous classifications reviewable.",
-      "User corrections feed the product loop through labels, categories, and training records."
+      "User corrections feed back through labels, categories, and training records."
     ]
   },
   "cad-understanding-core": {
     eyebrow: "Reconstruction explorer",
     title: "A CAD-first reconstruction system with explicit uncertainty.",
     description:
-      "This view separates geometry extraction, drawing contexts, evidence groups, semantic affordances, safety rules, and review artifacts.",
+      "Geometry extraction, drawing contexts, evidence groups, semantic affordances, safety rules, and review artifacts stay separated.",
     insights: [
       "Accepted geometry stays CAD-derived; AI can help interpret affordances but cannot create final coordinates.",
       "Drawing contexts, evidence groups, and unresolved geometry remain visible for review.",
-      "The system is designed to preserve uncertainty instead of hiding it behind a confident answer."
+      "The system preserves uncertainty instead of hiding it behind a confident answer."
     ]
   },
   melodymind: {
     eyebrow: "Product and model explorer",
     title: "A multimodal music product built from a thesis-backed model path.",
     description:
-      "The views connect CLAP-InfoNCE alignment, FastAPI services, Pinecone retrieval, Expo mobile UX, voice/image input, Spotify export, and stem separation.",
+      "CLAP-InfoNCE alignment, FastAPI services, Pinecone retrieval, Expo mobile UX, voice/image input, Spotify export, and stem separation connect into one product path.",
     insights: [
       "The model work moved from naive lyric/audio experiments toward CLAP audio and emotional text alignment.",
       "Text, image, and voice inputs converge into one playlist-generation workflow.",
-      "The product surface includes auth, chat, retrieval, Spotify export, voice, image handling, and analytics."
+      "Auth, chat, retrieval, Spotify export, voice, image handling, and analytics are part of the product surface."
     ]
   },
   "recruitment-rag-platform": {
     eyebrow: "RAG workflow explorer",
     title: "A recruitment automation workflow with retrieval and interviews.",
     description:
-      "This view connects candidate ingestion, embeddings, vector retrieval, job enrichment, interview orchestration, and deployment boundaries.",
+      "Candidate ingestion, embeddings, vector retrieval, job enrichment, interview orchestration, and deployment boundaries connect into one workflow.",
     insights: [
       "Candidate data from CV, GitHub, LinkedIn, ORIC, and web sources feeds semantic matching.",
       "Weaviate, Nomic embeddings, Groq Llama 3, FastAPI, and Docker Compose are separated into clear service responsibilities.",
-      "The system combines AI workflow design with small-team technical leadership."
+      "The project combines AI workflow design with small-team technical leadership."
     ]
   }
 };

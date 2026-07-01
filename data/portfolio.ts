@@ -117,7 +117,7 @@ export const profile: ContactProfile = {
   elevatorPitch:
     "I work across product UI, APIs, data models, queues, retrieval, evaluation, and recovery paths so AI workflows behave predictably in real use.",
   summary:
-    "Software engineer building AI automation, retrieval workflows, external API integrations, full-stack product surfaces, and systems projects."
+    "I build AI automation, retrieval workflows, external API integrations, full-stack product surfaces, and systems projects."
 };
 
 export const proofMetrics = [
@@ -154,9 +154,9 @@ export const featuredProjects: Project[] = [
     status: "Private product",
     confidentiality: "Private product",
     summary:
-      "Private multi-tenant AI SaaS platform tying together agents, account hierarchy, billing, credits, file assets, vector knowledge, cloud services, and operations workflows.",
+      "Worked across a private multi-tenant AI SaaS platform tying together agents, account hierarchy, billing, credits, file assets, vector knowledge, cloud services, and operations workflows.",
     pitch:
-      "Simplabots is a private multi-tenant AI platform where specialized agents share tenancy, billing, assets, knowledge, usage tracking, and cloud integrations.",
+      "Built across the Simplabots platform layer so specialized agents could share tenancy, billing, assets, knowledge, usage tracking, and cloud integrations.",
     role: "Full-stack product and AI engineer",
     dates: "2025",
     icon: Sparkles,
@@ -180,9 +180,9 @@ export const featuredProjects: Project[] = [
       { value: "Pinecone + AWS", label: "knowledge base, files, email, queues" }
     ],
     problem:
-      "A broad AI SaaS platform needs product infrastructure around the models: tenancy, permissions, credits, billing, cloud assets, knowledge retrieval, and operational controls.",
+      "The platform went beyond a model wrapper: it needed tenancy, permissions, credits, billing, cloud assets, knowledge retrieval, and operational controls.",
     constraints: [
-      "The product is private, so public material uses approved architecture summaries and media rather than raw records or customer data.",
+      "Because the product is private, I present it through approved architecture summaries and media rather than raw records or customer data.",
       "Multiple agent modules needed to share account state, usage rules, billing, and cloud services.",
       "AI workflows had to coexist with Stripe, S3, SES, SQS, Pinecone, OAuth, notifications, and admin operations."
     ],
@@ -199,8 +199,8 @@ export const featuredProjects: Project[] = [
     ],
     outcomes: [
       "Worked inside a larger proprietary AI SaaS codebase with shared platform, billing, and agent infrastructure.",
-      "Provides the platform context behind the Revvy, Emmy, Dominic, Hunter, and other specialized automation agents.",
-      "Covers tenancy, billing, AI orchestration, retrieval, cloud services, and admin workflows in one platform context."
+      "Connected platform context behind Revvy, Emmy, Dominic, Hunter, and other specialized automation agents.",
+      "Covered tenancy, billing, AI orchestration, retrieval, cloud services, and admin workflows in one platform context."
     ],
     stack: ["Next.js", "React", "TypeScript", "Prisma", "PostgreSQL", "Stripe", "AWS S3/SES/SQS", "Pinecone", "OpenAI"],
     lessons: [
@@ -246,9 +246,9 @@ export const featuredProjects: Project[] = [
     status: "Private product",
     confidentiality: "Private product",
     summary:
-      "Review-management automation for Google Business Profile with OAuth, location import, review sync, AI draft generation, smart filtering, caching, and reply publishing.",
+      "Built review-management automation for Google Business Profile with OAuth, location import, review sync, AI draft generation, smart filtering, caching, and reply publishing.",
     pitch:
-      "Revvy reduced slow review-response workflows by filtering unnecessary AI work, batching database writes, using cache invalidation, and keeping manual approval visible.",
+      "Reduced slow review-response workflows by filtering unnecessary AI work, batching database writes, using cache invalidation, and keeping manual approval visible.",
     role: "Full-stack automation and product engineer",
     dates: "2025",
     icon: Bot,
@@ -287,11 +287,11 @@ export const featuredProjects: Project[] = [
       { value: "Google GBP", label: "OAuth, locations, reviews, replies" }
     ],
     problem:
-      "Review response workflows get slow and expensive when every review is synced, queried, and sent through AI sequentially, even when many reviews do not need a draft.",
+      "Revvy was built around the bottleneck: review response workflows get slow and expensive when every review is synced, queried, and sent through AI sequentially, even when many reviews do not need a draft.",
     constraints: [
       "Google Business Profile requires OAuth offline tokens, account/location import, review sync, and reply posting without breaking user trust.",
       "Draft generation must skip replied reviews, avoid duplicate drafts, respect rating thresholds, and handle rate limits.",
-      "The workflow has to support manual review, semi-automation, and positive-review automation rather than one unsafe auto-reply mode."
+      "I had to support manual review, semi-automation, and positive-review automation rather than one unsafe auto-reply mode."
     ],
     architecture: [
       "Next.js/Prisma/PostgreSQL app with Google Business Profile OAuth, connections, workspaces, locations, reviews, automation settings, and drafts.",
@@ -305,13 +305,13 @@ export const featuredProjects: Project[] = [
       "Implemented publish flows that preserve manual approval and add human-like delay before posting replies."
     ],
     outcomes: [
-      "1000-review sync improved from 30-60 minutes to 5-10 minutes in the documented path.",
-      "2000-review workflows improved from 60-120 minutes to 10-20 minutes.",
-      "Cache-hit review pages are documented at roughly 50-200ms."
+      "Improved 1000-review sync from 30-60 minutes to 5-10 minutes in the documented path.",
+      "Improved 2000-review workflows from 60-120 minutes to 10-20 minutes.",
+      "Documented cache-hit review pages at roughly 50-200ms."
     ],
     stack: ["Next.js", "Prisma", "PostgreSQL", "Google Business Profile API", "OpenAI", "p-limit", "pg-boss", "Next cache"],
     lessons: [
-      "The best AI optimization is avoiding unnecessary model calls before the queue starts.",
+      "I found that the best AI optimization is avoiding unnecessary model calls before the queue starts.",
       "Automation products need modes, logs, approval states, and failure recovery, not just generated text."
     ],
     caseStudy: {
@@ -340,7 +340,7 @@ export const featuredProjects: Project[] = [
         {
           eyebrow: "Control",
           title: "Users keep the final publishing decision.",
-          text: "The interface supports manual, draft-first, and positive-only automation modes, with location-level settings and reply posting through Google APIs.",
+          text: "I built the interface around manual, draft-first, and positive-only automation modes, with location-level settings and reply posting through Google APIs.",
           items: ["Manual/semi/full modes", "Edit draft before posting", "Reply endpoint", "Human-like delay before publish"]
         }
       ]
@@ -353,9 +353,9 @@ export const featuredProjects: Project[] = [
     status: "Private product",
     confidentiality: "Private product",
     summary:
-      "Gmail workflow automation combining account setup, contact groups, thread-aware classification, categorization logs, default categories, Inngest processing, Gmail labels, and correction loops.",
+      "Built Gmail workflow automation combining account setup, contact groups, thread-aware classification, categorization logs, default categories, Inngest processing, Gmail labels, and correction loops.",
     pitch:
-      "Emmy combines deterministic sender rules, thread-aware AI classification, categorization logs, Gmail labels, and user correction paths.",
+      "Built Emmy around deterministic sender rules, thread-aware AI classification, categorization logs, Gmail labels, and user correction paths.",
     role: "Full-stack AI automation engineer",
     dates: "2025",
     icon: MailCheck,
@@ -385,7 +385,7 @@ export const featuredProjects: Project[] = [
       { value: "Hybrid", label: "contact rules plus AI classification" }
     ],
     problem:
-      "A useful email sorter has to keep conversations together, avoid brittle subject filters, route known senders cheaply, and still understand ambiguous new email.",
+      "I designed Emmy for the parts simple filters miss: keeping conversations together, routing known senders cheaply, and still understanding ambiguous new email.",
     constraints: [
       "Subject-line filters break easily and create high maintenance work.",
       "Blindly following old thread categories can miss urgency changes or topic drift.",
@@ -404,9 +404,9 @@ export const featuredProjects: Project[] = [
       "Increased concurrent processing while preserving cost limits and background processing through Inngest."
     ],
     outcomes: [
-      "Email processing became 2-3x faster in the documented update.",
-      "Users can inspect why an email was categorized instead of treating the model as a black box.",
-      "The product balances deterministic routing, thread context, AI flexibility, and user correction."
+      "Made email processing 2-3x faster in the documented update.",
+      "Made categorization inspectable so users can see why an email was routed instead of treating the model as a black box.",
+      "Balanced deterministic routing, thread context, AI flexibility, and user correction."
     ],
     stack: ["Next.js", "TypeScript", "Prisma", "Gmail API", "OpenAI", "Inngest", "p-limit", "Zod"],
     lessons: [
@@ -432,7 +432,7 @@ export const featuredProjects: Project[] = [
         },
         {
           eyebrow: "Decision path",
-          title: "The classifier uses rules first, then context-aware AI.",
+          title: "I use rules first, then context-aware AI.",
           text: "Contact groups constrain category choices for known senders; unknown or ambiguous messages are classified with thread context and structured JSON output.",
           items: ["Known sender routing", "Thread context builder", "JSON categorization logs", "Category confidence/reasoning"]
         },
@@ -452,9 +452,9 @@ export const featuredProjects: Project[] = [
     status: "Research prototype",
     confidentiality: "Research prototype",
     summary:
-      "DWG/DXF-first reconstruction engine that extracts exact CAD facts, isolates drawing contexts, groups evidence, uses capped AI only for affordances, and keeps unresolved geometry visible.",
+      "Built a DWG/DXF-first reconstruction engine that extracts exact CAD facts, isolates drawing contexts, groups evidence, uses capped AI only for affordances, and keeps unresolved geometry visible.",
     pitch:
-      "The engineering constraint was restraint: AI can interpret evidence, but accepted geometry must stay CAD-derived, reversible, and explicit about uncertainty.",
+      "Built around a strict constraint: AI can interpret evidence, but accepted geometry must stay CAD-derived, reversible, and explicit about uncertainty.",
     role: "Research and product prototyping engineer",
     dates: "2026",
     icon: Building2,
@@ -500,7 +500,7 @@ export const featuredProjects: Project[] = [
       { value: "AI off", label: "external calls require explicit capped permission" }
     ],
     problem:
-      "Architectural drawings contain exact geometry and metadata, but generic vision models, candidate boxes, and layer-name heuristics fail on real CAD exports.",
+      "Started from the CAD file because architectural drawings contain exact geometry and metadata, while generic vision models, candidate boxes, and layer-name heuristics fail on real CAD exports.",
     constraints: [
       "AI cannot generate accepted coordinates, polygons, final labels, or BOQ quantities.",
       "External AI is off by default, capped by call count and cost, and never retried automatically.",
@@ -518,8 +518,8 @@ export const featuredProjects: Project[] = [
       "Documented failure analysis across SAM, GDINO, VLM, and layer heuristic experiments."
     ],
     outcomes: [
-      "Current artifact discovers 28 exact drawing contexts and selects GF-WORKING/FF-WORKING for reconstruction.",
-      "The system groups 283 pieces of evidence and reuses 51 semantic evidence hypotheses.",
+      "Produced an artifact that discovers 28 exact drawing contexts and selects GF-WORKING/FF-WORKING for reconstruction.",
+      "Grouped 283 pieces of evidence and reused 51 semantic evidence hypotheses.",
       "The decoder reconstructs small CAD-aligned spaces while keeping large unresolved spaces explicit."
     ],
     stack: ["Python", "DXF/DWG", "OpenAI optional", "Geometry", "Graph reconstruction", "Visual QA", "Unittest"],
@@ -566,9 +566,9 @@ export const featuredProjects: Project[] = [
     status: "Academic product",
     confidentiality: "Academic",
     summary:
-      "Academic AI music companion with CLAP-InfoNCE alignment, FastAPI services, Pinecone search, React Native/Expo mobile UX, LangChain agents, Whisper/TTS voice flow, Spotify export, and stem separation.",
+      "Co-built an academic AI music companion with CLAP-InfoNCE alignment, FastAPI services, Pinecone search, React Native/Expo mobile UX, LangChain agents, Whisper/TTS voice flow, Spotify export, and stem separation.",
     pitch:
-      "MelodyMind connects model work with product delivery: emotion-aware audio/text embeddings became a mobile app for text, image, and voice-driven playlist generation.",
+      "Connected model work with product delivery in MelodyMind: emotion-aware audio/text embeddings became a mobile app for text, image, and voice-driven playlist generation.",
     role: "Co-builder, full-stack and AI systems",
     dates: "2025-2026",
     icon: Music2,
@@ -607,7 +607,7 @@ export const featuredProjects: Project[] = [
       { value: "Spotify", label: "OAuth and playlist export path" }
     ],
     problem:
-      "Music platforms often recommend by popularity or static mood labels, while users describe intent through emotion, context, images, and voice.",
+      "MelodyMind was built around how people actually describe music intent: emotion, context, images, and voice instead of only popularity or static mood labels.",
     constraints: [
       "Naive text/audio models collapsed or failed to capture abstract cues like focus, nostalgia, celebration, and social context.",
       "The app needed to connect the model path to a complete product workflow.",
@@ -626,9 +626,9 @@ export const featuredProjects: Project[] = [
       "Included stem separation as an asynchronous educational/remix workflow with waveform visualization support."
     ],
     outcomes: [
-      "The thesis documents a transition from naive prototypes to a multimodal product implementation.",
-      "Iteration 2 delivered FastAPI services, Pinecone vector search, React Native/Expo UX, voice interaction, image-to-playlist, and database migrations.",
-      "The final model aligned CLAP audio representations with emotional text semantics after 17 epochs."
+      "Moved the project from naive prototypes to a multimodal product implementation.",
+      "Delivered FastAPI services, Pinecone vector search, React Native/Expo UX, voice interaction, image-to-playlist, and database migrations in the second implementation path.",
+      "Aligned CLAP audio representations with emotional text semantics after 17 epochs."
     ],
     stack: ["FastAPI", "React Native", "Expo", "Supabase", "Pinecone", "LangChain", "Spotify API", "CLAP", "Nomic", "Whisper/TTS"],
     lessons: [
@@ -649,18 +649,18 @@ export const featuredProjects: Project[] = [
         {
           eyebrow: "Model path",
           title: "The model evolved after naive approaches failed.",
-          text: "The thesis documents early lyric/audio experiments, CLAP zero-shot evaluation, and a final CLAP-InfoNCE alignment path.",
+          text: "Worked through early lyric/audio experiments, CLAP zero-shot evaluation, and a final CLAP-InfoNCE alignment path.",
           items: ["Reddit and Last.fm data", "Genius lyrics integration", "Deezer MP3 previews", "Frozen CLAP audio encoder + Nomic text embeddings"]
         },
         {
           eyebrow: "Backend",
-          title: "The research model sits behind product services.",
+          title: "I put the research model behind product services.",
           text: "FastAPI services handle auth, embeddings, search, agents, voice, image storage, Spotify, health checks, and migrations.",
           items: ["/api/health/live/ready", "SQLAlchemy + Alembic", "Pinecone vector search", "LangChain music and voice agents"]
         },
         {
           eyebrow: "Mobile UX",
-          title: "The app covers the core user flows.",
+          title: "I covered the core user flows in the app.",
           text: "React Native/Expo screens cover authentication, chat playlist generation, image upload, voice input, Talk-to-Your-DJ, and playlist results.",
           items: ["Login/register", "Chat interface", "Expo ImagePicker", "Waveform animation", "Spotify playlist export"]
         }
@@ -674,7 +674,7 @@ export const featuredProjects: Project[] = [
     status: "Internal lab",
     confidentiality: "Internal lab",
     summary:
-      "Genesys Research Lab internship project for candidate ingestion, semantic matching, job-description enrichment, and conversational interviews using Weaviate, Nomic embeddings, Groq Llama 3, FastAPI, and Docker Compose.",
+      "Led a Genesys Research Lab project for candidate ingestion, semantic matching, job-description enrichment, and conversational interviews using Weaviate, Nomic embeddings, Groq Llama 3, FastAPI, and Docker Compose.",
     pitch:
       "I led a four-person group building an end-to-end recruitment workflow that connected candidate context, semantic matching, and structured AI interviews.",
     role: "AI research intern, team lead",
@@ -731,7 +731,7 @@ export const featuredProjects: Project[] = [
       { value: "<5s", label: "interview response target" }
     ],
     problem:
-      "Manual candidate screening is inconsistent when resumes, GitHub, LinkedIn, ORIC, personal websites, and job descriptions live in disconnected places.",
+      "The workflow was built around the screening problem: resumes, GitHub, LinkedIn, ORIC, personal websites, and job descriptions live in disconnected places.",
     constraints: [
       "The system needed semantic matching rather than keyword-only filtering.",
       "Interview questions had to avoid repetition and stay grounded in candidate/job context.",
@@ -772,7 +772,7 @@ export const featuredProjects: Project[] = [
         {
           eyebrow: "Ingestion",
           title: "Candidate context came from multiple public and internal sources.",
-          text: "The platform ingested CV, GitHub, LinkedIn, ORIC, and personal website context into a semantic candidate store.",
+          text: "Led ingestion of CV, GitHub, LinkedIn, ORIC, and personal website context into a semantic candidate store.",
           items: ["CV parsing", "GitHub profile signals", "LinkedIn/ORIC/web signals", "Candidate-job context objects"]
         },
         {
@@ -783,7 +783,7 @@ export const featuredProjects: Project[] = [
         },
         {
           eyebrow: "Interview flow",
-          title: "The interview agent needed structure and speed.",
+          title: "I designed the interview agent for structure and speed.",
           text: "Groq-hosted Llama 3 supported dynamic questioning with a sub-5-second response path and no repeated questions.",
           items: ["Llama 3 8B via Groq", "Conversational interview agent", "No question repetition", "FastAPI + Docker Compose deployment"]
         }
@@ -795,49 +795,49 @@ export const featuredProjects: Project[] = [
 export const secondaryProjects = [
   {
     title: "Document RAG Summarizer",
-    summary: "Cloud and offline document summarization pipeline with FAISS, SentenceTransformers, Groq, and TinyLlama.",
+    summary: "Built a cloud and offline document summarization pipeline with FAISS, SentenceTransformers, Groq, and TinyLlama.",
     stack: ["Python", "FAISS", "Groq", "TinyLlama"],
     href: "https://github.com/Mustafaiqbal2/BIG_Document_RAG",
     signal: "RAG depth"
   },
   {
     title: "CUDA Canny Optimization",
-    summary: "CUDA Canny edge detection with kernel fusion, memory optimization, shared memory, and minimized transfers.",
+    summary: "I optimized CUDA Canny edge detection with kernel fusion, memory optimization, shared memory, and minimized transfers.",
     stack: ["CUDA", "C++", "Image processing"],
     href: "https://github.com/Mustafaiqbal2/Canny_optimization",
     signal: "~48x reported speedup"
   },
   {
     title: "Neural Network Acceleration",
-    summary: "Six MNIST classifier implementations from CPU baseline to CUDA, Tensor Cores, OpenACC, and cuBLAS.",
+    summary: "Implemented six MNIST classifiers from CPU baseline to CUDA, Tensor Cores, OpenACC, and cuBLAS.",
     stack: ["CUDA", "cuBLAS", "OpenACC"],
     href: "https://github.com/Mustafaiqbal2/Neural-Network_Acceleration",
     signal: "GPU optimization"
   },
   {
     title: "OpenCL Image Convolution",
-    summary: "Cross-platform image convolution comparing basic and optimized OpenCL kernels with local-memory tuning.",
+    summary: "Built cross-platform image convolution comparing basic and optimized OpenCL kernels with local-memory tuning.",
     stack: ["OpenCL", "C++", "CMake"],
     href: "https://github.com/Mustafaiqbal2/opencl-image-convolution",
     signal: "Parallel image processing"
   },
   {
     title: "Custom Compiler",
-    summary: "Java compiler project covering lexical analysis, symbol tables, LL(1) parsing, AST construction, and errors.",
+    summary: "Built a Java compiler project covering lexical analysis, symbol tables, LL(1) parsing, AST construction, and errors.",
     stack: ["Java", "Compiler design", "DFA"],
     href: "https://github.com/Mustafaiqbal2/Custom-Compiler",
     signal: "Systems fundamentals"
   },
   {
     title: "DNA Matching with MPI",
-    summary: "Parallel DNA sequence matching using MPI master-worker distribution for larger sequence workloads.",
+    summary: "Built parallel DNA sequence matching using MPI master-worker distribution for larger sequence workloads.",
     stack: ["C++", "MPI", "Distributed systems"],
     href: "https://github.com/Mustafaiqbal2/DNA-Matching-MPI",
     signal: "Distributed compute"
   },
   {
     title: "Programmatic SEO Factory",
-    summary: "SEO roadmap and page-generation system for 1,053 pages across city, product, guide, calculator, and long-tail pages.",
+    summary: "Built an SEO roadmap and page-generation system for 1,053 pages across city, product, guide, calculator, and long-tail pages.",
     stack: ["Programmatic SEO", "Schema", "Sitemaps", "Content systems"],
     href: "",
     signal: "Content systems"

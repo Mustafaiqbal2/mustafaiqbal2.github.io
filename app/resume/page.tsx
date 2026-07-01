@@ -22,7 +22,7 @@ export default function ResumePage() {
             <p className="eyebrow">Resume</p>
             <h1>Software engineer focused on AI automation, full-stack product work, and systems depth.</h1>
             <p>
-              Experience spans OAuth-heavy integrations, async workflows, RAG/vector systems, SaaS-style product
+              I have worked across OAuth-heavy integrations, async workflows, RAG/vector systems, SaaS-style product
               surfaces, and performance-oriented systems projects.
             </p>
             <div className="button-row">
@@ -73,7 +73,7 @@ export default function ResumePage() {
             <p className="eyebrow">Experience</p>
             <h2 id="experience-title">Work experience that maps to startup engineering.</h2>
             <p>
-              The pattern is consistent: define the workflow, integrate the external systems, make background work
+              My pattern is consistent: define the workflow, integrate the external systems, make background work
               observable, and keep the product usable when AI is uncertain.
             </p>
           </Reveal>
@@ -105,7 +105,7 @@ export default function ResumePage() {
             <p className="eyebrow">Selected work</p>
             <h2 id="resume-projects-title">Selected project work.</h2>
             <p>
-              Each project lists my role, stack, outcome, and a detailed write-up with architecture and implementation notes.
+              Selected projects with role, stack, outcome, architecture decisions, and implementation notes.
             </p>
           </Reveal>
           <CarouselRail label="Selected engineering work" className="achievement-carousel" itemClassName="achievement-carousel-item">
@@ -156,7 +156,7 @@ export default function ResumePage() {
             <p className="eyebrow">Education</p>
             <h2 id="education-title">Computer science foundation with systems-heavy project work.</h2>
             <p>
-              The degree supports the product work with fundamentals across operating systems, compilers, databases,
+              My degree supports the product work with fundamentals across operating systems, compilers, databases,
               parallel computing, AI, and software engineering.
             </p>
           </Reveal>
