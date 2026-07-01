@@ -222,6 +222,7 @@ export default function RootLayout({
         var submit = form.querySelector("[data-contact-submit]");
         var label = form.querySelector("[data-submit-label]");
         var status = form.querySelector("[data-form-status]");
+        var statusMessage = form.querySelector("[data-form-status-message]");
         var original = label ? label.textContent : "Send message";
         var payload = {};
         var data = new FormData(form);
@@ -239,7 +240,10 @@ export default function RootLayout({
           label.textContent = "Sending";
         }
         if (status) {
-          status.textContent = "Sending message...";
+          status.setAttribute("data-status", "loading");
+        }
+        if (statusMessage) {
+          statusMessage.textContent = "Sending message...";
         }
 
         fetch("https://api.web3forms.com/submit", {
@@ -254,13 +258,19 @@ export default function RootLayout({
             }
             form.reset();
             if (status) {
-              status.textContent = "Message sent. I will reply from my email.";
+              status.setAttribute("data-status", "success");
+            }
+            if (statusMessage) {
+              statusMessage.textContent = "Message sent. I will reply from my email.";
             }
             showToast("Message sent", "success");
           })
           .catch(function (error) {
             if (status) {
-              status.textContent = error.message || "The form could not send. Email still works.";
+              status.setAttribute("data-status", "error");
+            }
+            if (statusMessage) {
+              statusMessage.textContent = error.message || "The form could not send. Email still works.";
             }
             showToast(error.message || "The form could not send", "error");
           })

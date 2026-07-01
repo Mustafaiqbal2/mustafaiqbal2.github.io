@@ -2235,8 +2235,7 @@ code {
   opacity: 0.92;
 }
 
-.form-disabled-note,
-.form-status {
+.form-disabled-note {
   display: grid;
   grid-template-columns: 20px 1fr;
   gap: 10px;
@@ -2249,12 +2248,45 @@ code {
   line-height: 1.52;
 }
 
-.form-status:empty {
+.form-status {
   display: none;
+  min-height: 46px;
+  align-items: center;
+  padding: 12px 14px;
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--surface-soft) 78%, transparent);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  line-height: 1.48;
 }
 
-.form-disabled-note svg,
-.form-status svg {
+.form-status[data-status] {
+  display: flex;
+}
+
+.form-status[data-status="loading"] {
+  border-color: color-mix(in srgb, var(--line-strong) 76%, transparent);
+}
+
+.form-status[data-status="success"] {
+  color: color-mix(in srgb, var(--accent) 58%, var(--ink));
+  background: color-mix(in srgb, var(--accent) 8%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 46%, var(--line));
+}
+
+.form-status[data-status="error"] {
+  color: color-mix(in srgb, var(--warning) 54%, var(--ink));
+  background: color-mix(in srgb, var(--warning) 10%, var(--surface));
+  border-color: color-mix(in srgb, var(--warning) 42%, var(--line));
+}
+
+.form-status span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 560;
+}
+
+.form-disabled-note svg {
   margin-top: 2px;
   color: var(--warning);
 }

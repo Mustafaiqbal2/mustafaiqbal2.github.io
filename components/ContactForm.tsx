@@ -28,7 +28,9 @@ export function ContactForm({ accessKey }: { accessKey: string }) {
         <span data-submit-label>Send message</span>
       </button>
 
-      <div className="form-status" aria-live="polite" data-form-status />
+      <div className="form-status" role="status" aria-live="polite" aria-atomic="true" data-form-status>
+        <span data-form-status-message />
+      </div>
     </form>
   );
 }
