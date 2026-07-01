@@ -24,13 +24,20 @@ export function ProjectMedia({ media, featured = false }: { media: MediaAsset[];
               type="button"
               data-image-lightbox={asset.src}
               data-image-lightbox-dark={asset.darkSrc}
+              data-image-alt={asset.alt}
               aria-label={`Expand ${asset.alt}`}
             >
               <img className="theme-media-light" src={asset.src} alt={asset.alt} loading="lazy" decoding="async" />
               <img className="theme-media-dark" src={asset.darkSrc} alt="" loading="lazy" decoding="async" />
             </button>
           ) : (
-            <button className="media-expand-button" type="button" data-image-lightbox={asset.src} aria-label={`Expand ${asset.alt}`}>
+            <button
+              className="media-expand-button"
+              type="button"
+              data-image-lightbox={asset.src}
+              data-image-alt={asset.alt}
+              aria-label={`Expand ${asset.alt}`}
+            >
               <img src={asset.src} alt={asset.alt} loading="lazy" decoding="async" />
             </button>
           )}

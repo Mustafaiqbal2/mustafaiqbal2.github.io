@@ -29,54 +29,40 @@ const mediaAssets = [
   "/images/me.jpeg",
   "/projects/simplabots/thumb-light.webp",
   "/projects/simplabots/thumb-dark.webp",
-  "/projects/simplabots/platform-topology-light.webp",
-  "/projects/simplabots/platform-topology-dark.webp",
-  "/projects/simplabots/platform-flow-light.webp",
-  "/projects/simplabots/platform-flow-dark.webp",
-  "/projects/simplabots/prisma-erd-light.webp",
-  "/projects/simplabots/prisma-erd-dark.webp",
-  "/projects/simplabots/domain-model-light.webp",
-  "/projects/simplabots/domain-model-dark.webp",
+  "/projects/revvy/thumb-light.webp",
+  "/projects/revvy/thumb-dark.webp",
   "/projects/revvy/revvy-demo.mp4",
   "/projects/revvy/revvy-poster.webp",
   "/projects/revvy/revvy-screenshot.webp",
-  "/projects/revvy/review-flow-light.webp",
-  "/projects/revvy/review-flow-dark.webp",
-  "/projects/revvy/review-erd-light.webp",
-  "/projects/revvy/review-erd-dark.webp",
-  "/projects/revvy/performance-pipeline-light.webp",
-  "/projects/revvy/performance-pipeline-dark.webp",
+  "/projects/emmy/thumb-light.webp",
+  "/projects/emmy/thumb-dark.webp",
   "/projects/emmy/emmy-screenshot.webp",
-  "/projects/emmy/email-flow-light.webp",
-  "/projects/emmy/email-flow-dark.webp",
-  "/projects/emmy/email-erd-light.webp",
-  "/projects/emmy/email-erd-dark.webp",
-  "/projects/emmy/classification-loop-light.webp",
-  "/projects/emmy/classification-loop-dark.webp",
+  "/projects/cad-understanding/thumb-light.webp",
+  "/projects/cad-understanding/thumb-dark.webp",
   "/projects/cad-understanding/drawing-contexts.webp",
   "/projects/cad-understanding/space-hypotheses.webp",
   "/projects/cad-understanding/boundary-graph.webp",
-  "/projects/cad-understanding/safety-contract-light.webp",
-  "/projects/cad-understanding/safety-contract-dark.webp",
+  "/projects/cad-understanding/linework-evidence.webp",
+  "/projects/melodymind/thumb-light.webp",
+  "/projects/melodymind/thumb-dark.webp",
   "/projects/melodymind/thesis-page-39.webp",
   "/projects/melodymind/thesis-page-40.webp",
-  "/projects/melodymind/music-architecture-light.webp",
-  "/projects/melodymind/music-architecture-dark.webp",
-  "/projects/recruitment-rag/recruitment-flow-light.webp",
-  "/projects/recruitment-rag/recruitment-flow-dark.webp",
+  "/projects/recruitment-rag/thumb-light.webp",
+  "/projects/recruitment-rag/thumb-dark.webp",
   "/projects/recruitment-rag/interview-demo-frame-1.webp",
   "/projects/recruitment-rag/interview-demo-frame-2.webp",
   "/projects/recruitment-rag/job-automation-frame-1.webp",
+  "/projects/recruitment-rag/job-automation-frame-2.webp",
   "/resume/Mustafa_Iqbal_Full_Resume.pdf"
 ];
 
 const expectedLayoutMarkers = {
-  "/work/simplabots-agentic-saas/": ".case-layout-platform .platform-stack-map",
-  "/work/revvy-review-automation/": ".case-layout-performance .performance-stage-carousel",
-  "/work/emmy-email-categorization/": ".case-layout-classification .email-routing-board",
-  "/work/cad-understanding-core/": ".case-layout-cad .contract-panel",
-  "/work/melodymind/": ".case-layout-music .music-journey-carousel",
-  "/work/recruitment-rag-platform/": ".case-layout-rag .rag-lane-carousel"
+  "/work/simplabots-agentic-saas/": ".case-layout-platform [data-project-documentation]",
+  "/work/revvy-review-automation/": ".case-layout-performance [data-project-documentation]",
+  "/work/emmy-email-categorization/": ".case-layout-classification [data-project-documentation]",
+  "/work/cad-understanding-core/": ".case-layout-cad [data-project-documentation]",
+  "/work/melodymind/": ".case-layout-music [data-project-documentation]",
+  "/work/recruitment-rag-platform/": ".case-layout-rag [data-project-documentation]"
 };
 
 const visualRoutes = [
@@ -101,6 +87,39 @@ const viewports = [
 const shotDir = path.join(process.cwd(), "audit-shots");
 fs.mkdirSync(shotDir, { recursive: true });
 
+const projectDocsPath = path.join(process.cwd(), "data", "generated", "project-docs.json");
+const featuredSlugs = [
+  "simplabots-agentic-saas",
+  "revvy-review-automation",
+  "emmy-email-categorization",
+  "cad-understanding-core",
+  "melodymind",
+  "recruitment-rag-platform"
+];
+const bannedGeneratedDataPatterns = [
+  /C:\\\\|C:\//i,
+  /Users[\\/]+musta/i,
+  /\.env/i,
+  /github-recovery-codes/i,
+  /\bid(front|back|b2?)\b/i,
+  /AKIA[0-9A-Z]{16}/,
+  /sk-[A-Za-z0-9_-]{20,}/,
+  /ghp_[A-Za-z0-9_]{20,}/,
+  /-----BEGIN [A-Z ]+PRIVATE KEY-----/,
+  /(^|[^A-Za-z0-9])(\+?92|0)?3\d{2}[- .]?\d{7}($|[^A-Za-z0-9])/
+];
+const obsoleteDiagramAssets = [
+  "public/projects/simplabots/prisma-erd-light.webp",
+  "public/projects/simplabots/platform-flow-light.webp",
+  "public/projects/revvy/review-erd-light.webp",
+  "public/projects/revvy/review-flow-light.webp",
+  "public/projects/emmy/email-erd-light.webp",
+  "public/projects/emmy/email-flow-light.webp",
+  "public/projects/cad-understanding/safety-contract-light.webp",
+  "public/projects/melodymind/music-architecture-light.webp",
+  "public/projects/recruitment-rag/recruitment-flow-light.webp"
+];
+
 async function verifyStatus(paths, label) {
   const failures = [];
 
@@ -119,6 +138,41 @@ async function main() {
   const failures = [];
   failures.push(...(await verifyStatus(routes, "Route")));
   failures.push(...(await verifyStatus(mediaAssets, "Media")));
+
+  if (!fs.existsSync(projectDocsPath)) {
+    failures.push("Generated project docs JSON is missing");
+  } else {
+    const projectDocsText = fs.readFileSync(projectDocsPath, "utf8");
+    for (const pattern of bannedGeneratedDataPatterns) {
+      if (pattern.test(projectDocsText)) {
+        failures.push(`Generated project docs failed safety pattern ${pattern}`);
+      }
+    }
+    try {
+      const projectDocs = JSON.parse(projectDocsText);
+      for (const slug of featuredSlugs) {
+        const project = projectDocs.projects?.[slug];
+        if (!project) {
+          failures.push(`Generated project docs missing ${slug}`);
+          continue;
+        }
+        if ((project.visualizations || []).length < 2) {
+          failures.push(`${slug} has fewer than two generated documentation visualizations`);
+        }
+        if (!(project.sources || []).length) {
+          failures.push(`${slug} has no generated documentation sources`);
+        }
+      }
+    } catch (error) {
+      failures.push(`Generated project docs are not valid JSON: ${error.message}`);
+    }
+  }
+
+  for (const asset of obsoleteDiagramAssets) {
+    if (fs.existsSync(path.join(process.cwd(), asset))) {
+      failures.push(`Obsolete static diagram asset still exists: ${asset}`);
+    }
+  }
 
   const browser = await chromium.launch({ executablePath: chromePath, headless: true });
 
@@ -162,7 +216,10 @@ async function main() {
             contactCtaCount: document.querySelectorAll(".contact-cta").length,
             sendDisabled: document.querySelector('.contact-form button[type="submit"]')?.disabled ?? null,
             textHasFallback: bodyText.includes("Email fallback:"),
-            textHasGroundedIn: /what this page is grounded in/i.test(bodyText),
+            textHasInternalBuildCopy:
+              /what this page is grounded in|local docs|local evidence|local Work folder|source signals|project sources|source-backed graph|generated from sanitized|generated from local|Live diagrams|Source-generated|project evidence behind/i.test(
+                bodyText
+              ),
             textHasParallelHeadline: Array.from(document.querySelectorAll(".metric")).some((metric) => /20\s*parallel|parallel ai calls/i.test(metric.innerText || "")),
             footerHasDocumentRag: Array.from(document.querySelectorAll(".site-footer a")).some((a) => a.textContent?.trim() === "Document RAG"),
             emptyMetricCells: Array.from(document.querySelectorAll(".metric")).filter((metric) => !metric.innerText.trim()).length,
@@ -187,6 +244,10 @@ async function main() {
               const themed = Array.from(document.querySelectorAll(".media-frame .theme-media-dark"));
               return themed.length === 0 || themed.some((img) => getComputedStyle(img).display !== "none");
             })(),
+            docPreviewCount: document.querySelectorAll(".documentation-preview-card").length,
+            docExpandCount: document.querySelectorAll(".documentation-preview-button").length,
+            reactFlowPreviewCount: document.querySelectorAll("[data-project-documentation] .react-flow").length,
+            oldStaticDiagramRefs: /\/projects\/[^"')\s]*(platform-topology|platform-flow|prisma-erd|review-flow|review-erd|performance-pipeline|email-erd|email-flow|safety-contract|music-architecture|recruitment-flow)[^"')\s]*\.webp/.test(document.documentElement.innerHTML),
             mobileMenuExists: Boolean(document.querySelector(".mobile-menu")),
             carouselExists: location.pathname === "/" ? Boolean(document.querySelector("[data-project-carousel]")) : true,
             railCount: document.querySelectorAll("[data-carousel-rail]").length,
@@ -209,7 +270,7 @@ async function main() {
         if (data.contactCtaCount !== 0) failures.push(`${route} ${viewport.name} ${theme} has duplicated contact CTA`);
         if (data.sendDisabled) failures.push(`${route} ${viewport.name} ${theme} contact send button disabled`);
         if (data.textHasFallback) failures.push(`${route} ${viewport.name} ${theme} has email fallback text`);
-        if (data.textHasGroundedIn) failures.push(`${route} ${viewport.name} ${theme} has grounded-in evidence copy`);
+        if (data.textHasInternalBuildCopy) failures.push(`${route} ${viewport.name} ${theme} has internal build/source copy`);
         if (data.textHasParallelHeadline) failures.push(`${route} ${viewport.name} ${theme} has 20-call headline metric`);
         if (data.footerHasDocumentRag) failures.push(`${route} ${viewport.name} ${theme} footer still links Document RAG`);
         if (data.emptyMetricCells) failures.push(`${route} ${viewport.name} ${theme} has empty metric cells`);
@@ -220,6 +281,16 @@ async function main() {
           failures.push(`${route} ${viewport.name} ${theme} section gutters too wide (${data.sectionGutter}px)`);
         }
         if (!data.expectedLayoutPresent) failures.push(`${route} ${viewport.name} ${theme} expected case-study layout marker missing`);
+        if (route.startsWith("/work/") && route !== "/work/" && data.docPreviewCount < 2) {
+          failures.push(`${route} ${viewport.name} ${theme} has fewer than two documentation preview cards`);
+        }
+        if (route.startsWith("/work/") && route !== "/work/" && data.docExpandCount < 2) {
+          failures.push(`${route} ${viewport.name} ${theme} has fewer than two documentation expand controls`);
+        }
+        if (route.startsWith("/work/") && route !== "/work/" && data.reactFlowPreviewCount < 2) {
+          failures.push(`${route} ${viewport.name} ${theme} has fewer than two React Flow previews`);
+        }
+        if (data.oldStaticDiagramRefs) failures.push(`${route} ${viewport.name} ${theme} still references old static diagram assets`);
         if (data.reelObjectFits.some((fit) => fit !== "contain")) failures.push(`${route} ${viewport.name} ${theme} reel wallpapers are not contain-fit`);
         if (data.projectObjectFits.some((fit) => fit !== "contain")) failures.push(`${route} ${viewport.name} ${theme} project wallpapers are not contain-fit`);
         if (!data.darkProjectMediaVisible) failures.push(`${route} ${viewport.name} ${theme} dark case-study media variant not visible`);
@@ -278,6 +349,31 @@ async function main() {
   const lightboxOpen = await interactionPage.locator("[data-lightbox]").evaluate((el) => !el.hasAttribute("hidden"));
   if (!lightboxOpen) failures.push("Avatar lightbox did not open");
   await interactionPage.locator(".lightbox-close").click();
+
+  await interactionPage.goto(`${base}/work/revvy-review-automation/`, { waitUntil: "domcontentloaded", timeout: 30000 });
+  await interactionPage.waitForTimeout(250);
+  await interactionPage.locator(".documentation-preview-button").first().click();
+  const explorerOpen = await interactionPage.locator(".documentation-explorer-shell").count();
+  if (!explorerOpen) failures.push("Documentation explorer did not open");
+  const flowControls = await interactionPage.locator(".documentation-explorer-shell .react-flow__controls").count();
+  if (!flowControls) failures.push("Documentation explorer controls missing");
+  const flowMinimap = await interactionPage.locator(".documentation-explorer-shell .react-flow__minimap").count();
+  if (!flowMinimap) failures.push("Documentation explorer minimap missing");
+  const beforeInspector = await interactionPage.locator(".documentation-inspector-card h3").first().innerText().catch(() => "");
+  const selectableNodes = interactionPage.locator(".documentation-explorer-shell .react-flow__node");
+  if ((await selectableNodes.count()) > 1) {
+    await selectableNodes.nth(1).click({ force: true });
+    await interactionPage.waitForTimeout(250);
+    const afterInspector = await interactionPage.locator(".documentation-inspector-card h3").first().innerText().catch(() => "");
+    if (beforeInspector && afterInspector && beforeInspector === afterInspector) {
+      failures.push("Documentation explorer inspector did not update after node click");
+    }
+  } else {
+    failures.push("Documentation explorer has fewer than two selectable nodes");
+  }
+  await interactionPage.locator(".documentation-explorer-close").click();
+  const explorerClosed = await interactionPage.locator(".documentation-explorer-shell").count();
+  if (explorerClosed) failures.push("Documentation explorer did not close");
 
   await interactionPage.setViewportSize({ width: 1440, height: 1000 });
   await interactionPage.goto(`${base}/contact/`, { waitUntil: "domcontentloaded", timeout: 30000 });

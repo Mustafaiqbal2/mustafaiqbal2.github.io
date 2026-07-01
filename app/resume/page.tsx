@@ -102,13 +102,13 @@ export default function ResumePage() {
       <section className="section section-muted resume-achievement-section" aria-labelledby="resume-projects-title">
         <div className="section-inner">
           <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Project evidence</p>
-            <h2 id="resume-projects-title">Project evidence behind the resume.</h2>
+            <p className="eyebrow">Selected work</p>
+            <h2 id="resume-projects-title">Engineering work behind the resume.</h2>
             <p>
               Each item links to a case study with implementation details, media, architecture, and tradeoffs that can be evaluated quickly.
             </p>
           </Reveal>
-          <CarouselRail label="Project evidence" className="achievement-carousel" itemClassName="achievement-carousel-item">
+          <CarouselRail label="Selected engineering work" className="achievement-carousel" itemClassName="achievement-carousel-item">
             {featuredProjects.map((project, index) => {
               const media = project.thumbnail || project.media[0];
 

@@ -162,57 +162,16 @@ export const featuredProjects: Project[] = [
     icon: Sparkles,
     links: [],
     thumbnail: {
-      src: "/projects/simplabots/platform-topology-light.webp",
-      darkSrc: "/projects/simplabots/platform-topology-dark.webp",
-      alt: "Layered architecture visual for the Simplabots private AI SaaS platform",
+      src: "/projects/simplabots/thumb-light.webp",
+      darkSrc: "/projects/simplabots/thumb-dark.webp",
+      alt: "Simplabots private AI SaaS platform preview artwork",
       type: "image",
-      caption: "Layered architecture visual generated from the local Simplabots schema and architecture notes.",
+      caption: "Architecture-style preview of the private Simplabots platform.",
       sourceKind: "repo-derived-visualization",
       isGenerated: true,
       isSanitized: true
     },
-    media: [
-      {
-        src: "/projects/simplabots/platform-topology-light.webp",
-        darkSrc: "/projects/simplabots/platform-topology-dark.webp",
-        alt: "Simplabots layered SaaS architecture with product surface, control plane, data model, AI retrieval, and external services",
-        type: "image",
-        caption: "Layered SaaS topology generated from the local Simplabots schema and architecture notes.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
-        isSanitized: true
-      },
-      {
-        src: "/projects/simplabots/platform-flow-light.webp",
-        darkSrc: "/projects/simplabots/platform-flow-dark.webp",
-        alt: "Simplabots platform flow generated with Mermaid from local architecture evidence",
-        type: "image",
-        caption: "Mermaid-rendered platform flow generated during media preparation.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
-        isSanitized: true
-      },
-      {
-        src: "/projects/simplabots/prisma-erd-light.webp",
-        darkSrc: "/projects/simplabots/prisma-erd-dark.webp",
-        alt: "Simplabots Prisma ERD generated from the local schema",
-        type: "image",
-        caption: "Prisma ERD generated from the local Simplabots schema.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
-        isSanitized: true
-      },
-      {
-        src: "/projects/simplabots/domain-model-light.webp",
-        darkSrc: "/projects/simplabots/domain-model-dark.webp",
-        alt: "Simplabots account, agent, billing, assets, and integration domain model",
-        type: "image",
-        caption: "Domain model summary from the local Prisma schema and architecture docs.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
-        isSanitized: true
-      }
-    ],
+    media: [],
     featuredMetric: { value: "Multi-tenant", label: "account, profile, role, and agent access model" },
     metrics: [
       { value: "Next.js 15", label: "App Router product surface" },
@@ -298,7 +257,7 @@ export const featuredProjects: Project[] = [
       src: "/projects/revvy/revvy-poster.webp",
       alt: "Revvy review automation product demo frame",
       type: "image",
-      caption: "Real product demo frame from the local Revvy recording.",
+      caption: "Revvy review automation demo frame.",
       sourceKind: "real-product-media",
       isSanitized: true
     },
@@ -308,46 +267,16 @@ export const featuredProjects: Project[] = [
         alt: "Revvy product demo video",
         type: "video",
         poster: "/projects/revvy/revvy-poster.webp",
-        caption: "Real local Revvy product recording.",
+        caption: "Revvy product recording showing review workflow automation.",
         sourceKind: "real-product-media",
         isSanitized: true
       },
       {
         src: "/projects/revvy/revvy-screenshot.webp",
-        alt: "Revvy product interface screenshot from the local Work folder",
+        alt: "Revvy product interface screenshot",
         type: "image",
-        caption: "Real Revvy PNG from the local Work folder.",
+        caption: "Revvy interface screenshot from the review automation workflow.",
         sourceKind: "real-product-media",
-        isSanitized: true
-      },
-      {
-        src: "/projects/revvy/performance-pipeline-light.webp",
-        darkSrc: "/projects/revvy/performance-pipeline-dark.webp",
-        alt: "Revvy sync, filtering, caching, and reply workflow pipeline",
-        type: "image",
-        caption: "Performance pipeline generated from local Revvy README and PERFORMANCE.md.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
-        isSanitized: true
-      },
-      {
-        src: "/projects/revvy/review-flow-light.webp",
-        darkSrc: "/projects/revvy/review-flow-dark.webp",
-        alt: "Revvy OAuth, import, sync, filtering, draft, cache, and publish workflow",
-        type: "image",
-        caption: "Mermaid workflow generated from the Revvy product architecture.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
-        isSanitized: true
-      },
-      {
-        src: "/projects/revvy/review-erd-light.webp",
-        darkSrc: "/projects/revvy/review-erd-dark.webp",
-        alt: "Revvy Prisma ERD for workspace, connection, location, review, draft, and automation settings",
-        type: "image",
-        caption: "Prisma ERD generated from the local Revvy schema.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
         isSanitized: true
       }
     ],
@@ -435,55 +364,17 @@ export const featuredProjects: Project[] = [
       src: "/projects/emmy/emmy-screenshot.webp",
       alt: "Emmy email categorization interface screenshot",
       type: "image",
-      caption: "Real product screenshot from the local Work folder.",
+      caption: "Emmy email categorization interface.",
       sourceKind: "real-product-media",
       isSanitized: true
     },
     media: [
       {
         src: "/projects/emmy/emmy-screenshot.webp",
-        alt: "Emmy email categorization product screenshot from the local Work folder",
+        alt: "Emmy email categorization product screenshot",
         type: "image",
-        caption: "Real Emmy PNG from the local Work folder.",
+        caption: "Emmy interface showing the categorization product surface.",
         sourceKind: "real-product-media",
-        isSanitized: true
-      },
-      {
-        src: "/projects/emmy/classification-loop-light.webp",
-        darkSrc: "/projects/emmy/classification-loop-dark.webp",
-        alt: "Emmy Gmail sync, contact groups, AI classification, logs, and label update loop",
-        type: "image",
-        caption: "Routing and correction loop generated from Emmy source and weekly update notes.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
-        isSanitized: true
-      },
-      {
-        src: "/projects/emmy/email-flow-light.webp",
-        darkSrc: "/projects/emmy/email-flow-dark.webp",
-        alt: "Emmy Gmail sync, contact rules, thread context, structured routing, logs, labels, and correction workflow",
-        type: "image",
-        caption: "Mermaid workflow generated from the Emmy implementation model.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
-        isSanitized: true
-      },
-      {
-        src: "/projects/emmy/email-erd-light.webp",
-        darkSrc: "/projects/emmy/email-erd-dark.webp",
-        alt: "Emmy Prisma ERD for Gmail accounts, emails, categories, labels, contact groups, categorizations, and training data",
-        type: "image",
-        caption: "Prisma ERD generated from the local Emmy schema.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
-        isSanitized: true
-      },
-      {
-        src: "/projects/emmy/emmy-agent.webp",
-        alt: "Emmy agent visual asset",
-        type: "image",
-        caption: "Agent visual from the local Simplabots asset set.",
-        sourceKind: "sanitized-artifact",
         isSanitized: true
       }
     ],
@@ -600,16 +491,6 @@ export const featuredProjects: Project[] = [
         caption: "Real artifact: weighted boundary/opening graph and anchors.",
         sourceKind: "sanitized-artifact",
         isSanitized: true
-      },
-      {
-        src: "/projects/cad-understanding/safety-contract-light.webp",
-        darkSrc: "/projects/cad-understanding/safety-contract-dark.webp",
-        alt: "CAD Understanding safety contract visualization",
-        type: "image",
-        caption: "Safety-contract visual generated from README and CLAUDE.md.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
-        isSanitized: true
       }
     ],
     featuredMetric: { value: "28", label: "exact drawing contexts discovered in current artifact" },
@@ -672,7 +553,7 @@ export const featuredProjects: Project[] = [
         {
           eyebrow: "Review",
           title: "The artifact is a review surface, not a black box.",
-          text: "The reconstruction output shows contexts, evidence, weighted graph state, CAD-derived spaces, unresolved geometry, and provenance for local review.",
+          text: "The reconstruction output shows contexts, evidence, weighted graph state, CAD-derived spaces, unresolved geometry, and provenance for technical review.",
           items: ["architectural_reconstruction_delta.html", "Space crops", "Unresolved geometry", "Secondary evidence audit"]
         }
       ]
@@ -705,7 +586,7 @@ export const featuredProjects: Project[] = [
         src: "/projects/melodymind/thesis-page-39.webp",
         alt: "MelodyMind thesis page with mobile login and chat playlist screenshots",
         type: "image",
-        caption: "Thesis evidence: mobile authentication and chat-driven playlist generation.",
+        caption: "Thesis figure showing mobile authentication and chat-driven playlist generation.",
         sourceKind: "thesis-evidence",
         isSanitized: true
       },
@@ -713,18 +594,8 @@ export const featuredProjects: Project[] = [
         src: "/projects/melodymind/thesis-page-40.webp",
         alt: "MelodyMind thesis page with image query, text query, and playlist result screenshots",
         type: "image",
-        caption: "Thesis evidence: image-based query and generated playlist view.",
+        caption: "Thesis figure showing image-based query and generated playlist results.",
         sourceKind: "thesis-evidence",
-        isSanitized: true
-      },
-      {
-        src: "/projects/melodymind/music-architecture-light.webp",
-        darkSrc: "/projects/melodymind/music-architecture-dark.webp",
-        alt: "MelodyMind CLAP InfoNCE, Pinecone, FastAPI, Spotify, and mobile architecture",
-        type: "image",
-        caption: "Architecture visualization generated from the thesis implementation chapter.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
         isSanitized: true
       }
     ],
@@ -805,25 +676,25 @@ export const featuredProjects: Project[] = [
     summary:
       "Genesys Research Lab internship project for candidate ingestion, semantic matching, job-description enrichment, and conversational interviews using Weaviate, Nomic embeddings, Groq Llama 3, FastAPI, and Docker Compose.",
     pitch:
-      "This is the team-leadership case study: I led a four-person group building an end-to-end recruitment workflow that connected scraped candidate evidence, semantic matching, and structured AI interviews.",
+      "This is the team-leadership case study: I led a four-person group building an end-to-end recruitment workflow that connected scraped candidate context, semantic matching, and structured AI interviews.",
     role: "AI research intern, team lead",
     dates: "Jun 2025 - Aug 2025",
     icon: Network,
     links: [],
     thumbnail: {
       src: "/projects/recruitment-rag/job-automation-frame-1.webp",
-      alt: "Job automation demo frame from the local recruitment platform video",
+      alt: "Job automation demo frame from the recruitment platform",
       type: "image",
-      caption: "Frame extracted from the local job automation video.",
+      caption: "Recruitment automation demo frame.",
       sourceKind: "sanitized-artifact",
       isSanitized: true
     },
     media: [
       {
         src: "/projects/recruitment-rag/interview-demo-frame-1.webp",
-        alt: "Recruitment interview automation demo frame from the local video",
+        alt: "Recruitment interview automation demo frame",
         type: "image",
-        caption: "Frame extracted from the local interview automation demo video.",
+        caption: "Interview automation demo frame.",
         sourceKind: "sanitized-artifact",
         isSanitized: true
       },
@@ -831,26 +702,24 @@ export const featuredProjects: Project[] = [
         src: "/projects/recruitment-rag/interview-demo-frame-2.webp",
         alt: "Recruitment platform demo frame showing the interview workflow",
         type: "image",
-        caption: "Second frame extracted from the local interview automation demo video.",
+        caption: "Second interview automation demo frame.",
         sourceKind: "sanitized-artifact",
         isSanitized: true
       },
       {
         src: "/projects/recruitment-rag/job-automation-frame-1.webp",
-        alt: "Job automation demo frame from the local complete video",
+        alt: "Job automation demo frame",
         type: "image",
-        caption: "Frame extracted from the local job automation video.",
+        caption: "Job automation demo frame.",
         sourceKind: "sanitized-artifact",
         isSanitized: true
       },
       {
-        src: "/projects/recruitment-rag/recruitment-flow-light.webp",
-        darkSrc: "/projects/recruitment-rag/recruitment-flow-dark.webp",
-        alt: "Recruitment RAG ingestion, vector search, job enrichment, and interview flow",
+        src: "/projects/recruitment-rag/job-automation-frame-2.webp",
+        alt: "Second job automation demo frame",
         type: "image",
-        caption: "Workflow visualization generated from resume evidence.",
-        sourceKind: "repo-derived-visualization",
-        isGenerated: true,
+        caption: "Second job automation demo frame.",
+        sourceKind: "sanitized-artifact",
         isSanitized: true
       }
     ],
@@ -876,7 +745,7 @@ export const featuredProjects: Project[] = [
     ],
     implementation: [
       "Led architecture and execution across ingestion, retrieval, matching, interview, and deployment work.",
-      "Built RAG-style matching over candidate and role evidence rather than relying on basic keyword filters.",
+      "Built RAG-style matching over candidate and role context rather than relying on basic keyword filters.",
       "Coordinated service boundaries for backend, vector search, interview flow, and deployment."
     ],
     outcomes: [
@@ -898,18 +767,18 @@ export const featuredProjects: Project[] = [
         "Simplabots Hunter recruitment product context"
       ],
       visualSpec:
-        "Recruitment workflow with candidate evidence ingestion, Weaviate/Nomic retrieval, job enrichment, Llama interviews, and FastAPI/Docker deployment lanes.",
+        "Recruitment workflow with candidate context ingestion, Weaviate/Nomic retrieval, job enrichment, Llama interviews, and FastAPI/Docker deployment lanes.",
       technicalPanels: [
         {
           eyebrow: "Ingestion",
-          title: "Candidate evidence came from multiple public and internal sources.",
+          title: "Candidate context came from multiple public and internal sources.",
           text: "The resume documents CV, GitHub, LinkedIn, ORIC, and personal website ingestion into a semantic candidate store.",
-          items: ["CV parsing", "GitHub profile evidence", "LinkedIn/ORIC/web evidence", "Candidate-job context objects"]
+          items: ["CV parsing", "GitHub profile signals", "LinkedIn/ORIC/web signals", "Candidate-job context objects"]
         },
         {
           eyebrow: "Retrieval",
           title: "Matching used semantic search rather than static keyword filters.",
-          text: "Nomic embeddings and Weaviate made candidate-job matching flexible enough for role evidence and resume language.",
+          text: "Nomic embeddings and Weaviate made candidate-job matching flexible enough for role context and resume language.",
           items: ["Nomic embeddings", "Weaviate vector DB", "Enhanced job descriptions", "Semantic candidate ranking"]
         },
         {
@@ -1006,7 +875,7 @@ export const education = [
     program: "BS Computer Science",
     institution: "National University of Computer and Emerging Sciences (FAST-NUCES), Islamabad",
     dates: "2022 - 2026",
-    detail: "CGPA 3.38/4.00. Dean's List: Spring 2024 and Fall 2024."
+    detail: "CGPA 3.38/4.00. Dean's List: Spring 2024, Fall 2024, and Fall 2025."
   },
   {
     program: "A Levels",

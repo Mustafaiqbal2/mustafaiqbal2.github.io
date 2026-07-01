@@ -23,8 +23,8 @@ const operatingNotes = [
     text: "The work I keep returning to involves OAuth, queues, caches, vector search, model cost, UI states, and the small details that make automation feel safe."
   },
   {
-    title: "I present private work through architecture and evidence.",
-    text: "If code or customer data cannot be public, I still show the domain model, constraints, source-backed media, and what changed technically."
+    title: "I present private work through architecture.",
+    text: "If code or customer data cannot be public, I show the domain model, constraints, technical decisions, and sanitized product media."
   }
 ];
 
@@ -82,11 +82,10 @@ export default function AboutPage() {
         <div className="section-inner">
           <Reveal className="editorial-statement">
             <p className="eyebrow">Operating mode</p>
-            <h2 id="operating-title">Useful software is measured by behavior, evidence, and recovery paths.</h2>
+            <h2 id="operating-title">Useful software is measured by behavior, observability, and recovery paths.</h2>
             <p>
-              The portfolio is intentionally specific because I want the work to be evaluated on product behavior,
-              architecture, constraints, and implementation details. If a claim cannot be tied to a repo, thesis, resume,
-              local artifact, or documented outcome, it does not deserve prominent space.
+              I focus on product behavior, architecture, constraints, and implementation details because those are the
+              parts that make engineering judgment visible quickly.
             </p>
           </Reveal>
           <div className="about-note-row">
@@ -105,7 +104,7 @@ export default function AboutPage() {
         <div className="section-inner build-loop-grid">
           <Reveal className="section-heading">
             <p className="eyebrow">How I build</p>
-            <h2 id="build-loop-title">The same debugging loop shows up across my projects.</h2>
+            <h2 id="build-loop-title">A consistent build loop across different domains.</h2>
             <p>
               Revvy, Emmy, MelodyMind, the CAD project, and the recruitment RAG platform are different domains, but the
               engineering loop is similar.

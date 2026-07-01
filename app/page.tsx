@@ -140,8 +140,8 @@ export default function Home() {
             <p className="eyebrow">Selected work</p>
             <h2 id="selected-work-title">Selected systems with clear problem, role, architecture, and outcome.</h2>
             <p>
-              Private product work is labeled clearly. Real media is used where safe, and preview visuals are generated
-              from local project evidence rather than decorative filler.
+              Private product work is labeled clearly, with architecture maps and real media where it is safe to show
+              product context without exposing private code or customer data.
             </p>
           </Reveal>
           <CarouselRail label="Selected work" className="project-card-carousel" itemClassName="project-carousel-item" auto>

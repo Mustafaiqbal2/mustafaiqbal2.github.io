@@ -4,6 +4,7 @@ import { GlobalContact } from "@/components/GlobalContact";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { profile, siteUrl } from "@/data/portfolio";
+import "@xyflow/react/dist/style.css";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -189,11 +190,14 @@ export default function RootLayout({
         if (imageButton) {
           var lightSrc = imageButton.getAttribute("data-image-lightbox");
           var darkSrc = imageButton.getAttribute("data-image-lightbox-dark");
+          var alt = imageButton.getAttribute("data-image-alt") || imageButton.getAttribute("aria-label") || "Expanded image preview";
           var src = document.documentElement.dataset.theme === "dark" && darkSrc ? darkSrc : lightSrc;
           var lightbox = document.querySelector("[data-lightbox]");
           var image = lightbox && lightbox.querySelector("img");
           if (lightbox && image && src) {
+            image.removeAttribute("hidden");
             image.setAttribute("src", src);
+            image.setAttribute("alt", alt.replace(/^Expand\\s+/i, ""));
             lightbox.removeAttribute("hidden");
           }
           return;
@@ -593,7 +597,7 @@ export default function RootLayout({
         <div className="toast-region" data-toast-region aria-live="polite" aria-atomic="true" />
         <div className="image-lightbox" data-lightbox hidden>
           <button className="lightbox-backdrop" type="button" data-lightbox-close aria-label="Close image preview" />
-          <div className="lightbox-panel" role="dialog" aria-modal="true" aria-label="Mustafa Iqbal photo preview">
+          <div className="lightbox-panel" role="dialog" aria-modal="true" aria-label="Image preview">
             <button className="lightbox-close" type="button" data-lightbox-close>
               Close
             </button>

@@ -17,10 +17,12 @@ import {
   Workflow
 } from "lucide-react";
 import { CarouselRail } from "@/components/CarouselRail";
+import { ProjectDocumentation } from "@/components/ProjectDocumentation";
 import { ProjectLinks } from "@/components/ProjectLinks";
 import { ProjectMedia } from "@/components/ProjectMedia";
 import { Reveal } from "@/components/Reveal";
 import { featuredProjects, getProject, siteUrl, type Project } from "@/data/portfolio";
+import { getProjectDocumentation, type ProjectDocumentation as ProjectDocumentationType } from "@/data/project-docs";
 
 type ProjectPageProps = {
   params: Promise<{ slug: string }>;
@@ -64,6 +66,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   }
 
   const Icon = project.icon;
+  const documentation = getProjectDocumentation(project.slug);
+  const heroMedia = project.media.length ? project.media.slice(0, 1) : project.thumbnail ? [project.thumbnail] : [];
 
   return (
     <main className={`project-page project-page-${project.slug} case-layout-${project.caseStudy.layoutKind}`}>
@@ -101,9 +105,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             <ProjectLinks project={project} />
           </Reveal>
 
-          <Reveal className="project-hero-media" delay={0.08}>
-            <ProjectMedia media={project.media.slice(0, 1)} featured />
-          </Reveal>
+          {heroMedia.length ? (
+            <Reveal className="project-hero-media" delay={0.08}>
+              <ProjectMedia media={heroMedia} featured />
+            </Reveal>
+          ) : null}
         </div>
       </section>
 
@@ -122,7 +128,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
         </div>
       </section>
 
-      <CaseStudyBody project={project} />
+      <CaseStudyBody project={project} documentation={documentation} />
 
       <section className="next-work-strip" aria-label="More work">
         <div className="section-inner next-work-inner">
@@ -136,20 +142,20 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   );
 }
 
-function CaseStudyBody({ project }: { project: Project }) {
+function CaseStudyBody({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
   switch (project.caseStudy.layoutKind) {
     case "platform":
-      return <PlatformCase project={project} />;
+      return <PlatformCase project={project} documentation={documentation} />;
     case "performance":
-      return <PerformanceCase project={project} />;
+      return <PerformanceCase project={project} documentation={documentation} />;
     case "classification":
-      return <ClassificationCase project={project} />;
+      return <ClassificationCase project={project} documentation={documentation} />;
     case "cad":
-      return <CadCase project={project} />;
+      return <CadCase project={project} documentation={documentation} />;
     case "music":
-      return <MusicCase project={project} />;
+      return <MusicCase project={project} documentation={documentation} />;
     case "rag":
-      return <RagCase project={project} />;
+      return <RagCase project={project} documentation={documentation} />;
     default:
       return null;
   }
@@ -200,7 +206,7 @@ function StackStrip({ project }: { project: Project }) {
   );
 }
 
-function PlatformCase({ project }: { project: Project }) {
+function PlatformCase({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
   const platformLayers = [
     ["Product surface", ["Dashboard", "Agent modules", "Admin tools", "Operations views"]],
     ["Control plane", ["Accounts", "Profiles", "Profile groups", "Agent access"]],
@@ -213,7 +219,7 @@ function PlatformCase({ project }: { project: Project }) {
     <>
       <section className="section case-platform-overview" aria-labelledby="platform-title">
         <div className="section-inner platform-grid">
-          <CaseIntro project={project} label="Platform evidence" />
+          <CaseIntro project={project} label="Platform architecture" />
           <Reveal className="platform-stack-map" delay={0.08}>
             {platformLayers.map(([title, items], index) => (
               <div className="platform-stack-layer" key={title as string} style={{ "--layer-index": index } as CSSProperties}>
@@ -244,10 +250,11 @@ function PlatformCase({ project }: { project: Project }) {
       <section className="section case-media-section" aria-labelledby="platform-media-title">
         <div className="section-inner case-documentation">
           <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Project documentation</p>
-            <h2 id="platform-media-title">Schema and workflow diagrams generated from the local product code.</h2>
-            <p>Private product details are represented through generated ERDs, workflow diagrams, and sanitized architecture media.</p>
+            <p className="eyebrow">Architecture explorer</p>
+            <h2 id="platform-media-title">How the private platform holds together.</h2>
+            <p>Inspect the tenancy model, agent modules, billing layer, knowledge assets, and cloud integrations behind the product.</p>
           </Reveal>
+          <ProjectDocumentation documentation={documentation} />
           <ProjectMedia media={project.media} />
         </div>
       </section>
@@ -255,7 +262,7 @@ function PlatformCase({ project }: { project: Project }) {
   );
 }
 
-function PerformanceCase({ project }: { project: Project }) {
+function PerformanceCase({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
   const stages = [
     ["OAuth", "offline Google Business Profile connection"],
     ["Import", "accounts and business locations"],
@@ -323,10 +330,11 @@ function PerformanceCase({ project }: { project: Project }) {
       <section className="section section-muted case-media-section" aria-labelledby="revvy-media-title">
         <div className="section-inner case-documentation">
           <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Project documentation</p>
-            <h2 id="revvy-media-title">Real product media, schema, and workflow diagrams.</h2>
-            <p>The gallery combines the local demo assets with source-derived diagrams for the Google Business Profile workflow.</p>
+            <p className="eyebrow">Architecture explorer</p>
+            <h2 id="revvy-media-title">Review automation from OAuth to published reply.</h2>
+            <p>Inspect the workflow, data model, cache behavior, and performance path behind the documented review-response speedup.</p>
           </Reveal>
+          <ProjectDocumentation documentation={documentation} />
           <ProjectMedia media={project.media} />
         </div>
       </section>
@@ -334,7 +342,7 @@ function PerformanceCase({ project }: { project: Project }) {
   );
 }
 
-function ClassificationCase({ project }: { project: Project }) {
+function ClassificationCase({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
   const loop = ["Gmail sync", "Contact groups", "Thread context", "LLM JSON log", "Gmail labels", "User correction"];
   const routing = [
     ["Known sender", "Contact group rule applies before any model call."],
@@ -392,7 +400,7 @@ function ClassificationCase({ project }: { project: Project }) {
           <TechnicalPanels project={project} className="vertical-panels" />
           <Reveal className="json-log-panel" delay={0.08}>
             <p className="eyebrow">Inspectable output</p>
-            <h2 id="classification-panels-title">The AI decision is stored as structured evidence.</h2>
+            <h2 id="classification-panels-title">The AI decision is stored as a structured decision log.</h2>
             <pre>{`{
   "Sender Email": "...",
   "Subject": "...",
@@ -407,10 +415,11 @@ function ClassificationCase({ project }: { project: Project }) {
       <section className="section section-muted case-media-section" aria-labelledby="emmy-media-title">
         <div className="section-inner case-documentation">
           <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Project documentation</p>
-            <h2 id="emmy-media-title">Screenshots, ERD, and workflow diagrams for the Gmail automation loop.</h2>
-            <p>The diagrams are generated from the local Prisma schema and implementation model, then paired with the real local product screenshot.</p>
+            <p className="eyebrow">Architecture explorer</p>
+            <h2 id="emmy-media-title">Gmail automation data model and decision loop.</h2>
+            <p>Inspect how account sync, contact rules, categorization logs, labels, and correction loops make the classifier reviewable.</p>
           </Reveal>
+          <ProjectDocumentation documentation={documentation} />
           <ProjectMedia media={project.media} />
         </div>
       </section>
@@ -418,7 +427,7 @@ function ClassificationCase({ project }: { project: Project }) {
   );
 }
 
-function CadCase({ project }: { project: Project }) {
+function CadCase({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
   const contract = [
     "AI is off by default",
     "External calls require explicit permission",
@@ -457,9 +466,11 @@ function CadCase({ project }: { project: Project }) {
       <section className="section case-media-section" aria-labelledby="cad-artifacts-title">
         <div className="section-inner">
           <Reveal className="section-heading">
-            <p className="eyebrow">Real artifacts</p>
-            <h2 id="cad-artifacts-title">The page uses reconstruction outputs, not fake screenshots.</h2>
+            <p className="eyebrow">Architecture explorer</p>
+            <h2 id="cad-artifacts-title">CAD artifact graph and reconstruction outputs.</h2>
+            <p>Inspect how CAD extraction, drawing contexts, evidence groups, semantic affordances, and safety constraints stay separated.</p>
           </Reveal>
+          <ProjectDocumentation documentation={documentation} />
           <ProjectMedia media={project.media} />
         </div>
       </section>
@@ -467,7 +478,7 @@ function CadCase({ project }: { project: Project }) {
   );
 }
 
-function MusicCase({ project }: { project: Project }) {
+function MusicCase({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
   const modelSteps = [
     ["Data", "Reddit emotions, Last.fm tags, Genius lyrics, Deezer previews"],
     ["Baseline", "Lyrics/audio prototypes exposed feature collapse"],
@@ -516,10 +527,11 @@ function MusicCase({ project }: { project: Project }) {
       <section className="section case-media-section" aria-labelledby="music-media-title">
         <div className="section-inner case-documentation">
           <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Project documentation</p>
-            <h2 id="music-media-title">Thesis screenshots and system architecture.</h2>
-            <p>The gallery keeps the product screenshots and architecture artifacts together so the research path and product surface are visible in one place.</p>
+            <p className="eyebrow">Architecture explorer</p>
+            <h2 id="music-media-title">Thesis-backed model, product, and multimodal flow.</h2>
+            <p>Inspect how model alignment, retrieval, backend services, mobile UX, voice, image input, Spotify export, and stem separation connect.</p>
           </Reveal>
+          <ProjectDocumentation documentation={documentation} />
           <ProjectMedia media={project.media} />
         </div>
       </section>
@@ -527,10 +539,10 @@ function MusicCase({ project }: { project: Project }) {
   );
 }
 
-function RagCase({ project }: { project: Project }) {
+function RagCase({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
   const lanes = [
     { icon: Database, title: "Ingest", text: "CVs, GitHub, LinkedIn, ORIC, personal websites" },
-    { icon: GitBranch, title: "Embed", text: "Nomic vectors over candidate and role evidence" },
+    { icon: GitBranch, title: "Embed", text: "Nomic vectors over candidate and role context" },
     { icon: Gauge, title: "Retrieve", text: "Weaviate semantic candidate-job matching" },
     { icon: Route, title: "Interview", text: "Groq Llama 3 agent with structured question flow" },
     { icon: Layers3, title: "Deploy", text: "FastAPI services with Docker Compose" }
@@ -591,10 +603,11 @@ function RagCase({ project }: { project: Project }) {
       <section className="section section-muted case-media-section" aria-labelledby="rag-media-title">
         <div className="section-inner case-documentation">
           <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Project documentation</p>
-            <h2 id="rag-media-title">Demo frames and recruitment workflow architecture.</h2>
-            <p>These frames come from the local automation videos and sit beside the workflow diagram for the lab project.</p>
+            <p className="eyebrow">Architecture explorer</p>
+            <h2 id="rag-media-title">Recruitment ingestion, retrieval, interview, and deployment flow.</h2>
+            <p>Inspect how candidate ingestion, semantic retrieval, job enrichment, interview orchestration, and deployment boundaries fit together.</p>
           </Reveal>
+          <ProjectDocumentation documentation={documentation} />
           <ProjectMedia media={project.media} />
         </div>
       </section>

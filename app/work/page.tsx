@@ -24,8 +24,8 @@ export default function WorkPage() {
             <p className="eyebrow">Work</p>
             <h1>Selected software engineering work with enough detail to evaluate the build.</h1>
             <p>
-              The portfolio is intentionally split: featured case studies explain product and architecture decisions;
-              secondary projects show public systems depth across RAG, CUDA, OpenCL, MPI, and compiler work.
+              Featured case studies cover product and architecture decisions. Secondary projects show systems depth
+              across RAG, CUDA, OpenCL, MPI, and compiler work.
             </p>
             <div className="button-row">
               <a className="button primary" href={profile.resume}>
