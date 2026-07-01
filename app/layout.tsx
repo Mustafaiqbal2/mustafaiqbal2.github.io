@@ -132,6 +132,7 @@ export default function RootLayout({
         var preference = localStorage.getItem("theme-preference") || "system";
         updateThemeControls(preference);
         updateActiveNav();
+        setupMobileMenu();
         setupReveals();
         setupCarousels();
         setupCarouselRails();
@@ -338,6 +339,42 @@ export default function RootLayout({
         });
       }
 
+      function setupMobileMenu() {
+        var menu = document.querySelector("[data-mobile-menu]");
+        if (!menu) {
+          return;
+        }
+
+        function setBodyLock() {
+          if (menu.hasAttribute("open")) {
+            document.body.classList.add("mobile-menu-open");
+          } else {
+            document.body.classList.remove("mobile-menu-open");
+          }
+        }
+
+        function closeMenu() {
+          menu.removeAttribute("open");
+          setBodyLock();
+        }
+
+        menu.addEventListener("toggle", setBodyLock);
+        menu.addEventListener("click", function (event) {
+          var target = event.target;
+          var close = target && target.closest ? target.closest("[data-mobile-menu-close]") : null;
+          var link = target && target.closest ? target.closest(".mobile-menu-panel a") : null;
+          if (close || link) {
+            closeMenu();
+          }
+        });
+        document.addEventListener("keydown", function (event) {
+          if (event.key === "Escape" && menu.hasAttribute("open")) {
+            closeMenu();
+          }
+        });
+        setBodyLock();
+      }
+
       function setupCarousels() {
         var reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
         var carousels = Array.prototype.slice.call(document.querySelectorAll("[data-project-carousel]"));
@@ -484,7 +521,8 @@ export default function RootLayout({
           }
 
           function start() {
-            if (reduceMotion || rail.getAttribute("data-carousel-auto") !== "true") {
+            var touchViewport = window.matchMedia("(hover: none), (pointer: coarse), (max-width: 680px)").matches;
+            if (reduceMotion || touchViewport || rail.getAttribute("data-carousel-auto") !== "true") {
               return;
             }
             stop();

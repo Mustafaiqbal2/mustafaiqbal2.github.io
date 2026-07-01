@@ -1,4 +1,4 @@
-import { Mail, Menu } from "lucide-react";
+import { FileText, Mail, Menu, X } from "lucide-react";
 import { FaGithub, FaLinkedinIn } from "react-icons/fa6";
 import { navigation, profile } from "@/data/portfolio";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -41,23 +41,50 @@ export function SiteHeader() {
         <a className="desktop-link" href={profile.linkedIn} aria-label="Open LinkedIn" target="_blank" rel="noreferrer">
           <FaLinkedinIn aria-hidden="true" />
         </a>
-        <details className="mobile-menu">
+        <details className="mobile-menu" data-mobile-menu>
           <summary aria-label="Open navigation">
             <Menu size={18} aria-hidden="true" />
           </summary>
+          <button className="mobile-menu-backdrop" type="button" data-mobile-menu-close aria-label="Close navigation" />
           <div className="mobile-menu-panel">
-            {navigation.map((item) => (
-              <a className={item.label === "Home" ? "nav-home" : undefined} href={item.href} key={item.href} data-nav-link>
-                {item.label}
+            <div className="mobile-menu-head">
+              <div>
+                <strong>{profile.name}</strong>
+                <span>{profile.shortTitle}</span>
+              </div>
+              <button type="button" data-mobile-menu-close aria-label="Close navigation">
+                <X size={18} aria-hidden="true" />
+              </button>
+            </div>
+            <div className="mobile-theme-row">
+              <span>Theme</span>
+              <ThemeToggle />
+            </div>
+            <nav className="mobile-menu-nav" aria-label="Mobile primary navigation">
+              {navigation.map((item) => (
+                <a className={item.label === "Home" ? "nav-home" : undefined} href={item.href} key={item.href} data-nav-link>
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+            <div className="mobile-menu-actions" aria-label="Contact and profile links">
+              <a href={`mailto:${profile.email}`}>
+                <Mail size={18} aria-hidden="true" />
+                Email
               </a>
-            ))}
-            <a href={`mailto:${profile.email}`}>Email</a>
-            <a href={profile.github} target="_blank" rel="noreferrer">
-              GitHub
-            </a>
-            <a href={profile.linkedIn} target="_blank" rel="noreferrer">
-              LinkedIn
-            </a>
+              <a href={profile.github} target="_blank" rel="noreferrer">
+                <FaGithub aria-hidden="true" />
+                GitHub
+              </a>
+              <a href={profile.linkedIn} target="_blank" rel="noreferrer">
+                <FaLinkedinIn aria-hidden="true" />
+                LinkedIn
+              </a>
+              <a href={profile.resume}>
+                <FileText size={18} aria-hidden="true" />
+                Resume
+              </a>
+            </div>
           </div>
         </details>
       </div>

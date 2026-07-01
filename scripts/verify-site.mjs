@@ -79,9 +79,12 @@ const visualRoutes = [
   "/contact/"
 ];
 const viewports = [
+  { name: "mobile-360", width: 360, height: 820 },
   { name: "mobile", width: 390, height: 900 },
+  { name: "mobile-430", width: 430, height: 932 },
   { name: "tablet", width: 768, height: 1024 },
-  { name: "desktop", width: 1440, height: 1000 }
+  { name: "desktop", width: 1440, height: 1000 },
+  { name: "wide", width: 1728, height: 1100 }
 ];
 
 const shotDir = path.join(process.cwd(), "audit-shots");
@@ -249,6 +252,24 @@ async function main() {
             reactFlowPreviewCount: document.querySelectorAll("[data-project-documentation] .react-flow").length,
             oldStaticDiagramRefs: /\/projects\/[^"')\s]*(platform-topology|platform-flow|prisma-erd|review-flow|review-erd|performance-pipeline|email-erd|email-flow|safety-contract|music-architecture|recruitment-flow)[^"')\s]*\.webp/.test(document.documentElement.innerHTML),
             mobileMenuExists: Boolean(document.querySelector(".mobile-menu")),
+            mobileBrandVisible: (() => {
+              const brand = document.querySelector(".brand-copy");
+              return Boolean(brand && getComputedStyle(brand).display !== "none");
+            })(),
+            mobileMenuButtonSize: (() => {
+              const summary = document.querySelector(".mobile-menu summary");
+              if (!summary) return null;
+              const rect = summary.getBoundingClientRect();
+              return { width: Math.round(rect.width), height: Math.round(rect.height) };
+            })(),
+            desktopThemeHiddenOnMobile: (() => {
+              const toggle = document.querySelector(".site-header .header-actions > .theme-toggle");
+              return !toggle || getComputedStyle(toggle).display === "none";
+            })(),
+            firstRailControlsOrder: (() => {
+              const controls = document.querySelector(".carousel-rail-controls");
+              return controls ? getComputedStyle(controls).order : "";
+            })(),
             carouselExists: location.pathname === "/" ? Boolean(document.querySelector("[data-project-carousel]")) : true,
             railCount: document.querySelectorAll("[data-carousel-rail]").length,
             visibleRailControls: Array.from(document.querySelectorAll("[data-carousel-rail]")).filter((rail) => rail.getAttribute("data-can-scroll") === "true").length,
@@ -277,7 +298,7 @@ async function main() {
         if (data.homepageHasAvailabilityChip) failures.push(`${route} ${viewport.name} ${theme} homepage still shows availability chip text`);
         if (!data.homeGradient.includes("gradient")) failures.push(`${route} ${viewport.name} ${theme} Home nav gradient missing`);
         if (data.activeNavCount < 1) failures.push(`${route} ${viewport.name} ${theme} active nav state missing`);
-        if (data.sectionGutter !== null && data.sectionGutter > (viewport.name === "mobile" ? 16 : viewport.name === "tablet" ? 54 : 96)) {
+        if (data.sectionGutter !== null && data.sectionGutter > (viewport.width <= 430 ? 16 : viewport.name === "tablet" ? 54 : 96)) {
           failures.push(`${route} ${viewport.name} ${theme} section gutters too wide (${data.sectionGutter}px)`);
         }
         if (!data.expectedLayoutPresent) failures.push(`${route} ${viewport.name} ${theme} expected case-study layout marker missing`);
@@ -302,7 +323,17 @@ async function main() {
           failures.push(`${route} ${viewport.name} ${theme} repeated cards still use grid layout`);
         }
         if (data.theme !== theme) failures.push(`${route} ${viewport.name} expected ${theme} theme, got ${data.theme}`);
-        if (viewport.name === "mobile" && !data.mobileMenuExists) failures.push(`${route} mobile menu missing`);
+        if (viewport.width <= 680) {
+          if (!data.mobileMenuExists) failures.push(`${route} ${viewport.name} mobile menu missing`);
+          if (!data.mobileBrandVisible) failures.push(`${route} ${viewport.name} mobile brand copy hidden`);
+          if (!data.desktopThemeHiddenOnMobile) failures.push(`${route} ${viewport.name} desktop theme toggle visible in header`);
+          if (!data.mobileMenuButtonSize || data.mobileMenuButtonSize.width < 44 || data.mobileMenuButtonSize.height < 44) {
+            failures.push(`${route} ${viewport.name} mobile menu tap target too small`);
+          }
+          if (data.railCount > 0 && data.firstRailControlsOrder !== "2") {
+            failures.push(`${route} ${viewport.name} carousel controls are not below the rail`);
+          }
+        }
       }
 
       await context.close();
@@ -320,6 +351,11 @@ async function main() {
   await interactionPage.locator(".mobile-menu summary").first().click();
   const menuOpen = await interactionPage.locator(".mobile-menu").evaluate((el) => el.hasAttribute("open"));
   if (!menuOpen) failures.push("Mobile menu did not open");
+  const menuBodyLocked = await interactionPage.locator("body").evaluate((el) => el.classList.contains("mobile-menu-open"));
+  if (!menuBodyLocked) failures.push("Mobile menu did not lock page scroll");
+  await interactionPage.locator(".mobile-menu-head [data-mobile-menu-close]").click();
+  const menuClosed = await interactionPage.locator(".mobile-menu").evaluate((el) => !el.hasAttribute("open"));
+  if (!menuClosed) failures.push("Mobile menu did not close from close button");
 
   await interactionPage.evaluate(() => window.scrollTo({ top: 1400, behavior: "instant" }));
   await interactionPage.waitForTimeout(600);
@@ -358,7 +394,7 @@ async function main() {
   const flowControls = await interactionPage.locator(".documentation-explorer-shell .react-flow__controls").count();
   if (!flowControls) failures.push("Documentation explorer controls missing");
   const flowMinimap = await interactionPage.locator(".documentation-explorer-shell .react-flow__minimap").count();
-  if (!flowMinimap) failures.push("Documentation explorer minimap missing");
+  if (flowMinimap) failures.push("Documentation explorer minimap should be hidden on mobile");
   const beforeInspector = await interactionPage.locator(".documentation-inspector-card h3").first().innerText().catch(() => "");
   const selectableNodes = interactionPage.locator(".documentation-explorer-shell .react-flow__node");
   if ((await selectableNodes.count()) > 1) {
@@ -376,8 +412,26 @@ async function main() {
   if (explorerClosed) failures.push("Documentation explorer did not close");
 
   await interactionPage.setViewportSize({ width: 1440, height: 1000 });
+  await interactionPage.goto(`${base}/work/revvy-review-automation/`, { waitUntil: "domcontentloaded", timeout: 30000 });
+  await interactionPage.waitForTimeout(250);
+  await interactionPage.locator(".documentation-preview-button").first().click();
+  const desktopMinimap = await interactionPage.locator(".documentation-explorer-shell .react-flow__minimap").count();
+  if (!desktopMinimap) failures.push("Documentation explorer minimap missing on desktop");
+  await interactionPage.locator(".documentation-explorer-close").click();
+
   await interactionPage.goto(`${base}/contact/`, { waitUntil: "domcontentloaded", timeout: 30000 });
   await interactionPage.waitForTimeout(250);
+  const statusLayoutOk = await interactionPage.evaluate(() => {
+    const status = document.querySelector("[data-form-status]");
+    const message = document.querySelector("[data-form-status-message]");
+    if (!status || !message) return false;
+    status.setAttribute("data-status", "success");
+    message.textContent = "Message sent. I will reply from my email.";
+    const statusRect = status.getBoundingClientRect();
+    const messageRect = message.getBoundingClientRect();
+    return statusRect.width > 260 && messageRect.width > 220 && statusRect.height < 96;
+  });
+  if (!statusLayoutOk) failures.push("Contact form status banner layout collapsed");
   await interactionPage.locator("[data-copy-email]").first().click();
   const copiedText = await interactionPage.locator('[data-copy-email][data-copied="true"]').count();
   if (!copiedText) failures.push("Copy email button did not show copied state");

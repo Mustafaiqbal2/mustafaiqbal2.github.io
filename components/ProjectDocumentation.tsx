@@ -42,6 +42,7 @@ type GraphNodeData = {
   cluster?: string;
   faded?: boolean;
   preview?: boolean;
+  mobile?: boolean;
 };
 
 type GraphNode = Node<GraphNodeData, "documentation">;
@@ -224,11 +225,18 @@ function colorIndex(group?: string) {
   return seed % groupColorNames.length;
 }
 
-function nodeSize(node: SourceNode, preview: boolean) {
+function nodeSize(node: SourceNode, preview: boolean, mobile = false) {
   if (preview) {
     return {
       width: node.fields?.length ? 174 : 160,
       height: node.fields?.length ? 92 : 82
+    };
+  }
+
+  if (mobile) {
+    return {
+      width: 260,
+      height: node.fields?.length ? Math.min(152, Math.max(108, 78 + Math.min(node.fields.length, 3) * 16)) : 102
     };
   }
 
@@ -260,11 +268,25 @@ function orderedNodes(visualization: DocumentationVisualization) {
   return [...visualization.nodes].sort((a, b) => a.x - b.x || a.y - b.y);
 }
 
-function layoutVisualization(visualization: DocumentationVisualization, preview: boolean) {
+function layoutVisualization(visualization: DocumentationVisualization, preview: boolean, mobile = false) {
   const nodes = orderedNodes(visualization);
   const positioned = new Map<string, SourceNode>();
 
-  if (visualization.kind === "workflow" || visualization.kind === "timeline" || visualization.kind === "contract") {
+  if (mobile && !preview) {
+    const gapY = 32;
+    const marginX = 28;
+    const marginY = 30;
+    nodes.forEach((node, index) => {
+      const size = nodeSize(node, preview, mobile);
+      positioned.set(node.id, {
+        ...node,
+        x: marginX,
+        y: marginY + index * (size.height + gapY),
+        width: size.width,
+        height: size.height
+      });
+    });
+  } else if (visualization.kind === "workflow" || visualization.kind === "timeline" || visualization.kind === "contract") {
     const columns = preview ? Math.min(3, Math.max(2, Math.ceil(nodes.length / 2))) : Math.min(3, Math.max(2, Math.ceil(nodes.length / 2)));
     const gapX = preview ? 44 : 48;
     const gapY = preview ? 54 : 76;
@@ -273,7 +295,7 @@ function layoutVisualization(visualization: DocumentationVisualization, preview:
     nodes.forEach((node, index) => {
       const row = Math.floor(index / columns);
       const column = row % 2 === 0 ? index % columns : columns - 1 - (index % columns);
-      const size = nodeSize(node, preview);
+      const size = nodeSize(node, preview, mobile);
       positioned.set(node.id, {
         ...node,
         x: marginX + column * (size.width + gapX),
@@ -291,7 +313,7 @@ function layoutVisualization(visualization: DocumentationVisualization, preview:
     nodes.forEach((node, index) => {
       const row = Math.floor(index / columns);
       const column = index % columns;
-      const size = nodeSize(node, preview);
+      const size = nodeSize(node, preview, mobile);
       positioned.set(node.id, {
         ...node,
         x: marginX + column * (size.width + gapX),
@@ -306,7 +328,7 @@ function layoutVisualization(visualization: DocumentationVisualization, preview:
     const offsetX = preview ? 18 : 60;
     const offsetY = preview ? 18 : 56;
     visualization.nodes.forEach((node) => {
-      const size = nodeSize(node, preview);
+      const size = nodeSize(node, preview, mobile);
       positioned.set(node.id, {
         ...node,
         x: offsetX + (node.x - sourceBounds.minX) * scale,
@@ -356,10 +378,12 @@ function buildFlowElements(
     selectedNodeId?: string | null;
     visibleGroups?: Set<string>;
     reducedMotion?: boolean;
+    mobile?: boolean;
   } = {}
 ) {
   const preview = Boolean(options.preview);
-  const laidOutNodes = layoutVisualization(visualization, preview);
+  const mobile = Boolean(options.mobile);
+  const laidOutNodes = layoutVisualization(visualization, preview, mobile);
   const visibleGroups = options.visibleGroups;
   const visibleNodeIds = new Set(
     laidOutNodes.filter((node) => !visibleGroups || visibleGroups.has(node.group || "other")).map((node) => node.id)
@@ -369,7 +393,7 @@ function buildFlowElements(
   const nodes: GraphNode[] = laidOutNodes
     .filter((node) => visibleNodeIds.has(node.id))
     .map((node) => {
-      const size = nodeSize(node, preview);
+      const size = nodeSize(node, preview, mobile);
       const group = node.group || "other";
       const faded = Boolean(options.selectedNodeId && !connected.has(node.id));
       return {
@@ -390,9 +414,10 @@ function buildFlowElements(
           inspectDetails: node.inspectDetails || [],
           cluster: node.cluster || group,
           faded,
-          preview
+          preview,
+          mobile
         },
-        draggable: !preview,
+        draggable: !preview && !mobile,
         selectable: !preview,
         className: faded ? "is-faded" : "",
         style: {
@@ -434,12 +459,12 @@ function buildFlowElements(
 
 function DocumentationFlowNode({ data, selected }: NodeProps<GraphNode>) {
   const fieldCount = data.fields?.length || 0;
-  const visibleFields = data.preview ? [] : data.fields?.slice(0, 4) || [];
+  const visibleFields = data.preview || data.mobile ? [] : data.fields?.slice(0, 4) || [];
 
   return (
     <div className={`documentation-node ${selected ? "is-selected" : ""} ${data.faded ? "is-faded" : ""} ${data.preview ? "is-preview" : ""}`}>
-      <Handle type="target" position={Position.Left} />
-      <Handle type="source" position={Position.Right} />
+      <Handle type="target" position={data.mobile ? Position.Top : Position.Left} />
+      <Handle type="source" position={data.mobile ? Position.Bottom : Position.Right} />
       <div className="documentation-node-topline">
         <span>{groupLabel(data.group)}</span>
         {fieldCount ? <em>{fieldCount} fields</em> : null}
@@ -475,15 +500,30 @@ function usePrefersReducedMotion() {
   return reduced;
 }
 
-function FitOnChange({ activeKey }: { activeKey: string }) {
+function useIsMobileViewport() {
+  const [mobile, setMobile] = useState(false);
+
+  useEffect(() => {
+    const query = window.matchMedia("(max-width: 680px), (pointer: coarse)");
+    const update = () => setMobile(query.matches);
+    update();
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
+
+  return mobile;
+}
+
+function FitOnChange({ activeKey, mobile = false }: { activeKey: string; mobile?: boolean }) {
   const { fitView } = useReactFlow();
 
   useEffect(() => {
+    if (mobile) return;
     const timer = window.setTimeout(() => {
       fitView({ padding: 0.1, duration: 520, maxZoom: 1.62 });
     }, 80);
     return () => window.clearTimeout(timer);
-  }, [activeKey, fitView]);
+  }, [activeKey, fitView, mobile]);
 
   return null;
 }
@@ -494,6 +534,7 @@ function DocumentationFlowCanvas({
   selectedNodeId,
   visibleGroups,
   reducedMotion,
+  mobile = false,
   onSelectNode
 }: {
   visualization: DocumentationVisualization;
@@ -501,11 +542,12 @@ function DocumentationFlowCanvas({
   selectedNodeId?: string | null;
   visibleGroups?: Set<string>;
   reducedMotion?: boolean;
+  mobile?: boolean;
   onSelectNode?: (nodeId: string | null) => void;
 }) {
   const { nodes, edges } = useMemo(
-    () => buildFlowElements(visualization, { preview, selectedNodeId, visibleGroups, reducedMotion }),
-    [preview, reducedMotion, selectedNodeId, visibleGroups, visualization]
+    () => buildFlowElements(visualization, { preview, selectedNodeId, visibleGroups, reducedMotion, mobile }),
+    [mobile, preview, reducedMotion, selectedNodeId, visibleGroups, visualization]
   );
 
   return (
@@ -513,19 +555,20 @@ function DocumentationFlowCanvas({
       nodes={nodes}
       edges={edges}
       nodeTypes={nodeTypes}
-      fitView
+      fitView={!mobile}
+      defaultViewport={mobile ? { x: 18, y: 18, zoom: 0.82 } : undefined}
       fitViewOptions={{ padding: preview ? 0.14 : 0.1, maxZoom: preview ? 1.08 : 1.62 }}
-      nodesDraggable={!preview}
+      nodesDraggable={!preview && !mobile}
       nodesConnectable={false}
       elementsSelectable={!preview}
       panOnDrag={!preview}
-      zoomOnScroll={!preview}
+      zoomOnScroll={!preview && !mobile}
       zoomOnPinch={!preview}
       zoomOnDoubleClick={!preview}
       preventScrolling={!preview}
       proOptions={{ hideAttribution: true }}
-      minZoom={0.22}
-      maxZoom={1.35}
+      minZoom={mobile ? 0.34 : 0.22}
+      maxZoom={mobile ? 1.28 : 1.35}
       onNodeClick={(_, node) => onSelectNode?.(node.id)}
       onPaneClick={() => onSelectNode?.(null)}
       className={preview ? "documentation-flow is-preview" : "documentation-flow"}
@@ -533,15 +576,17 @@ function DocumentationFlowCanvas({
       <Background gap={preview ? 26 : 34} size={1} />
       {!preview ? (
         <>
-          <Controls position="bottom-left" showInteractive={false} />
-          <MiniMap
-            position="bottom-right"
-            pannable
-            zoomable
-            nodeStrokeWidth={2}
-            nodeColor={(node) => String(node.style?.["--node-tone" as keyof typeof node.style] || "var(--primary)")}
-          />
-          <FitOnChange activeKey={`${visualization.id}-${Array.from(visibleGroups || []).join(",")}-${selectedNodeId || "none"}`} />
+          <Controls position={mobile ? "top-right" : "bottom-left"} showInteractive={false} />
+          {!mobile ? (
+            <MiniMap
+              position="bottom-right"
+              pannable
+              zoomable
+              nodeStrokeWidth={2}
+              nodeColor={(node) => String(node.style?.["--node-tone" as keyof typeof node.style] || "var(--primary)")}
+            />
+          ) : null}
+          <FitOnChange activeKey={`${visualization.id}-${Array.from(visibleGroups || []).join(",")}-${selectedNodeId || "none"}`} mobile={mobile} />
         </>
       ) : null}
     </ReactFlow>
@@ -600,6 +645,7 @@ function DocumentationExplorer({
   onChangeIndex: (index: number) => void;
 }) {
   const reducedMotion = usePrefersReducedMotion();
+  const mobileViewport = useIsMobileViewport();
   const visualization = documentation.visualizations[activeIndex];
   const groups = useMemo(() => Array.from(new Set(visualization.nodes.map((node) => node.group || "other"))), [visualization]);
   const [enabledGroups, setEnabledGroups] = useState<Set<string>>(() => new Set(groups));
@@ -729,6 +775,7 @@ function DocumentationExplorer({
                 selectedNodeId={selectedNodeId}
                 visibleGroups={enabledGroups}
                 reducedMotion={reducedMotion}
+                mobile={mobileViewport}
                 onSelectNode={setSelectedNodeId}
               />
             </ReactFlowProvider>
