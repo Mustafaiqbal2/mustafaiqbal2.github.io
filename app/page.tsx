@@ -1,113 +1,83 @@
-import type { CSSProperties } from "react";
-import { ArrowLeft, ArrowRight, BriefcaseBusiness, Download, Sparkles } from "lucide-react";
+import { ArrowRight, BriefcaseBusiness, Download, Sparkles } from "lucide-react";
 import { CarouselRail } from "@/components/CarouselRail";
 import { ContactActions } from "@/components/ContactActions";
 import { ProjectCard } from "@/components/ProjectCard";
 import { Reveal } from "@/components/Reveal";
-import { featuredProjects, focusAreas, principles, profile } from "@/data/portfolio";
+import { featuredProjects, focusAreas, principles, profile, proofMetrics } from "@/data/portfolio";
 
 const selectedProjects = featuredProjects.slice(0, 4);
+
+const stackTicker = [
+  "Next.js",
+  "TypeScript",
+  "FastAPI",
+  "Python",
+  "Prisma",
+  "PostgreSQL",
+  "Pinecone",
+  "Weaviate",
+  "OpenAI",
+  "LangChain",
+  "React Native",
+  "Stripe",
+  "AWS",
+  "Docker",
+  "Inngest",
+  "CUDA",
+  "OpenCL",
+  "MPI"
+];
 
 export default function Home() {
   return (
     <main id="top">
       <section className="landing-hero" aria-labelledby="hero-title">
-        <div className="section-inner landing-grid">
-          <div className="hero-copy">
-            <p className="eyebrow">AI workflow systems / full-stack product engineering</p>
-            <h1 id="hero-title">I build reliable AI automation software across product, data, and infrastructure.</h1>
-            <p className="hero-summary">{profile.elevatorPitch}</p>
+        <canvas className="workflow-trace" data-workflow-trace aria-hidden="true" />
+        <div className="section-inner hero-stage">
+          <p className="hero-status">
+            <i aria-hidden="true" />
+            Open to remote roles — Rawalpindi, PK — UTC+5
+          </p>
+          <h1 id="hero-title">
+            <span className="hero-line">
+              <span>I build AI automation</span>
+            </span>
+            <span className="hero-line">
+              <span>that survives contact</span>
+            </span>
+            <span className="hero-line">
+              <span>with production.</span>
+            </span>
+          </h1>
+          <p className="hero-summary">{profile.elevatorPitch}</p>
+          <div className="hero-actions">
             <ContactActions links={profile} />
           </div>
+        </div>
+        <a className="hero-scroll-cue" href="#telemetry" aria-label="Scroll to measured outcomes">
+          Scroll
+          <i aria-hidden="true" />
+        </a>
+      </section>
 
-          <div className="hero-reel" data-project-carousel>
-            <div className="reel-header">
-              <span>Recent work</span>
-              <a href="/work/">
-                Full work index
-                <ArrowRight size={16} aria-hidden="true" />
-              </a>
+      <section className="telemetry-band" id="telemetry" aria-label="Measured outcomes">
+        <div className="section-inner telemetry-grid">
+          {proofMetrics.map((metric) => (
+            <div className="telemetry-item" key={metric.label}>
+              <strong data-decode suppressHydrationWarning>{metric.value}</strong>
+              <span>{metric.label}</span>
             </div>
-            <div className="reel-viewport">
-              <div className="reel-track" aria-label="Project highlights" data-carousel-track>
-                {selectedProjects.map((project, index) => {
-                  const media = project.media.find((item) => !item.isGenerated) || project.media[0] || project.thumbnail;
-                  return (
-                    <a
-                      className="reel-card"
-                      href={`/work/${project.slug}/`}
-                      style={{ "--reel-delay": `${index * 120}ms` } as CSSProperties}
-                      key={project.slug}
-                      data-carousel-slide
-                    >
-                      {media ? (
-                        media.darkSrc ? (
-                          <>
-                            <img
-                              className="theme-media-light"
-                              src={media.src}
-                              alt={media.alt}
-                              loading={index === 0 ? "eager" : "lazy"}
-                              decoding="async"
-                            />
-                            <img
-                              className="theme-media-dark"
-                              src={media.darkSrc}
-                              alt=""
-                              loading={index === 0 ? "eager" : "lazy"}
-                              decoding="async"
-                            />
-                          </>
-                        ) : (
-                          <img
-                            src={media.type === "video" ? media.poster || media.src : media.src}
-                            alt={media.alt}
-                            loading={index === 0 ? "eager" : "lazy"}
-                            decoding="async"
-                          />
-                        )
-                      ) : null}
-                      <span>{project.category}</span>
-                      <strong>{project.title}</strong>
-                      <small>{project.featuredMetric.value} / {project.featuredMetric.label}</small>
-                    </a>
-                  );
-                })}
-              </div>
-            </div>
-            <div className="reel-controls" aria-label="Project carousel controls">
-              <button type="button" data-carousel-prev aria-label="Previous project">
-                <ArrowLeft size={16} aria-hidden="true" />
-              </button>
-              <div className="reel-dots" aria-label="Project slides">
-                {selectedProjects.map((project, index) => (
-                  <button type="button" data-carousel-dot={index} aria-label={`Show ${project.title}`} key={project.slug} />
-                ))}
-              </div>
-              <button type="button" data-carousel-next aria-label="Next project">
-                <ArrowRight size={16} aria-hidden="true" />
-              </button>
-            </div>
-          </div>
+          ))}
         </div>
       </section>
 
-      <section className="home-signal-strip" aria-label="Portfolio credibility signals">
-        <div className="section-inner home-signal-grid">
-          <div>
-            <span>Product work</span>
-            <strong>Built across private AI SaaS, review automation, and email intelligence systems.</strong>
-          </div>
-          <div>
-            <span>Research lab</span>
-            <strong>I led a four-person team on a recruitment RAG and interview automation platform.</strong>
-          </div>
-          <div>
-            <span>Foundations</span>
-            <strong>FAST-NUCES CS fundamentals with CUDA, OpenCL, MPI, and compiler projects.</strong>
-          </div>
+      <div className="stack-marquee" aria-hidden="true">
+        <div className="stack-marquee-track">
+          {[...stackTicker, ...stackTicker].map((item, index) => (
+            <span key={`${item}-${index}`}>{item}</span>
+          ))}
         </div>
-      </section>
+      </div>
 
       <section className="section" aria-labelledby="fit-title">
         <div className="section-inner split-intro">
@@ -137,7 +107,7 @@ export default function Home() {
       <section className="section section-muted" aria-labelledby="selected-work-title">
         <div className="section-inner">
           <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Selected work</p>
+            <p className="eyebrow">Selected work — 04 systems</p>
             <h2 id="selected-work-title">Selected work with role, architecture, and outcomes.</h2>
             <p>
               These projects show shipped automation, research systems, and implementation details across

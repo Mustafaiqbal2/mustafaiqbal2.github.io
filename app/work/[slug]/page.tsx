@@ -117,12 +117,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
       <section className="proof-band project-proof-band" aria-label={`${project.title} proof metrics`}>
         <div className="section-inner proof-band-grid">
           <div className="metric featured-metric">
-            <strong>{project.featuredMetric.value}</strong>
+            <strong data-decode suppressHydrationWarning>{project.featuredMetric.value}</strong>
             <span>{project.featuredMetric.label}</span>
           </div>
           {project.metrics.map((metric) => (
             <div className="metric" key={`${metric.value}-${metric.label}`}>
-              <strong>{metric.value}</strong>
+              <strong data-decode suppressHydrationWarning>{metric.value}</strong>
               <span>{metric.label}</span>
             </div>
           ))}

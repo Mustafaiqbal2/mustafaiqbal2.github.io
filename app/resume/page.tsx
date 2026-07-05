@@ -60,7 +60,7 @@ export default function ResumePage() {
         <div className="section-inner proof-band-grid">
           {proofMetrics.map((metric) => (
             <div className="metric" key={metric.label}>
-              <strong>{metric.value}</strong>
+              <strong data-decode suppressHydrationWarning>{metric.value}</strong>
               <span>{metric.label}</span>
             </div>
           ))}

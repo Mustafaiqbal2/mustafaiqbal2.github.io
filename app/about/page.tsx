@@ -91,7 +91,6 @@ export default function AboutPage() {
           <div className="about-note-row">
             {operatingNotes.map((note, index) => (
               <Reveal as="article" className="about-note" key={note.title} delay={index * 0.05}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
                 <h3>{note.title}</h3>
                 <p>{note.text}</p>
               </Reveal>

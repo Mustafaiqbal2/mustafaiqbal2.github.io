@@ -115,7 +115,7 @@ export const profile: ContactProfile = {
   resume: "/resume/Mustafa_Iqbal_Full_Resume.pdf",
   photo: "/images/me.jpeg",
   elevatorPitch:
-    "I work across product UI, APIs, data models, queues, retrieval, evaluation, and recovery paths so AI workflows behave predictably in real use.",
+    "Product surfaces, queues, retrieval, evaluation, and recovery paths — engineered so AI workflows behave predictably in real use.",
   summary:
     "I build AI automation, retrieval workflows, external API integrations, full-stack product surfaces, and systems projects."
 };

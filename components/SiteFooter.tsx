@@ -3,6 +3,9 @@ import { featuredProjects, profile } from "@/data/portfolio";
 export function SiteFooter() {
   return (
     <footer className="site-footer">
+      <div className="section-inner footer-wordmark" aria-hidden="true">
+        Mustafa Iqbal
+      </div>
       <div className="section-inner footer-grid">
         <div className="footer-brand">
           <strong>{profile.name}</strong>
@@ -41,8 +44,11 @@ export function SiteFooter() {
         </nav>
       </div>
       <div className="section-inner footer-bottom">
+        <span className="footer-status">
+          <i aria-hidden="true" />
+          Status: open to remote roles
+        </span>
         <span>Built by Mustafa Iqbal.</span>
-        <span>AI products, automation systems, full-stack apps, and systems projects.</span>
       </div>
     </footer>
   );

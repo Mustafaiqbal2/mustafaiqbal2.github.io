@@ -7,7 +7,7 @@ export function ProjectCard({ project, priority = false }: { project: Project; p
   const leadMedia = project.thumbnail || project.media[0];
 
   return (
-    <article className={priority ? "project-card project-card-featured" : "project-card"}>
+    <article className={priority ? "project-card project-card-featured" : "project-card"} data-spotlight>
       {leadMedia ? (
         <a className="project-card-media" href={`/work/${project.slug}/`} aria-label={`Open ${project.title} details`}>
           {leadMedia.darkSrc ? (
@@ -40,7 +40,7 @@ export function ProjectCard({ project, priority = false }: { project: Project; p
       <div className="project-card-body">
         <div className="metadata-row">
           <span>{project.category}</span>
-          <span>{project.status}</span>
+          <span className="live-pill">{project.status}</span>
         </div>
         <div className="project-title-row">
           <span className="project-icon">

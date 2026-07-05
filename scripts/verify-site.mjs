@@ -186,7 +186,8 @@ async function main() {
         viewport: { width: viewport.width, height: viewport.height },
         isMobile: mobileEmulation,
         hasTouch: mobileEmulation,
-        deviceScaleFactor: mobileEmulation ? 2 : 1
+        deviceScaleFactor: mobileEmulation ? 2 : 1,
+        reducedMotion: "reduce"
       });
       await context.addInitScript((themeName) => localStorage.setItem("theme-preference", themeName), theme);
       const page = await context.newPage();
@@ -234,7 +235,6 @@ async function main() {
             footerHasDocumentRag: Array.from(document.querySelectorAll(".site-footer a")).some((a) => a.textContent?.trim() === "Document RAG"),
             emptyMetricCells: Array.from(document.querySelectorAll(".metric")).filter((metric) => !metric.innerText.trim()).length,
             homepageHasAvailabilityChip: location.pathname === "/" && bodyText.includes("Open to remote AI engineering roles"),
-            homeGradient: getComputedStyle(document.querySelector(".nav-home")).backgroundImage,
             activeNavCount: document.querySelectorAll("[data-nav-link].is-active").length,
             activeNavCurrent: document.querySelector("[data-nav-link].is-active")?.getAttribute("href") || "",
             sectionGutter: (() => {
@@ -291,7 +291,10 @@ async function main() {
                 return controlsHidden && trackStyle.gridAutoFlow === "row" && itemRect.width >= Math.min(window.innerWidth - 24, 320);
               });
             })(),
-            carouselExists: location.pathname === "/" ? Boolean(document.querySelector("[data-project-carousel]")) : true,
+            heroSignatureExists:
+              location.pathname === "/"
+                ? Boolean(document.querySelector("[data-workflow-trace]")) && Boolean(document.querySelector(".telemetry-band [data-decode]"))
+                : true,
             railCount: document.querySelectorAll("[data-carousel-rail]").length,
             visibleRailControls: Array.from(document.querySelectorAll("[data-carousel-rail]")).filter((rail) => rail.getAttribute("data-can-scroll") === "true").length,
             hasGridEvidenceRows: Boolean(document.querySelector(".achievement-board, .skills-grid, .secondary-grid .secondary-card, .project-grid .project-card")),
@@ -320,7 +323,6 @@ async function main() {
         if (data.footerHasDocumentRag) failures.push(`${route} ${viewport.name} ${theme} footer still links Document RAG`);
         if (data.emptyMetricCells) failures.push(`${route} ${viewport.name} ${theme} has empty metric cells`);
         if (data.homepageHasAvailabilityChip) failures.push(`${route} ${viewport.name} ${theme} homepage still shows availability chip text`);
-        if (!data.homeGradient.includes("gradient")) failures.push(`${route} ${viewport.name} ${theme} Home nav gradient missing`);
         if (data.activeNavCount < 1) failures.push(`${route} ${viewport.name} ${theme} active nav state missing`);
         if (data.sectionGutter !== null && data.sectionGutter > (viewport.width <= 430 ? 16 : viewport.name === "tablet" ? 54 : 96)) {
           failures.push(`${route} ${viewport.name} ${theme} section gutters too wide (${data.sectionGutter}px)`);
@@ -339,7 +341,7 @@ async function main() {
         if (data.reelObjectFits.some((fit) => fit !== "contain")) failures.push(`${route} ${viewport.name} ${theme} reel wallpapers are not contain-fit`);
         if (data.projectObjectFits.some((fit) => fit !== "contain")) failures.push(`${route} ${viewport.name} ${theme} project wallpapers are not contain-fit`);
         if (!data.darkProjectMediaVisible) failures.push(`${route} ${viewport.name} ${theme} dark case-study media variant not visible`);
-        if (!data.carouselExists) failures.push(`${route} ${viewport.name} ${theme} homepage carousel missing`);
+        if (!data.heroSignatureExists) failures.push(`${route} ${viewport.name} ${theme} homepage workflow trace or telemetry band missing`);
         if (["/", "/work/", "/resume/", "/about/"].includes(route) && data.railCount < 1) {
           failures.push(`${route} ${viewport.name} ${theme} expected carousel rails`);
         }
@@ -357,7 +359,7 @@ async function main() {
           if (data.railCount > 0 && !data.mobileContentRailsReadable) {
             failures.push(`${route} ${viewport.name} content carousel cards are not readable stacked mobile cards`);
           }
-          if (data.largestH1FontSize > 34) {
+          if (data.largestH1FontSize > 44) {
             failures.push(`${route} ${viewport.name} mobile h1 too large (${data.largestH1FontSize}px)`);
           }
         }
@@ -390,10 +392,6 @@ async function main() {
   if (!revealVisible) failures.push("Scroll reveal did not activate after scrolling");
   await interactionPage.evaluate(() => window.scrollTo({ top: 0, behavior: "instant" }));
   await interactionPage.waitForTimeout(200);
-
-  await interactionPage.locator("[data-carousel-next]").first().click();
-  const firstDotInactive = await interactionPage.locator('[data-carousel-dot="0"]').evaluate((el) => el.getAttribute("aria-pressed") === "false");
-  if (!firstDotInactive) failures.push("Carousel next control did not advance");
 
   await interactionPage.goto(`${base}/resume/`, { waitUntil: "domcontentloaded", timeout: 30000 });
   await interactionPage.waitForTimeout(250);

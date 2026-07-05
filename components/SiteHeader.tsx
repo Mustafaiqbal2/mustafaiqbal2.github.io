@@ -24,7 +24,7 @@ export function SiteHeader() {
 
       <nav className="nav-links" aria-label="Primary navigation">
         {navigation.map((item) => (
-          <a className={item.label === "Home" ? "nav-home" : undefined} href={item.href} key={item.href} data-nav-link>
+          <a href={item.href} key={item.href} data-nav-link>
             {item.label}
           </a>
         ))}
@@ -62,7 +62,7 @@ export function SiteHeader() {
             </div>
             <nav className="mobile-menu-nav" aria-label="Mobile primary navigation">
               {navigation.map((item) => (
-                <a className={item.label === "Home" ? "nav-home" : undefined} href={item.href} key={item.href} data-nav-link>
+                <a href={item.href} key={item.href} data-nav-link>
                   {item.label}
                 </a>
               ))}
