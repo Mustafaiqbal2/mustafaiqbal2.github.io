@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function ResumePage() {
   return (
-    <main>
+    <main id="top">
       <section className="page-hero resume-hero">
         <div className="section-inner resume-hero-grid">
           <Reveal className="section-heading wide-heading">

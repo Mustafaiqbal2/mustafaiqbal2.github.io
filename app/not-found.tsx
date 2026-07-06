@@ -2,7 +2,7 @@ import { ArrowLeft } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <main>
+    <main id="top">
       <section className="page-hero compact-page-hero">
         <div className="section-inner">
           <div className="section-heading wide-heading">

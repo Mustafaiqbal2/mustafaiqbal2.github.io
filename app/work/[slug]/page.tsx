@@ -20,6 +20,7 @@ import { CarouselRail } from "@/components/CarouselRail";
 import { ProjectDocumentation } from "@/components/ProjectDocumentation";
 import { ProjectLinks } from "@/components/ProjectLinks";
 import { ProjectMedia } from "@/components/ProjectMedia";
+import { ProjectStory } from "@/components/ProjectStory";
 import { Reveal } from "@/components/Reveal";
 import { featuredProjects, getProject, siteUrl, type Project } from "@/data/portfolio";
 import { getProjectDocumentation, type ProjectDocumentation as ProjectDocumentationType } from "@/data/project-docs";
@@ -71,7 +72,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
   const heroTags = Array.from(new Set([project.category, project.status, project.confidentiality].filter(Boolean)));
 
   return (
-    <main className={`project-page project-page-${project.slug} case-layout-${project.caseStudy.layoutKind}`}>
+    <main id="top" className={`project-page project-page-${project.slug} case-layout-${project.caseStudy.layoutKind}`}>
       <section className="project-hero">
         <div className="section-inner project-hero-grid">
           <Reveal className="project-hero-copy">
@@ -128,6 +129,8 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
           ))}
         </div>
       </section>
+
+      <ProjectStory slug={project.slug} />
 
       <CaseStudyBody project={project} documentation={documentation} />
 

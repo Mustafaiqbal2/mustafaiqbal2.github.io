@@ -342,7 +342,7 @@ async function main() {
         if (data.projectObjectFits.some((fit) => fit !== "contain")) failures.push(`${route} ${viewport.name} ${theme} project wallpapers are not contain-fit`);
         if (!data.darkProjectMediaVisible) failures.push(`${route} ${viewport.name} ${theme} dark case-study media variant not visible`);
         if (!data.heroSignatureExists) failures.push(`${route} ${viewport.name} ${theme} homepage workflow trace or telemetry band missing`);
-        if (["/", "/work/", "/resume/", "/about/"].includes(route) && data.railCount < 1) {
+        if (["/work/", "/resume/", "/about/"].includes(route) && data.railCount < 1) {
           failures.push(`${route} ${viewport.name} ${theme} expected carousel rails`);
         }
         if (["/work/", "/resume/"].includes(route) && data.hasGridEvidenceRows) {

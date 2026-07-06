@@ -8,7 +8,7 @@ import { profile, siteUrl } from "@/data/portfolio";
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Contact Mustafa Iqbal for AI automation, LLM, RAG, backend, and full-stack software engineering roles.",
+    "Reach Mustafa Iqbal about remote software engineering roles in AI automation, LLM and RAG systems, and full-stack product work. Email gets a fast reply.",
   alternates: {
     canonical: `${siteUrl}/contact/`
   }
@@ -37,15 +37,17 @@ const contactOptions = [
 
 export default function ContactPage() {
   return (
-    <main>
+    <main id="top">
       <section className="page-hero contact-page-hero">
         <div className="section-inner contact-page-grid">
           <Reveal className="section-heading wide-heading">
             <p className="eyebrow">Contact</p>
-            <h1>Send the role, product problem, and timeline.</h1>
+            <h1>Let&apos;s talk about the role.</h1>
             <p>
-              Use email or the form for roles, collaboration, or technical conversations. Include the role, product
-              area, and timeline so I can reply with useful context.
+              Email me directly, or use the form — I reply from my own inbox, usually within a day. If you can, include
+              the role or product area and a rough timeline, and I&apos;ll come back with specifics on how I&apos;d
+              approach it. I&apos;m open to remote software engineering roles across AI automation, product engineering,
+              and full-stack delivery.
             </p>
             <ContactActions links={profile} />
           </Reveal>

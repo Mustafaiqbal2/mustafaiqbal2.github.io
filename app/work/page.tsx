@@ -2,14 +2,14 @@ import type { Metadata } from "next";
 import { ArrowRight, Lock } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
 import { CarouselRail } from "@/components/CarouselRail";
-import { ProjectCard } from "@/components/ProjectCard";
+import { FeatureIndex } from "@/components/FeatureIndex";
 import { Reveal } from "@/components/Reveal";
 import { featuredProjects, profile, secondaryProjects, siteUrl } from "@/data/portfolio";
 
 export const metadata: Metadata = {
   title: "Work",
   description:
-    "Selected AI automation, RAG, SaaS, CAD understanding, systems, and full-stack engineering projects by Mustafa Iqbal.",
+    "AI automation, RAG, and full-stack engineering by Mustafa Iqbal — with the architecture, constraints, and outcomes behind each, from SaaS platforms to CUDA.",
   alternates: {
     canonical: `${siteUrl}/work/`
   }
@@ -17,16 +17,16 @@ export const metadata: Metadata = {
 
 export default function WorkPage() {
   return (
-    <main>
+    <main id="top">
       <section className="page-hero compact-page-hero">
         <div className="section-inner">
           <Reveal className="section-heading wide-heading">
             <p className="eyebrow">Work</p>
-            <h1>AI automation, product systems, and engineering fundamentals.</h1>
+            <h1>Six systems I designed, built, or led — and measured.</h1>
             <p>
-              Selected systems with shipped workflows, architecture decisions, implementation constraints, and
-              outcomes. Secondary projects show systems depth across RAG, CUDA,
-              OpenCL, MPI, and compiler work.
+              Each one had a real bottleneck, the architecture I chose to fix it, and an outcome I can defend. Some are
+              private products, so I show them through approved architecture and media instead of customer data. The
+              additional projects go down to the metal: RAG, CUDA, OpenCL, MPI, and compiler work.
             </p>
             <div className="button-row">
               <a className="button primary" href={profile.resume}>
@@ -44,16 +44,12 @@ export default function WorkPage() {
       <section className="section section-muted" aria-labelledby="featured-projects-title">
         <div className="section-inner">
           <Reveal className="section-heading">
-            <p className="eyebrow">Featured work</p>
-            <h2 id="featured-projects-title">Featured product and systems work.</h2>
+            <p className="eyebrow">Featured work — 06 systems</p>
+            <h2 id="featured-projects-title">Built, measured, and ready to walk through.</h2>
           </Reveal>
-          <CarouselRail label="Featured work" className="project-card-carousel" itemClassName="project-carousel-item" auto>
-            {featuredProjects.map((project, index) => (
-              <Reveal key={project.slug} delay={index * 0.04}>
-                <ProjectCard project={project} priority={index === 0} />
-              </Reveal>
-            ))}
-          </CarouselRail>
+          <Reveal delay={0.06}>
+            <FeatureIndex projects={featuredProjects} />
+          </Reveal>
         </div>
       </section>
 
@@ -61,10 +57,10 @@ export default function WorkPage() {
         <div className="section-inner">
           <Reveal className="section-heading">
             <p className="eyebrow">Systems depth</p>
-            <h2 id="secondary-projects-title">Additional systems projects.</h2>
+            <h2 id="secondary-projects-title">Where the fundamentals show.</h2>
             <p>
-              Additional projects across performance, distributed compute, compiler construction,
-              document retrieval, and parallel programming.
+              The low-level work behind the product engineering: a ~48x CUDA Canny speedup, GPU-accelerated neural nets,
+              OpenCL convolution, MPI sequence matching, and a hand-built compiler.
             </p>
           </Reveal>
           <CarouselRail label="Secondary systems projects" className="secondary-carousel" itemClassName="secondary-carousel-item" auto>

@@ -16,42 +16,45 @@ export const metadata: Metadata = {
 const operatingNotes = [
   {
     title: "I build around workflows, not isolated model calls.",
-    text: "Before touching prompts, I map the user action, owned data, external API state, failure modes, retry path, and what the user needs to inspect."
+    text: "Before I touch a prompt, I map the user action, the data I own, the external API's state, the failure modes, the retry path, and what the user needs to see. The model is usually the last decision, not the first."
   },
   {
-    title: "I focus on systems where product polish and backend reliability meet.",
-    text: "The work I keep returning to involves OAuth, queues, caches, vector search, model cost, UI states, and the small details that make automation feel safe."
+    title: "I reach for the seam where product polish meets backend reliability.",
+    text: "The work I keep returning to lives in OAuth, queues, caches, vector search, model cost, and UI states — the small details that make automation feel safe to hand to a real user."
   },
   {
-    title: "I present private work through architecture.",
-    text: "If code or customer data cannot be public, I show the domain model, constraints, technical decisions, and approved product media."
+    title: "I present private work through its architecture.",
+    text: "When code or customer data can't be public, I don't hand-wave it. I show the domain model, the constraints I worked under, the decisions I made, and approved product media — enough for an engineer to evaluate the real work."
   }
 ];
 
 const buildLoop = [
-  ["Trace", "Understand the current workflow and the data that actually moves."],
-  ["Separate", "Use deterministic logic for clear cases and AI only where ambiguity is real."],
-  ["Instrument", "Add logs, status, cache behavior, retries, and correction surfaces."],
-  ["Ship", "Keep the UI understandable enough for someone else to operate the system."]
+  ["Trace", "Map the real workflow and the data that actually moves through it before writing a line."],
+  ["Separate", "Deterministic logic handles the obvious cases; AI is reserved for genuine ambiguity. On Emmy, known senders route on rules and only unclear mail reaches the model."],
+  ["Instrument", "Add logs, status, cache behavior, retries, and correction surfaces — so the system is inspectable, not a black box."],
+  ["Ship", "Keep the interface clear enough that someone who didn't build it can operate and trust it."]
 ];
 
 const fitSignals = [
-  "AI products where full-stack ownership matters more than a narrow frontend/backend split.",
-  "Automation workflows involving Gmail, Google Business Profile, Stripe, vector search, or messy third-party APIs.",
-  "Early teams that need technical breadth, practical judgment, and enough polish to show customers quickly."
+  "AI products where full-stack ownership matters more than a clean frontend/backend split — someone who can carry a feature from data model to shipped UI.",
+  "Automation work over messy real-world APIs — Gmail, Google Business Profile, Stripe, vector search — where correctness, cost, and recovery all matter at once.",
+  "Early teams that need technical breadth, practical judgment, and enough polish to put something in front of customers quickly."
 ];
 
 export default function AboutPage() {
   return (
-    <main>
+    <main id="top">
       <section className="page-hero compact-page-hero about-hero">
         <div className="section-inner about-hero-grid">
           <Reveal className="section-heading wide-heading">
             <p className="eyebrow">About</p>
-            <h1>I work best where product, AI, and systems meet.</h1>
+            <h1>Most AI demos work once. I build the version that runs every day.</h1>
             <p>
-              I move across product UI, APIs, data models, integrations, AI workflows, mobile surfaces, deployment,
-              and debugging until the workflow is usable.
+              I&apos;m a full-stack engineer who works end to end — product UI, APIs, data models, third-party
+              integrations, retrieval, and the queues, caching, and recovery paths underneath. I&apos;ve built private
+              automation products around Gmail, Google Business Profile, and Stripe, and led a four-person AI research
+              team at Genesys Research Lab. What I care about most is the part of a system that only shows up under real
+              load: state, failure, latency, and what the user is allowed to correct.
             </p>
             <div className="button-row">
               <a className="button primary" href="/work/">
@@ -82,10 +85,11 @@ export default function AboutPage() {
         <div className="section-inner">
           <Reveal className="editorial-statement">
             <p className="eyebrow">Operating mode</p>
-            <h2 id="operating-title">Useful software is measured by behavior, observability, and recovery paths.</h2>
+            <h2 id="operating-title">I judge software by how it behaves when something goes wrong.</h2>
             <p>
-              The details around state, failure, permissions, latency, and recovery determine whether an automation
-              system can be trusted by users and maintained by a team.
+              Anyone can make a model return text. The parts that decide whether a team can trust and maintain an
+              automation system are less visible: state, permissions, latency, failure modes, and whether a user can see
+              what happened and undo it. That&apos;s the layer I build for.
             </p>
           </Reveal>
           <div className="about-note-row">
@@ -103,10 +107,11 @@ export default function AboutPage() {
         <div className="section-inner build-loop-grid">
           <Reveal className="section-heading">
             <p className="eyebrow">How I build</p>
-            <h2 id="build-loop-title">A consistent build loop across different domains.</h2>
+            <h2 id="build-loop-title">One build loop, whatever the domain.</h2>
             <p>
-              Revvy, Emmy, MelodyMind, the CAD project, and the recruitment RAG platform are different domains, but the
-              engineering loop is similar.
+              Review automation, email triage, a CAD reconstruction engine, a multimodal music app, a recruitment RAG
+              platform — different problems, same loop. It&apos;s the loop that produced measurable results, not the
+              individual domain.
             </p>
           </Reveal>
           <Reveal className="build-loop-shell" delay={0.08}>
@@ -131,7 +136,7 @@ export default function AboutPage() {
         <div className="section-inner fit-editorial-grid">
           <Reveal className="fit-callout">
             <p className="eyebrow">Role fit</p>
-            <h2 id="fit-title">The roles that make sense are broad, technical, and close to product.</h2>
+            <h2 id="fit-title">The roles that fit are broad, technical, and close to the product.</h2>
           </Reveal>
           <div className="fit-signal-stack">
             {fitSignals.map((signal, index) => (
@@ -140,6 +145,12 @@ export default function AboutPage() {
                 <p>{signal}</p>
               </Reveal>
             ))}
+            <Reveal className="fit-invite" delay={0.2}>
+              <a className="text-link" href="/contact/">
+                If that&apos;s the shape of the role, I&apos;d like to talk
+                <ArrowRight size={17} aria-hidden="true" />
+              </a>
+            </Reveal>
           </div>
         </div>
       </section>
@@ -148,7 +159,7 @@ export default function AboutPage() {
         <div className="section-inner">
           <Reveal className="section-heading">
             <p className="eyebrow">Engineering principles</p>
-            <h2 id="principles-title">The standards I use when AI touches real workflows.</h2>
+            <h2 id="principles-title">The standards I hold when AI touches a real workflow.</h2>
           </Reveal>
           <CarouselRail label="Engineering principles" className="principles-carousel" itemClassName="principle-carousel-item">
             {principles.map((principle, index) => (

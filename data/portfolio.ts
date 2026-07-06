@@ -32,6 +32,7 @@ export type ContactProfile = {
   resume: string;
   photo: string;
   elevatorPitch: string;
+  positioning: string;
   summary: string;
 };
 
@@ -74,6 +75,7 @@ export type Project = {
   status: string;
   confidentiality: "Public" | "Private product" | "Internal lab" | "Academic" | "Research prototype";
   summary: string;
+  proof: string;
   pitch: string;
   role: string;
   dates: string;
@@ -115,17 +117,19 @@ export const profile: ContactProfile = {
   resume: "/resume/Mustafa_Iqbal_Full_Resume.pdf",
   photo: "/images/me.jpeg",
   elevatorPitch:
-    "Product surfaces, queues, retrieval, evaluation, and recovery paths — engineered so AI workflows behave predictably in real use.",
+    "Full-stack software engineer. I build the queues, retrieval, caching, and approval paths around AI models so automation stays fast, cheap, and correct once real users arrive — like the review workflow I made 6–10× faster.",
+  positioning:
+    "Full-stack software engineer who builds AI automation that holds up in production — the queues, retrieval, caching, and recovery paths around the model, with a documented 6–10× workflow speedup and a four-person AI team led.",
   summary:
     "I build AI automation, retrieval workflows, external API integrations, full-stack product surfaces, and systems projects."
 };
 
 export const proofMetrics = [
-  { value: "6-10x", label: "documented Revvy workflow speedup" },
-  { value: "50-200ms", label: "cached review page load path" },
-  { value: "4-person", label: "AI research team led at Genesys" },
-  { value: "28", label: "exact CAD drawing contexts isolated" },
-  { value: "3.38", label: "FAST-NUCES CS CGPA" }
+  { value: "6-10x", label: "faster review response (documented)", stage: "DRAFT" },
+  { value: "30-50%", label: "lower AI cost, filtered before the model", stage: "FILTER" },
+  { value: "50-200ms", label: "cached review page loads", stage: "PUBLISH" },
+  { value: "4-person", label: "AI team led at Genesys Research Lab", stage: "APPROVE" },
+  { value: "3x", label: "Dean's List, FAST-NUCES CS", stage: "SYNC" }
 ];
 
 export const focusAreas = [
@@ -154,7 +158,9 @@ export const featuredProjects: Project[] = [
     status: "Private product",
     confidentiality: "Private product",
     summary:
-      "Worked across a private multi-tenant AI SaaS platform tying together agents, account hierarchy, billing, credits, file assets, vector knowledge, cloud services, and operations workflows.",
+      "Worked across a private multi-tenant AI SaaS where specialized agents share one spine — tenancy, billing, credits, file assets, vector knowledge, and cloud services — instead of shipping as separate apps.",
+    proof:
+      "I work across the whole platform an AI product actually needs — account hierarchy, Stripe billing, usage metering, and AWS + Pinecone infra — not just a model wrapper.",
     pitch:
       "Built across the Simplabots platform layer so specialized agents could share tenancy, billing, assets, knowledge, usage tracking, and cloud integrations.",
     role: "Full-stack product and AI engineer",
@@ -172,7 +178,7 @@ export const featuredProjects: Project[] = [
       isSanitized: true
     },
     media: [],
-    featuredMetric: { value: "Multi-tenant", label: "account, profile, role, and agent access model" },
+    featuredMetric: { value: "4-tier", label: "account, profile, role, and agent access model" },
     metrics: [
       { value: "Next.js 15", label: "App Router product surface" },
       { value: "Prisma/Postgres", label: "account, agent, billing, asset data model" },
@@ -246,7 +252,9 @@ export const featuredProjects: Project[] = [
     status: "Private product",
     confidentiality: "Private product",
     summary:
-      "Built review-management automation for Google Business Profile with OAuth, location import, review sync, AI draft generation, smart filtering, caching, and reply publishing.",
+      "Google Business Profile review automation that syncs, filters, drafts, and publishes replies — engineered to skip unnecessary AI work and cut large-review-workflow time 6–10x.",
+    proof:
+      "Performance and cost judgment on real workflows: the cheapest model call is the one you avoid. Batching, tagged cache invalidation, and pre-generation filtering took 1000-review syncs from 30–60 min to 5–10 min.",
     pitch:
       "Reduced slow review-response workflows by filtering unnecessary AI work, batching database writes, using cache invalidation, and keeping manual approval visible.",
     role: "Full-stack automation and product engineer",
@@ -353,7 +361,9 @@ export const featuredProjects: Project[] = [
     status: "Private product",
     confidentiality: "Private product",
     summary:
-      "Built Gmail workflow automation combining account setup, contact groups, thread-aware classification, categorization logs, default categories, Inngest processing, Gmail labels, and correction loops.",
+      "Gmail automation that routes known senders by deterministic rule and classifies ambiguous email with thread-aware AI — every decision logged, labeled, and correctable.",
+    proof:
+      "I design hybrid rule + AI systems and treat model output as inspectable and correctable, not a black box — the reliability discipline production ML products need.",
     pitch:
       "Built Emmy around deterministic sender rules, thread-aware AI classification, categorization logs, Gmail labels, and user correction paths.",
     role: "Full-stack AI automation engineer",
@@ -452,7 +462,9 @@ export const featuredProjects: Project[] = [
     status: "Research prototype",
     confidentiality: "Research prototype",
     summary:
-      "Built a DWG/DXF-first reconstruction engine that extracts exact CAD facts, isolates drawing contexts, groups evidence, uses capped AI only for affordances, and keeps unresolved geometry visible.",
+      "A DWG/DXF reconstruction engine that treats extracted CAD geometry as ground truth and uses capped AI only to interpret evidence — never to invent coordinates, labels, or quantities.",
+    proof:
+      "I can put hard safety contracts around AI in a high-stakes domain — keeping 28 exact drawing contexts CAD-derived and reversible, and leaving unresolved geometry visible instead of faking confidence.",
     pitch:
       "Built around a strict constraint: AI can interpret evidence, but accepted geometry must stay CAD-derived, reversible, and explicit about uncertainty.",
     role: "Research and product prototyping engineer",
@@ -566,7 +578,9 @@ export const featuredProjects: Project[] = [
     status: "Academic product",
     confidentiality: "Academic",
     summary:
-      "Co-built an academic AI music companion with CLAP-InfoNCE alignment, FastAPI services, Pinecone search, React Native/Expo mobile UX, LangChain agents, Whisper/TTS voice flow, Spotify export, and stem separation.",
+      "Co-built an academic multimodal music companion that turns text, image, or voice into playlists — carried from CLAP-InfoNCE embedding alignment through a FastAPI backend to a React Native / Expo app.",
+    proof:
+      "Rare research-to-product range: I worked on the embedding alignment (stabilized after 17 epochs) and the FastAPI backend, Pinecone search, and mobile UX around it — model and product as one system.",
     pitch:
       "Connected model work with product delivery in MelodyMind: emotion-aware audio/text embeddings became a mobile app for text, image, and voice-driven playlist generation.",
     role: "Co-builder, full-stack and AI systems",
@@ -674,7 +688,9 @@ export const featuredProjects: Project[] = [
     status: "Internal lab",
     confidentiality: "Internal lab",
     summary:
-      "Led a Genesys Research Lab project for candidate ingestion, semantic matching, job-description enrichment, and conversational interviews using Weaviate, Nomic embeddings, Groq Llama 3, FastAPI, and Docker Compose.",
+      "Led a 4-person lab team building end-to-end recruitment automation — candidate ingestion, semantic matching, and grounded AI interviews on Weaviate, Nomic, and Groq Llama 3.",
+    proof:
+      "Technical leadership plus real RAG delivery: I set service boundaries and architecture for a team and shipped retrieval-backed matching and a conversational interview agent built to a sub-5-second response target.",
     pitch:
       "I led a four-person group building an end-to-end recruitment workflow that connected candidate context, semantic matching, and structured AI interviews.",
     role: "AI research intern, team lead",
@@ -795,52 +811,52 @@ export const featuredProjects: Project[] = [
 export const secondaryProjects = [
   {
     title: "Document RAG Summarizer",
-    summary: "Built a cloud and offline document summarization pipeline with FAISS, SentenceTransformers, Groq, and TinyLlama.",
+    summary: "Document summarization that runs both in the cloud and fully offline, pairing FAISS retrieval with Groq or a local TinyLlama fallback.",
     stack: ["Python", "FAISS", "Groq", "TinyLlama"],
     href: "https://github.com/Mustafaiqbal2/BIG_Document_RAG",
-    signal: "RAG depth"
+    signal: "Offline-capable RAG"
   },
   {
     title: "CUDA Canny Optimization",
-    summary: "I optimized CUDA Canny edge detection with kernel fusion, memory optimization, shared memory, and minimized transfers.",
+    summary: "Optimized CUDA Canny edge detection with kernel fusion, shared memory, and minimized host-device transfers for a ~48x reported speedup.",
     stack: ["CUDA", "C++", "Image processing"],
     href: "https://github.com/Mustafaiqbal2/Canny_optimization",
-    signal: "~48x reported speedup"
+    signal: "~48x CUDA speedup"
   },
   {
     title: "Neural Network Acceleration",
-    summary: "Implemented six MNIST classifiers from CPU baseline to CUDA, Tensor Cores, OpenACC, and cuBLAS.",
+    summary: "Six MNIST classifiers taken from a CPU baseline through CUDA, Tensor Cores, OpenACC, and cuBLAS to compare acceleration paths head to head.",
     stack: ["CUDA", "cuBLAS", "OpenACC"],
     href: "https://github.com/Mustafaiqbal2/Neural-Network_Acceleration",
     signal: "GPU optimization"
   },
   {
     title: "OpenCL Image Convolution",
-    summary: "Built cross-platform image convolution comparing basic and optimized OpenCL kernels with local-memory tuning.",
+    summary: "Cross-platform image convolution benchmarking naive against local-memory-tuned OpenCL kernels.",
     stack: ["OpenCL", "C++", "CMake"],
     href: "https://github.com/Mustafaiqbal2/opencl-image-convolution",
-    signal: "Parallel image processing"
+    signal: "Cross-platform GPU kernels"
   },
   {
     title: "Custom Compiler",
-    summary: "Built a Java compiler project covering lexical analysis, symbol tables, LL(1) parsing, AST construction, and errors.",
+    summary: "A Java compiler front end covering lexical analysis, symbol tables, LL(1) parsing, AST construction, and error recovery.",
     stack: ["Java", "Compiler design", "DFA"],
     href: "https://github.com/Mustafaiqbal2/Custom-Compiler",
-    signal: "Systems fundamentals"
+    signal: "Compiler internals"
   },
   {
     title: "DNA Matching with MPI",
-    summary: "Built parallel DNA sequence matching using MPI master-worker distribution for larger sequence workloads.",
+    summary: "Parallel DNA sequence matching using an MPI master-worker split to scale across larger sequence workloads.",
     stack: ["C++", "MPI", "Distributed systems"],
     href: "https://github.com/Mustafaiqbal2/DNA-Matching-MPI",
     signal: "Distributed compute"
   },
   {
     title: "Programmatic SEO Factory",
-    summary: "Built an SEO roadmap and page-generation system for 1,053 pages across city, product, guide, calculator, and long-tail pages.",
+    summary: "A programmatic SEO system that planned and generated 1,053 pages across city, product, guide, calculator, and long-tail templates.",
     stack: ["Programmatic SEO", "Schema", "Sitemaps", "Content systems"],
     href: "",
-    signal: "Content systems"
+    signal: "Content systems at scale"
   }
 ];
 
