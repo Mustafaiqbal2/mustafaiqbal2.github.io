@@ -1,14 +1,14 @@
 import { Monitor, Moon, Sun } from "lucide-react";
 
 const options = [
-  { value: "system", label: "Use system theme", icon: Monitor },
-  { value: "light", label: "Use light theme", icon: Sun },
-  { value: "dark", label: "Use dark theme", icon: Moon }
+  { value: "system", label: "Match system theme", icon: Monitor },
+  { value: "light", label: "Light theme", icon: Sun },
+  { value: "dark", label: "Dark theme", icon: Moon }
 ];
 
 export function ThemeToggle() {
   return (
-    <div className="theme-toggle" data-theme-toggle aria-label="Theme preference">
+    <div className="theme-toggle" data-theme-toggle role="group" aria-label="Theme">
       {options.map((option) => {
         const Icon = option.icon;
         return (
@@ -19,7 +19,7 @@ export function ThemeToggle() {
             aria-pressed={option.value === "system"}
             data-theme-choice={option.value}
           >
-            <Icon size={16} aria-hidden="true" />
+            <Icon aria-hidden="true" />
           </button>
         );
       })}

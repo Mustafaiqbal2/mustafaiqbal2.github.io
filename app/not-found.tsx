@@ -1,17 +1,22 @@
-import { ArrowLeft } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 
 export default function NotFound() {
   return (
-    <main id="top">
-      <section className="page-hero compact-page-hero">
-        <div className="section-inner">
-          <div className="section-heading wide-heading">
-            <p className="eyebrow">404</p>
-            <h1>That page is not in this portfolio.</h1>
-            <p>Use the work index to get back to the project case studies and engineering work.</p>
-            <a className="button primary" href="/work/">
-              <ArrowLeft size={18} aria-hidden="true" />
-              Back to work
+    <main id="main">
+      <section className="section">
+        <div className="wrap prose">
+          <p className="eyebrow mono">404</p>
+          <h1>This route doesn&apos;t resolve.</h1>
+          <p className="lede" style={{ marginTop: 16 }}>
+            The page you&apos;re after isn&apos;t here. Head back to the work, or the home page.
+          </p>
+          <div className="btn-row" style={{ marginTop: 26 }}>
+            <a className="btn btn--primary" href="/work/">
+              View the work
+              <ArrowRight aria-hidden="true" />
+            </a>
+            <a className="btn btn--ghost" href="/">
+              Home
             </a>
           </div>
         </div>

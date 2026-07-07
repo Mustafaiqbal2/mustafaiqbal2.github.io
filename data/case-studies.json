@@ -1,0 +1,782 @@
+[
+  {
+    "slug": "revvy-review-automation",
+    "title": "Revvy",
+    "category": "Google Business Profile review-response automation",
+    "oneLiner": "A multi-tenant SaaS that ingests Google Business Profile reviews at scale and generates on-brand reply drafts through a tunable draft-to-approve-to-publish pipeline, engineered so throughput and per-call cost stay controlled once real review volume arrives.",
+    "summary": "Revvy connects to Google Business Profile over OAuth, paginates and ingests reviews, and generates per-location AI reply drafts that an operator can approve and publish back to Google. A three-tier automation model — manual, draft-then-approve, and auto-post above a per-location star threshold — lets each workspace decide how much runs unattended. The engineering emphasis is throughput and cost: parallelized model calls, pre-filtering that skips ineligible reviews before any generation, batched database writes, and tagged server-side caching.",
+    "status": "Private product",
+    "role": "Solo builder — designed and implemented the full stack: data model, Google OAuth and token layer, API routes, background job workers, the AI generation pipeline, performance work, and the operator dashboard.",
+    "dates": "Active development through November 2025 (deployed on Vercel; not generally available)",
+    "isPrivate": true,
+    "privateNote": "Private product in active development — architecture walkthrough and sanitized demo available on request. No connected accounts, business names, or review data are shown.",
+    "featuredMetric": {
+      "value": "6-10x",
+      "label": "faster large-review syncs (2000 reviews: ~60-120 min sequential to ~10-20 min parallel)",
+      "tier": "documented",
+      "source": "PERFORMANCE.md"
+    },
+    "metrics": [
+      {
+        "value": "30-60 min to 5-10 min",
+        "label": "1000-review sync time",
+        "tier": "documented",
+        "source": "PERFORMANCE.md benchmark"
+      },
+      {
+        "value": "30-50%",
+        "label": "targeted reduction in generation cost via pre-filtering ineligible reviews",
+        "tier": "target",
+        "source": "design target"
+      },
+      {
+        "value": "300-1000ms to 50-200ms",
+        "label": "cached reviews/locations page loads",
+        "tier": "documented",
+        "source": "PERFORMANCE.md"
+      },
+      {
+        "value": "~2000 to ~20-40",
+        "label": "DB queries per full sync after write batching",
+        "tier": "target",
+        "source": "design target described in docs"
+      }
+    ],
+    "problem": "Responding to Google reviews is a manual, per-location chore that does not scale: a business with many locations accumulates reviews faster than a person can read, draft an on-brand reply, and post it. Doing this naively in software is worse — a sequential sync of a few thousand reviews takes over an hour, and generating a reply for every review spends model budget on reviews that are already answered or do not warrant one.",
+    "constraints": [
+      "Real end-customer data under Google's platform terms — the integration handles live review and business data, so nothing customer-identifying can leak into logs, media, or the portfolio.",
+      "Google Business Profile access tokens expire and refresh tokens can be permanently revoked (invalid_grant); the system has to survive token expiry mid-sync and detect dead connections rather than silently failing.",
+      "Model calls cost money per review and rate limits are real — throughput can't come at the price of runaway spend or hitting provider limits.",
+      "Multi-tenant from the start: every workspace has its own locations, prompts, automation settings, and cached views that must stay isolated.",
+      "Kept infrastructure minimal — no separate queue broker to operate alongside the database."
+    ],
+    "approach": [
+      {
+        "decision": "Made pre-filtering the first stage of the pipeline — skip reviews already replied to, below the star threshold, or already drafted before spending a single model call.",
+        "why": "The cheapest generation is the one you avoid. Filtering ineligible reviews up front is where most of the cost discipline comes from; it targets a documented 30-50% cut in generation spend without changing output quality."
+      },
+      {
+        "decision": "Built three generation strategies matched to a decision matrix rather than one code path: parallel (p-limit at 20 concurrent) for small and real-time work, a throttled mode (10 concurrent plus delays) for rate-limit safety, and an OpenAI Batch API path for non-urgent bulk jobs.",
+        "why": "Throughput, cost, and latency trade off against each other. Small syncs want speed, bulk backfills tolerate a 24-hour turnaround for roughly half the cost, and rate limits need a safety valve — one strategy can't serve all three honestly."
+      },
+      {
+        "decision": "Wrote a real OAuth token lifecycle instead of a happy-path integration: refresh access tokens with a 5-minute expiry buffer, cache the token within a request, and detect invalid_grant to flag a connection as needing reauthorization.",
+        "why": "Long-running syncs outlive a token's lifetime, and revoked grants are a permanent failure, not a retry. Distinguishing a transient refresh from a dead connection is what keeps the product from either crashing or looping forever on a workspace that has to reconnect."
+      },
+      {
+        "decision": "Chose pg-boss so the job queue lives entirely in PostgreSQL — no Redis or separate broker.",
+        "why": "For a single-operator build, one fewer piece of infrastructure to run and reason about is worth more than a marginally faster queue. Sync, generate, and post all became typed jobs on the database already in the stack."
+      },
+      {
+        "decision": "Batched database writes inside transactions and cached read-heavy pages with per-workspace tagged revalidation.",
+        "why": "A full sync that issues ~2000 individual queries is the hidden bottleneck behind the model calls; upserting in batches (design target ~20-40 queries) and invalidating cache by workspace tag on sync keeps both writes and page loads fast without stale cross-tenant data."
+      }
+    ],
+    "implementation": [
+      "Built the Google Business Profile integration on NextAuth v5 with offline access: a token layer that refreshes with a 5-minute expiry buffer, caches the access token in-request, and marks connections reauthRequired on invalid_grant.",
+      "Implemented review ingestion that paginates the GBP reviews API, maps star enums, and batch-upserts into PostgreSQL via Prisma inside transactions.",
+      "Built the reply pipeline with configurable per-location prompts, business/SEO context injection, and first-name-only personalization, across multiple OpenAI models (gpt-4o-mini default, with gpt-5 code paths).",
+      "Implemented the three-mode automation model — manual, draft-then-approve, and auto-post at or above a per-location star threshold.",
+      "Engineered throughput three ways: parallel generation via p-limit at 20 concurrent, a throttled 10-concurrent mode for rate-limit safety, and a Batch API path for cheap bulk work.",
+      "Built background processing on pg-boss with typed SYNC_REVIEWS, GENERATE_REPLY, and POST_REPLY handlers, plus an optional GBP Pub/Sub endpoint to trigger syncs.",
+      "Built the operator dashboard: connect, locations, and an inbox to generate, edit, approve, and publish drafts with per-location settings."
+    ],
+    "outcomes": [
+      {
+        "label": "Large-review sync (2000 reviews) improved from ~60-120 min sequential to ~10-20 min parallel — roughly 6-10x",
+        "tier": "documented",
+        "value": "6-10x",
+        "source": "PERFORMANCE.md; not independently audited"
+      },
+      {
+        "label": "1000-review sync improved from ~30-60 min to ~5-10 min",
+        "tier": "documented",
+        "value": "~6x",
+        "source": "PERFORMANCE.md"
+      },
+      {
+        "label": "Pre-filtering targets a 30-50% reduction in generation cost by not drafting ineligible reviews",
+        "tier": "target",
+        "value": "30-50%",
+        "source": "design target"
+      },
+      {
+        "label": "Batch API path offers ~50% cost savings on bulk jobs where a 24-hour turnaround is acceptable",
+        "tier": "target",
+        "value": "~50%",
+        "source": "design target / provider pricing"
+      },
+      {
+        "label": "Cached page loads reduced from ~300-1000ms to ~50-200ms",
+        "tier": "documented",
+        "value": "50-200ms",
+        "source": "PERFORMANCE.md"
+      }
+    ],
+    "stack": [
+      "Next.js 14 (App Router)",
+      "TypeScript",
+      "React 18",
+      "PostgreSQL",
+      "Prisma ORM",
+      "pg-boss (Postgres-backed job queue)",
+      "NextAuth v5 (Google OAuth, offline tokens)",
+      "Google Business Profile API",
+      "OpenAI API (gpt-4o-mini / gpt-5) + Batch API",
+      "p-limit",
+      "Zod",
+      "Tailwind CSS",
+      "Vercel"
+    ],
+    "limitations": [
+      "Performance numbers come from an internal PERFORMANCE.md — documented benchmarks and design targets, not independently audited production metrics. They should be read as documented, never guaranteed.",
+      "The product is deployed but not generally available; there are no verified users or revenue, and the README still describes it honestly as an early, functional build.",
+      "Pinecone is scaffolded as hooks for per-location voice memory but is not part of the shipped generation loop — reply voice is driven by per-location prompts and injected context today.",
+      "The AI layer is currently OpenAI-specific (with gpt-5 code paths staged); it is structured to swap models but has not been exercised against another provider.",
+      "Next: close the loop on per-location voice memory, add reply-quality evaluation before auto-post is trusted more broadly, and measure the cost and throughput targets against real production volume rather than benchmark runs."
+    ],
+    "mediaNotes": [
+      "Show a sanitized architecture diagram: GBP OAuth to paginated ingestion to pg-boss (SYNC / GENERATE / POST handlers) to draft-approve-publish, with the pre-filter stage called out before generation. Caption it as the sourced pipeline.",
+      "Show an annotated 'measured value' callout for the 6-10x sync benchmark tagged DOCUMENTED - PERFORMANCE.md, mirroring the provenance signature.",
+      "Optional: a wireframe-style still of the inbox (generate / edit / approve / publish) with all review text, business names, and reviewer names replaced by neutral placeholders.",
+      "MUST NOT show: any real review text, reviewer or business names, connected Google accounts, tokens, or secrets. Do not surface the publishing-delay behavior anywhere.",
+      "Do not present any dashboard screenshot containing live GBP data; only synthetic/placeholder content is publishable."
+    ],
+    "_key": "revvy"
+  },
+  {
+    "slug": "emmy-email-categorization",
+    "title": "Emmy — thread-aware Gmail categorization",
+    "category": "Applied LLM systems / email automation",
+    "oneLiner": "A production Gmail auto-categorization system that routes known senders by deterministic rule and classifies the rest with a thread-aware LLM, writing every decision back as a native Gmail label — and logging why.",
+    "summary": "Emmy sorts a user's incoming Gmail into their own categories and applies the decision as a real Gmail label in near-real-time. It uses a two-layer design: deterministic Contact Group rules resolve known senders with no model call, and a thread-aware LLM handles everything ambiguous using full conversation context, the owner's To/CC/BCC role, and learned corrections. New mail flows through a Gmail Pub/Sub webhook into an Inngest background job, and every categorization is persisted with a structured reasoning log and confidence score.",
+    "status": "Client work",
+    "role": "Solo developer — designed and built the full stack end to end: data model, background pipeline, LLM prompting, Gmail integration, and dashboard UI.",
+    "dates": "Active development through late 2025 (weekly updates dated Nov 2025)",
+    "isPrivate": true,
+    "privateNote": "Private client build over real inboxes — sanitized architecture walkthrough available on request.",
+    "featuredMetric": {
+      "value": "~2–3×",
+      "label": "faster processing after raising OpenAI concurrency 3 → 8",
+      "tier": "self-reported",
+      "source": "weekly update"
+    },
+    "metrics": [
+      {
+        "value": "0",
+        "label": "LLM cost for single-category Contact Group matches (routed by rule)",
+        "tier": "documented",
+        "source": "rules-first short-circuit before any model call"
+      },
+      {
+        "value": "12",
+        "label": "default categories, with configurable backfill of 100/300/500/1000 emails",
+        "tier": "documented",
+        "source": "shipped defaults"
+      },
+      {
+        "value": "Batch API",
+        "label": "evaluated and rejected — up to 24h latency unfit for near-real-time inbox sorting",
+        "tier": "documented",
+        "source": "engineering trade-off in weekly update"
+      }
+    ],
+    "problem": "A client needed incoming Gmail sorted automatically into their own operational categories, applied as native Gmail labels so the sorting lives in the inbox they already use — not a separate app. Naively sending every message to an LLM is slow, expensive, and inconsistent across a conversation; a pure-rules filter can't handle the ambiguous mail that actually needs judgment. The system also had to categorize new mail fast enough to feel live, and be auditable and correctable when it got a call wrong.",
+    "constraints": [
+      "Near-real-time requirement ruled out cheap batch processing — new mail must be labeled promptly, not hours later.",
+      "Operates on real user inboxes: OAuth tokens and full message bodies are sensitive and stay server-side; no inbox content is exposed.",
+      "Every LLM call costs money and latency, so known senders must never reach the model.",
+      "Decisions had to stay consistent within a thread — a conversation split across categories is worse than no sorting.",
+      "Corrections needed to be cheap to act on and to influence future decisions without a retraining loop."
+    ],
+    "approach": [
+      {
+        "decision": "Two-layer classifier: deterministic Contact Group rules first, LLM only for the rest.",
+        "why": "Known senders are the common case and don't need judgment. Matching a sender email or domain to a single-category group short-circuits to that category with zero model cost and full confidence by construction, so the LLM budget is spent only where it buys something — a real cost/latency/accuracy trade-off, not a buzzword."
+      },
+      {
+        "decision": "Thread-level consistency enforced end to end.",
+        "why": "The classifier reads full conversation history and keeps every message in a thread in one category; moving one message re-routes the whole thread. Per-message drift within a conversation is the failure mode users notice most."
+      },
+      {
+        "decision": "Structured-context prompting instead of dumping raw text at the model.",
+        "why": "The prompt encodes concrete signals — the owner's To/CC/BCC role, internal-vs-external domain, reply/forward detection, timing, attachments, and per-category descriptions — and the model must return strict JSON with a category plus reasoning, falling back to Uncategorized on any parse or validation failure. Concrete signals and a strict contract make the output usable and safe to automate."
+      },
+      {
+        "decision": "Rejected the OpenAI Batch API, blind thread routing, and two-step AI.",
+        "why": "Batch's 24-hour turnaround is wrong for a near-real-time inbox; the added complexity of multi-pass AI wasn't justified by the accuracy it bought. Knowing when not to add a layer is the point."
+      },
+      {
+        "decision": "A lightweight correction feedback loop rather than fine-tuning.",
+        "why": "User corrections are stored as training data and the last 10 are injected into subsequent prompts. It adapts to the client's real conventions immediately, with no retraining pipeline to own."
+      }
+    ],
+    "implementation": [
+      "Built the Pub/Sub-to-background-job ingestion path: a Gmail push webhook decodes the notification and dispatches an Inngest event that categorizes mail in small batches and auto-applies labels — a real pipeline, not a synchronous loop.",
+      "Implemented the deterministic Contact Group layer: match by sender email or domain, and short-circuit single-category groups to their category with no LLM call.",
+      "Wrote the structured-context prompt and strict-JSON contract; used a fast single-pass configuration (reasoning effort off, low temperature) for deterministic classification, with a separate model call powering sender-to-group suggestions from a sender's recent history.",
+      "Wrote decisions back as native Gmail labels through a label manager, including restore-all-to-inbox logic on account deletion so uninstalling leaves the inbox clean.",
+      "Persisted a structured JSON reasoning log and confidence score per email to Postgres via Prisma, surfaced in a dashboard modal for full decision transparency.",
+      "Raised OpenAI concurrency from 3 to 8 parallel calls under a p-limit rate limiter, the change behind the reported ~2–3× processing speedup.",
+      "Built the Next.js dashboard: category manager, Contact Group CRUD with bulk email upload, setup wizard, prompt editor, training panel, and a thread-grouped inbox view."
+    ],
+    "outcomes": [
+      {
+        "label": "~2–3× faster processing after raising concurrency from 3 to 8 parallel calls",
+        "value": "~2–3×",
+        "tier": "self-reported"
+      },
+      {
+        "label": "Known senders in single-category Contact Groups route with zero LLM cost and full confidence by construction",
+        "value": "0 model calls",
+        "tier": "documented"
+      },
+      {
+        "label": "OpenAI Batch API evaluated and rejected as unfit for near-real-time sorting (up to 24h latency) — a documented trade-off",
+        "value": "rejected",
+        "tier": "documented"
+      },
+      {
+        "label": "Every categorization is auditable: structured reasoning log + confidence score persisted per email and viewable in-product",
+        "value": "per-email logs",
+        "tier": "documented"
+      },
+      {
+        "label": "Shipped 12 default categories with configurable initial backfill (100/300/500/1000 emails)",
+        "value": "12 categories",
+        "tier": "documented"
+      }
+    ],
+    "stack": [
+      "Next.js 14 (App Router)",
+      "TypeScript",
+      "Prisma / PostgreSQL",
+      "Inngest (durable background jobs)",
+      "Gmail API + Pub/Sub push",
+      "OpenAI API",
+      "p-limit (concurrency control)",
+      "jose (JWT/session auth)",
+      "Zod",
+      "Tailwind CSS"
+    ],
+    "limitations": [
+      "The ~2–3× speedup is developer-reported from a weekly update, not an independently measured benchmark — presented as reported, not guaranteed.",
+      "Confidence scores are a system heuristic (a fixed high value for a valid LLM match, a low value on fallback), not calibrated model probabilities — they flag fallbacks, they don't quantify certainty.",
+      "Pinecone is wired as a dependency and embedding fields exist on the schema, but the shipped categorization path is rules-plus-prompt; a live vector-search layer is scaffolded, not the current mechanism.",
+      "The Uncategorized bucket is reduced via a forced second-pass review with thread context and a lower confidence bar, but nothing guarantees zero unsorted mail — some ambiguous messages are correctly left for a human.",
+      "Next steps: calibrate confidence against real correction outcomes, and evaluate whether the embedding layer earns its place for near-duplicate sender/category matching."
+    ],
+    "mediaNotes": [
+      "Show a sanitized architecture diagram: Gmail Pub/Sub webhook → Inngest job → rules short-circuit / LLM classify → Gmail label write + Postgres reasoning log. Caption: 'Ingestion pipeline — known senders skip the model; ambiguous mail is classified with thread context.'",
+      "Optional: a redacted mock of the per-email decision log modal (category + confidence + reasoning) using synthetic placeholder data. Caption it as illustrative/synthetic.",
+      "Do NOT show any real inbox, real sender addresses, real message bodies, the client's identity or requirements doc, or any secrets/config."
+    ],
+    "_key": "emmy"
+  },
+  {
+    "slug": "recruitment-rag-platform",
+    "title": "Recruitment RAG Platform",
+    "category": "AI recruitment automation (RAG + multi-agent)",
+    "oneLiner": "An end-to-end recruitment platform that matches candidates to roles by semantic retrieval and runs a conversational, non-repeating interview agent — built with a 4-person team I led during a research-lab internship.",
+    "summary": "A recruitment platform built at Genesys Research Lab that replaces keyword CV screening with a retrieval pipeline: it ingests a candidate's public footprint, embeds it with Nomic into a Weaviate vector store, and matches it semantically against LLM-enhanced job descriptions. On top of the retrieval layer sits a conversational interview agent on Llama 3 8B, structured as a multi-agent flow so questions stay dynamic and non-repeating. I led a 4-person team, owned the architecture, and shipped it as containerized microservices on lab infrastructure over a summer internship.",
+    "status": "Internal lab",
+    "role": "Team lead — led a 4-person team and owned the platform architecture end to end.",
+    "dates": "Jun–Aug 2025",
+    "isPrivate": true,
+    "privateNote": "Internal research-lab build — architecture walkthrough available on request.",
+    "featuredMetric": {
+      "value": "< 5s",
+      "label": "interview-agent response, no question repetition",
+      "tier": "self-reported",
+      "source": "CV"
+    },
+    "metrics": [
+      {
+        "value": "4",
+        "label": "engineers led",
+        "tier": "team",
+        "source": "Genesys Research Lab"
+      },
+      {
+        "value": "5",
+        "label": "candidate sources ingested (CV, GitHub, LinkedIn, ORIC, personal site)",
+        "tier": "self-reported"
+      },
+      {
+        "value": "8B",
+        "label": "Llama 3 interview model, served on Groq",
+        "tier": "self-reported"
+      }
+    ],
+    "problem": "Manual candidate screening is slow and shallow: recruiters skim CVs and miss the context scattered across a candidate's GitHub, LinkedIn, and personal sites. The lab wanted an end-to-end system that could assemble a candidate's public footprint, match it against a role by meaning rather than keyword overlap, and run a first-pass conversational interview without a human in the loop for every candidate.",
+    "constraints": [
+      "Fixed internship window (Jun–Aug 2025) to ship an end-to-end system with a 4-person team.",
+      "Input data is heterogeneous and personal — CVs, GitHub, LinkedIn, ORIC, and personal sites vary wildly in structure and carry sensitive PII.",
+      "Ran on lab servers, not managed cloud — deployment had to be self-hosted and reproducible.",
+      "The interview agent had to feel conversational: low latency and no repeated questions across a session, which is a state problem, not just a prompt.",
+      "Constrained to small open models (Llama 3 8B via Groq) rather than frontier APIs."
+    ],
+    "approach": [
+      {
+        "decision": "Semantic retrieval over keyword filtering — Nomic embeddings in Weaviate for candidate-to-job matching.",
+        "why": "A candidate's fit lives in context and phrasing that keyword filters miss; embedding both sides into one space lets the match rank on meaning."
+      },
+      {
+        "decision": "LLM-enhanced job descriptions before embedding, via Llama on Groq.",
+        "why": "Raw job descriptions are terse and inconsistent; normalizing and expanding them first gives the retrieval side a richer, more comparable vector to match against."
+      },
+      {
+        "decision": "Multi-agent architecture for the interview agent rather than a single looping prompt.",
+        "why": "Keeping questioning dynamic and non-repeating is a state-management problem — separating question generation from context tracking prevents the agent from looping or asking what it already asked."
+      },
+      {
+        "decision": "Llama 3 8B served on Groq for the interview loop.",
+        "why": "Conversational feel needs low latency; Groq inference kept responses under 5s (self-reported) with a small open model instead of a slower or costlier frontier API."
+      },
+      {
+        "decision": "Containerized microservices (FastAPI + async job processing) on Docker Compose.",
+        "why": "Ingestion, embedding, matching, and interviewing have different runtime shapes; splitting them into services with async job handling made the pipeline deployable and reproducible on lab servers."
+      }
+    ],
+    "implementation": [
+      "Built a multi-source ingestion pipeline that scrapes and normalizes candidate data from CVs, GitHub, LinkedIn, ORIC, and personal sites.",
+      "Embedded candidate and job data with Nomic and indexed it in Weaviate for semantic candidate-job matching.",
+      "Enhanced job descriptions with Llama models on the Groq API before embedding to improve match quality.",
+      "Built a conversational interview agent on Llama 3 8B with a multi-agent architecture for dynamic, non-repeating questioning.",
+      "Stood up a FastAPI backend with async job processing to decouple long-running ingestion and embedding from request handling.",
+      "Deployed the platform as containerized microservices via Docker Compose on lab servers."
+    ],
+    "outcomes": [
+      {
+        "label": "Led a 4-person team and owned the architecture end to end.",
+        "tier": "team",
+        "source": "Genesys Research Lab"
+      },
+      {
+        "label": "Interview agent responds in under 5s with no question repetition across a session.",
+        "tier": "self-reported",
+        "source": "CV",
+        "value": "< 5s"
+      },
+      {
+        "label": "Reduced manual screening time by automating candidate evaluation (no measured percentage claimed).",
+        "tier": "self-reported"
+      }
+    ],
+    "stack": [
+      "Python",
+      "FastAPI",
+      "Weaviate",
+      "Nomic embeddings",
+      "Llama 3 8B (Groq API)",
+      "Docker Compose",
+      "async job processing"
+    ],
+    "limitations": [
+      "Match quality was never independently benchmarked — no precision/recall or relevance evaluation, so the retrieval win is architectural, not measured.",
+      "The sub-5s figure is dev-reported from a specific Groq-served setup, not an audited latency benchmark, and depends on external inference availability.",
+      "An 8B model bounds reasoning depth; a real deployment would want evaluation against frontier models before trusting interview judgments.",
+      "This is a research-lab prototype, not a product with real hiring outcomes — I would not claim it screened real candidates at scale.",
+      "The pipeline ingests sensitive personal data; before any real-world use it needs consent, retention limits, access controls, and a clear lawful basis — that governance layer is out of scope for the internship build.",
+      "Self-hosted on lab servers via Docker Compose — not hardened, monitored, or scaled for production traffic."
+    ],
+    "mediaNotes": [
+      "Show a sanitized architecture diagram: multi-source ingestion → Nomic embeddings → Weaviate → semantic match → Llama 3 interview agent, with FastAPI/Docker services labeled. Use only synthetic/placeholder entities.",
+      "Optionally show a short interview-agent transcript using a fully synthetic candidate to illustrate non-repeating questioning.",
+      "Do NOT show any real candidate data — no real names, CVs, GitHub/LinkedIn/ORIC profiles, or any PII. Do not imply access to a real candidate database.",
+      "Do not expose lab server hostnames or internal infrastructure details in any diagram."
+    ],
+    "_key": "recruitment-rag"
+  },
+  {
+    "slug": "adzee-ad-creative",
+    "title": "Adzee",
+    "category": "AI ad-creative generation",
+    "oneLiner": "A solo, end-to-end AI product that turns a brand profile and a one-line theme into a full ad set — brief, ranked headlines, copy, and imagery — through a staged, brand-conditioned pipeline with a self-correcting image-quality loop.",
+    "summary": "Adzee generates on-brand advertising creative end to end. A user defines a brand — name, description, logo, color palette — gives a short theme, and a staged LLM pipeline produces a creative brief, ten ranked headlines, per-image prompts, and short and long copy, then generates imagery and automatically regenerates any image that scores below a quality threshold. Built solo as a full application, not a prototype: JWT auth, a Prisma/Postgres data model, Pinecone retrieval over past generations, Vercel Blob storage, streaming responses, and a Docker deploy path.",
+    "status": "Private product",
+    "role": "Solo builder — architected and implemented the full stack end to end: auth, data model, the staged AI pipeline, the image-quality loop, retrieval, frontend, and containerized deploy.",
+    "dates": "2025 (active through late 2025)",
+    "isPrivate": true,
+    "privateNote": "Private product — architecture walkthrough and demo available on request.",
+    "featuredMetric": {
+      "value": "4-stage",
+      "label": "brand-conditioned generation pipeline",
+      "tier": "self-reported",
+      "source": "staged: brief → ranked headlines → image prompts → copy"
+    },
+    "metrics": [
+      {
+        "value": "Auto-regen",
+        "label": "images re-generated below a quality threshold",
+        "tier": "self-reported",
+        "source": "self-correcting image loop"
+      },
+      {
+        "value": "Per-stage",
+        "label": "streaming — UI shows each stage as it lands",
+        "tier": "self-reported",
+        "source": "async generators"
+      },
+      {
+        "value": "Private",
+        "label": "solo build — demo on request",
+        "tier": "private"
+      }
+    ],
+    "problem": "Producing a coherent ad set by hand — brief, headlines, body copy, and matching imagery — is slow and drifts off-brand, and a single naive prompt to a model produces generic, uncontrolled output that ignores a brand's identity. Adzee is a solo attempt to make that whole flow one brand-conditioned pipeline where every stage carries the same structured brand context and the output is checked before it is returned.",
+    "constraints": [
+      "No independently measured usage, revenue, or accuracy data exists — this is a working build, not a launched product with a user base, and it is presented that way.",
+      "Image generation is non-deterministic and can return weak results, so the pipeline cannot trust a single pass — quality has to be checked and corrected in-loop.",
+      "Brand consistency has to hold across four distinct generation stages, not just one prompt, so brand context is threaded through every step rather than set once.",
+      "Single builder across the entire surface — auth, data, pipeline, retrieval, and deploy — so scope choices had to stay narrow enough to actually finish and run."
+    ],
+    "approach": [
+      {
+        "decision": "Decompose generation into distinct, composable stages — creative brief, ten ranked headlines, per-image prompts, then short and long copy — each receiving structured brand context, rather than one monolithic prompt.",
+        "why": "Staging makes each step inspectable and independently tunable, and threading the same brand context (name, description, logo, primary color) through every stage is what keeps the output on-brand instead of generic."
+      },
+      {
+        "decision": "Add a self-correcting image-quality loop: generate, score against a configurable threshold, regenerate the weak ones before returning.",
+        "why": "Image models fail unpredictably; a closed loop with a quality gate is the difference between a demo that sometimes returns junk and a pipeline you can hand a result from."
+      },
+      {
+        "decision": "Stream the pipeline with async generators so the UI surfaces each stage as it completes.",
+        "why": "A multi-stage generation run is long; showing progressive results keeps the interaction responsive instead of blocking on the full run, and makes a failing stage visible rather than hidden in a spinner."
+      },
+      {
+        "decision": "Add Pinecone retrieval over past generations via OpenAI embeddings.",
+        "why": "Past outputs are the cheapest source of on-brand grounding; a retrieval layer lets the pipeline draw on prior generations rather than starting cold every time."
+      },
+      {
+        "decision": "Ship it as a real application — JWT auth, Prisma/Postgres model, Vercel Blob storage, and a Dockerfile — not a notebook or CLI toy.",
+        "why": "The product started life as a one-shot CLI ad creator and was deliberately grown into a deployable web app with persistence and auth, because the interesting problems (brand state, stored generations, multi-user) only appear once it is a real system."
+      }
+    ],
+    "implementation": [
+      "Built the staged GPT-4o pipeline: creative brief, ten ranked headlines, per-image prompts, and short/long copy, each stage fed the same structured brand context (name, description, logo, primary color).",
+      "Implemented the image-quality loop — generate, score against a configurable threshold, and regenerate images that fall below it before returning the set.",
+      "Wired streaming generation with async generators so each pipeline stage renders in the UI as it completes instead of blocking on the whole run.",
+      "Modeled the domain in Prisma/Postgres — Users, Brands, per-brand Colors, and Generations — persisting prompts and generated image URLs.",
+      "Integrated Pinecone with OpenAI text-embedding-3-small to embed and retrieve past generations.",
+      "Wrote a from-scratch JWT auth layer with hashed, rotating refresh tokens (revocation and replacement chaining) and bcrypt password hashing.",
+      "Persisted imagery through Vercel Blob and containerized the app with a Dockerfile and deploy scripts."
+    ],
+    "outcomes": [
+      {
+        "label": "A working, deployable end-to-end AI product — staged generation, a self-correcting image loop, auth, persistence, vector retrieval, and containerization — built solo.",
+        "tier": "self-reported",
+        "source": "24 commits; deployable build"
+      },
+      {
+        "label": "Brand-conditioned output across four stages rather than a single uncontrolled prompt, with structured brand context threaded through each step.",
+        "tier": "self-reported"
+      },
+      {
+        "label": "Image results are quality-gated and auto-regenerated below threshold rather than returned blind.",
+        "tier": "self-reported"
+      },
+      {
+        "label": "No usage, revenue, or accuracy metrics are claimed — none were measured. The demonstrated outcome is architectural completeness.",
+        "tier": "self-reported"
+      }
+    ],
+    "stack": [
+      "Next.js 15",
+      "React 19",
+      "TypeScript",
+      "OpenAI GPT-4o",
+      "OpenAI image generation",
+      "OpenAI embeddings (text-embedding-3-small)",
+      "Pinecone",
+      "Prisma",
+      "PostgreSQL",
+      "Vercel Blob",
+      "JWT + bcrypt",
+      "Tailwind CSS",
+      "Docker"
+    ],
+    "limitations": [
+      "No quantitative evaluation of creative quality — the image loop scores against a threshold, but there is no measured baseline for how much regeneration improves the final set. The next step is an honest offline eval of the scorer against human judgment.",
+      "The refresh-token layer works but is not hardened: a token-TTL configuration bug means the auth lifecycle needs an audit and correction before I would call the security posture production-ready. I am not presenting token security as a selling point.",
+      "No usage or accuracy data exists — it has not been run against real users or a labeled test set, so all claims here are architectural, not outcome-based.",
+      "Retrieval over past generations is wired but its effect on output quality is unmeasured; I would want to test whether it actually improves on-brand grounding before leaning on it.",
+      "It began as a one-shot CLI and grew into a web app; some seams from that evolution remain and would want consolidation before scaling to multiple concurrent users."
+    ],
+    "mediaNotes": [
+      "Show a sanitized annotated pipeline diagram: theme + brand profile → brief → ranked headlines → image prompts → copy → image-quality loop (generate → score → regenerate) → ad set. Caption it as the staged, brand-conditioned generation flow.",
+      "If showing a generated ad set, use a fictional placeholder brand only, clearly labeled as a generated sample — never a real client or brand.",
+      "Do NOT show the repository, any .env/config, the parent folder name, or any screenshot exposing secrets or the internal project location.",
+      "A small diagram of the streaming UX (stages resolving progressively) reinforces the async-generator decision without exposing anything sensitive."
+    ],
+    "_key": "adzee"
+  },
+  {
+    "slug": "cad-understanding",
+    "title": "CAD Understanding",
+    "category": "Architectural-CAD intelligence (foundation)",
+    "oneLiner": "An evidence-first foundation that turns a delivered architectural CAD package into typed, content-hashed, provenance-tracked evidence — engineered so a reasoning model can later interpret real drawings without ever drifting from the exact CAD.",
+    "summary": "CAD Understanding is the technical foundation for an early-stage startup building a system that reads real professional architectural CAD well enough to support downstream construction workflows. The current codebase does two honest jobs: it inventories a delivered project package as typed, content-hashed evidence with DWG-to-DXF provenance, and it reads the readable CAD's own text, tags, and dimensions as structurally-typed claims — keeping delivered-source and derived evidence strictly separate. The interpretation layer is deliberately left unbuilt, behind a priced, capped, currently-unwired AI boundary. The defining trait is restraint: a design law (\"element types are evidence, not code\") enforced by a build-failing AST gate, and a documented decision to delete the team's own more-sophisticated pipeline once it was shown not to generalize.",
+    "status": "Research",
+    "role": "Technical founder and lead engineer — owns the architecture, codebase, and decision records; works with a domain cofounder for licensed-professional review.",
+    "dates": "2026 — active; current foundation reset July 2026",
+    "isPrivate": true,
+    "privateNote": "Private, pre-product startup — architecture walkthrough and decision records available on request.",
+    "featuredMetric": {
+      "value": "766 / 766",
+      "label": "readable-sheet dimensions yielding a supported geometric measured value",
+      "tier": "documented",
+      "source": "real-package dimension audit"
+    },
+    "metrics": [
+      {
+        "value": "51",
+        "label": "foundation tests pass in under 2s — proves foundation integrity, not architectural accuracy",
+        "tier": "documented",
+        "source": "foundation test suite"
+      },
+      {
+        "value": "13",
+        "label": "explicit dimension text-overrides surfaced rather than silently trusted",
+        "tier": "documented",
+        "source": "dimension audit"
+      },
+      {
+        "value": "4",
+        "label": "evidence tiers every delivered file is typed into at the ingestion boundary",
+        "tier": "documented",
+        "source": "ingestion boundary"
+      },
+      {
+        "value": "0",
+        "label": "element-named identifiers permitted in foundation code — enforced by a build-failing AST gate",
+        "tier": "documented",
+        "source": "G2 AST gate"
+      }
+    ],
+    "problem": "Real architectural CAD deliveries are messy: nested blocks, non-resolving external references, corrupt sheets, and dimensions whose displayed text may not match their true geometry. Any system that hopes to reason about these drawings — to eventually support quantity takeoff and other construction workflows — will produce confident, wrong answers unless every fact it accepts stays grounded in and verifiable against the exact CAD. The hard problem is not the model; it is building a substrate honest enough to keep a model from hallucinating in a high-stakes domain.",
+    "constraints": [
+      "Accepted facts must remain CAD-grounded and independently verifiable — no interpretation may enter the foundation as an unearned assumption.",
+      "Element vocabulary (door, window, room) must come from the project's own schedules and tags, never from hardcoded modules — real deliveries do not share one office's conventions.",
+      "The substrate must never silently drop data: corrupt drawings and missing references have to surface as evidence, not disappear.",
+      "DWG source is not directly parseable; it is converted out-of-band to DXF, so the conversion itself has to be recorded as provenance rather than assumed lossless.",
+      "AI cost must stay bounded and subordinate — the model transport is priced and capped before it is ever wired in."
+    ],
+    "approach": [
+      {
+        "decision": "Make 'element types are evidence, not code' an executable law, enforced by an AST gate that fails the build if any element-named identifier leaks into foundation code.",
+        "why": "Hardcoding door/window/room logic would silently bake one office's conventions into a system meant to generalize across real deliveries. A build-failing gate turns a design principle into something that cannot quietly erode over time."
+      },
+      {
+        "decision": "Build an exact-CAD extraction substrate as the moat: expand nested blocks into world-space primitives with full ancestry, apply coordinate-system transforms, and derive content-based IDs that survive re-extraction.",
+        "why": "Exact vector structure — geometry, text, dimensions, blocks, provenance — is a richer and more reliable substrate for a reasoner than pixels. Computer vision was explicitly rejected as the path; stable content IDs let a downstream model cite and re-verify a fact even after unrelated file edits."
+      },
+      {
+        "decision": "Keep delivered-source evidence and derived evidence strictly separate, and read the CAD's own declarations only as structurally-typed claims (generic text, tag attributes, dimensions, leader notes) with no office-shaped classification.",
+        "why": "Conflating what the drawing literally says with what the system inferred is how a pipeline starts lying. Typing without interpreting preserves the line a later reasoner needs to stay honest."
+      },
+      {
+        "decision": "Keep AI behind a priced, capped, deliberately-unwired transport, and leave the interpretation core un-architected on purpose.",
+        "why": "There is no point shipping quantities before a credible world model exists to ground them. Wiring the model only once a verification spine can check its claims keeps the AI subordinate to evidence rather than the other way around."
+      },
+      {
+        "decision": "Delete the team's own prior, more-sophisticated deterministic semantic pipeline after documenting that it was semantically mute on 12 of 16 real sheets and rode on one-sample-tuned multipliers.",
+        "why": "Sophistication that does not generalize is a liability, not an asset. Choosing generality over sunk cost — with the failure evidence written down rather than hidden — is the whole thesis of the project made concrete."
+      }
+    ],
+    "implementation": [
+      "Built the exact-CAD extraction substrate over DXF via ezdxf: expands nested INSERT/MINSERT blocks into world-space primitives with full ancestry and persistent-handle provenance, applies OCS-to-WCS transforms, and derives content-based IDs stable across re-extraction.",
+      "Enforced the core design law with a G2 AST gate (unittest) that fails the build if a door/window/room identifier appears in foundation code, so element vocabulary always originates from the project's own schedules and tags.",
+      "Built a content-hashed ingestion boundary that types every delivered file by evidence tier (delivered source / format-converted derivative / degraded failed-conversion / unsupported-but-preserved), links DWG-to-DXF conversions as provenance, and surfaces corrupt drawings instead of dropping them.",
+      "Added a non-resolving reference census that marks each declared image, underlay, XREF, and font present or missing — on one real sheet it surfaced 21 declared external images whose paths point outside the package, all correctly flagged as missing rather than assumed present.",
+      "Built dimension_evidence, the first primitive of a verification spine: reads each dimension's true geometric measured value (via ezdxf get_measurement, not the often-absent stored value), measured span, explicit text-override semantics, and style precision as exact, id-addressable evidence.",
+      "Kept AI behind a verified boundary: a priced, capped transport where an unpriced model is a constructor error and caps are enforced pre- and post-call, intentionally unwired because the interpretation core is deliberately unbuilt.",
+      "Wrote decision records and a known-gaps register that separate verified, evidence-cited facts from assumptions and document exactly where the substrate still degrades or drops data.",
+      "Regression-tested an R0 hardening pass that fixed silent geometry misplacement from OCS/negative-extrusion handling and made primitive IDs survive re-extraction."
+    ],
+    "outcomes": [
+      {
+        "label": "Foundation test suite passes 51 tests in under 2s — framed explicitly as proving foundation integrity, not architectural accuracy",
+        "value": "51 tests / <2s",
+        "tier": "documented",
+        "source": "test suite"
+      },
+      {
+        "label": "Real-package dimension audit: every readable-sheet dimension yields a supported geometric measured value, with 13 explicit text-overrides surfaced",
+        "value": "766 / 766",
+        "tier": "documented",
+        "source": "dimension audit"
+      },
+      {
+        "label": "Reference census surfaced load-bearing hidden context the prior ingest silently dropped (e.g. a sheet declaring 21 external images, all outside the package)",
+        "value": "recovered",
+        "tier": "documented",
+        "source": "reference census"
+      },
+      {
+        "label": "Made the disciplined call to delete a prior deterministic pipeline that was semantically mute on 12 of 16 real sheets, choosing generality over sunk cost",
+        "value": "12 / 16 mute",
+        "tier": "documented",
+        "source": "decision records"
+      },
+      {
+        "label": "The interpretation / quantity-takeoff layer remains deliberately unshipped — a documented product decision (no quantities before a credible world model), not a gap",
+        "value": "by design",
+        "tier": "self-reported"
+      }
+    ],
+    "stack": [
+      "Python",
+      "ezdxf (DXF parsing)",
+      "ODA File Converter (out-of-band DWG-to-DXF, behind a provenance-recording adapter seam)",
+      "AST-based build gates (unittest)",
+      "Content-addressed hashing (SHA-256) for file/package identity",
+      "Capped, priced LLM transport (OpenAI-compatible, currently unwired)",
+      "Bounded CAD raster renderer (world-to-pixel bridge, unwired)",
+      "Git"
+    ],
+    "limitations": [
+      "The interpretation core is deliberately unbuilt and un-architected: model perception, the model-to-substrate interface, and the honesty contract for accepted facts are open founder decisions, not solved problems.",
+      "Passing tests prove foundation integrity only — the system makes no claim of architectural or semantic accuracy, and the docs refuse to conflate the two.",
+      "The substrate still degrades on some inputs (failed conversions, unreadable sheets); every extracted count is paired with a coverage descriptor so 'can't read it yet' is never mistaken for 'not in the drawing'.",
+      "DWG is only accessible via out-of-band conversion, so the extraction quality is bounded by the converter until a first-party path exists.",
+      "This is a private, pre-product, research-phase foundation — not a shipping or revenue-generating product; the quantity-takeoff workflow it is meant to serve does not exist yet."
+    ],
+    "mediaNotes": [
+      "Show a sanitized architecture diagram of the three pillars: exact-CAD extraction substrate → typed evidence with provenance → capped, unwired AI boundary. Caption: 'AI stays subordinate to exact CAD until a verification spine can check its claims.'",
+      "Optionally show a stylized 'measured value' evidence callout mirroring the dimension_evidence primitive (geometric measured value + explicit text-override flag), using synthetic values only. Caption it as illustrative.",
+      "Do NOT show the real client/project name or any real drawing — the test package is a private, gitignored architecture-office deliverable.",
+      "Do NOT surface the leaked external-reference paths (office file-server paths, cloud host, a designer's local desktop), the out-of-band converter's licensing status, cofounder identity, or the human-review reference set — all internal/sensitive."
+    ],
+    "_key": "cad"
+  },
+  {
+    "slug": "melodymind",
+    "title": "MelodyMind",
+    "category": "Multimodal music recommendation / cross-modal ML",
+    "oneLiner": "A multimodal AI music companion whose recommendation core aligns a frozen CLAP audio encoder to a text embedding space with InfoNCE contrastive learning — arrived at only after a naive baseline collapsed and the failure was diagnosed.",
+    "summary": "MelodyMind generates emotion-aware playlists from text, images, and voice. The research contribution is cross-modal: a frozen CLAP audio encoder projected through a trained head into the same latent space as pre-computed Nomic text embeddings, aligned with an InfoNCE in-batch contrastive loss — a design reached by first building naive spectrogram/CNN and text-sentiment baselines, watching them collapse, and diagnosing why. It was then productized across three iterations into a working prototype: text/image/voice playlist generation, a real-time \"Talk to Your DJ\" voice loop, and Demucs-based stem separation, served through a FastAPI backend, Pinecone vector search, and a React Native app.",
+    "status": "Academic",
+    "role": "Co-built as one of three team members (with Hassaan Anwar and Saad Nadeem) on a supervised final-year thesis; the thesis does not attribute specific modules to individuals, so this describes shared work, not solo ownership.",
+    "dates": "Session 2022–2026; thesis dated May 2026. Built in three iterations: embedding research, productization, stem separation.",
+    "isPrivate": false,
+    "privateNote": "",
+    "featuredMetric": {
+      "value": "17 epochs",
+      "label": "to stable embedding separation, eliminating the earlier feature collapse",
+      "tier": "thesis",
+      "source": "reported in thesis"
+    },
+    "metrics": [
+      {
+        "value": "3",
+        "label": "co-builders (Mustafa Iqbal, Hassaan Anwar, Saad Nadeem)",
+        "tier": "team",
+        "source": "FAST-NUCES thesis"
+      },
+      {
+        "value": "10 prompts",
+        "label": "zero-shot CLAP emotion probes used to map where the pretrained model succeeds and fails",
+        "tier": "thesis"
+      },
+      {
+        "value": "3 iterations",
+        "label": "embedding research → multimodal productization → stem separation",
+        "tier": "thesis"
+      },
+      {
+        "value": "Qualitative only",
+        "label": "no accuracy/precision/recall/latency numbers are reported in the thesis",
+        "tier": "thesis"
+      }
+    ],
+    "problem": "Emotion-aware music recommendation is hard because emotional intent lives in text (\"something for a rainy focus session\") while the signal lives in audio, and the two have no shared representation. The naive first attempts — text sentiment classifiers over lyrics and Reddit, spectrogram CNNs, concatenated audio-text pipelines — suffered feature collapse and rode on imbalanced data, producing embeddings that did not separate by emotion. The core question became how to align audio and text into one space reliably enough to recommend across modalities.",
+    "constraints": [
+      "Academic thesis with no labeled emotion-to-audio ground truth — training data had to be assembled from public sources (Reddit, Last.fm, Genius lyrics, Deezer 30-second previews) with real class imbalance.",
+      "Audio access limited to short public previews, not full tracks.",
+      "A three-person team on a fixed academic timeline, iterating from research toward a demonstrable prototype.",
+      "No compute budget to train an audio encoder from scratch — the design had to lean on a frozen pretrained encoder and train only a lightweight head."
+    ],
+    "approach": [
+      {
+        "decision": "Freeze a pretrained CLAP audio encoder and train only a small projection head into the Nomic text embedding space, rather than training an audio model end to end.",
+        "why": "It reuses CLAP's audio understanding, needs far less data and compute, and reduces the alignment problem to learning one projection — the tractable path given no ground-truth dataset."
+      },
+      {
+        "decision": "Align modalities with an InfoNCE in-batch contrastive loss instead of a regression or classification objective.",
+        "why": "Contrastive in-batch pairing optimizes both audio-text matching and song-to-song discrimination at once, which is what fixed the feature collapse the earlier baselines exhibited."
+      },
+      {
+        "decision": "Run a structured zero-shot CLAP evaluation across ten emotion prompts before committing to fine-tuning.",
+        "why": "It surfaced an honest split — the pretrained model handled direct emotions, tempo, and timbre but was weak on abstract/situational cues like 'romantic dinner' or 'focus' — which is the evidence that justified the projection-head approach rather than assuming it."
+      },
+      {
+        "decision": "Build recommendation on weighted embedding centroids in Pinecone with mood filtering by vector distance.",
+        "why": "Once audio and text share a space, playlist construction and mood filtering reduce to vector geometry, keeping the serving path simple and inspectable."
+      },
+      {
+        "decision": "Route the conversational layer through Gemini with GROQ LLaMA 3 as a latency fallback.",
+        "why": "The real-time voice loop needs low latency; a fallback protects responsiveness when the primary model is slow."
+      }
+    ],
+    "implementation": [
+      "Trained a lightweight fully-connected projection head mapping frozen CLAP audio embeddings into the dimensionality of pre-computed Nomic text embeddings, enabling direct audio-text similarity search.",
+      "Built the earlier naive baselines (lyric/Reddit sentiment classifiers, spectrogram CNNs, concatenated audio-text pipelines) that exposed the data imbalance and feature collapse motivating the CLAP approach.",
+      "Assembled a data pipeline over Reddit (emotional language), Last.fm (mood/genre tags), Genius lyrics, and Deezer previews with concurrent download and feature extraction.",
+      "Served the system from a service-oriented FastAPI backend with async SQLAlchemy and Alembic migrations, uploading aligned embeddings to Pinecone for similarity search and centroid-based playlist construction.",
+      "Implemented the 'Talk to Your DJ' loop: audio → Whisper (via GROQ) transcript → LangChain agent → playlist update → streamed TTS reply, adapting the playlist mid-session as the user's stated mood changes.",
+      "Added image-to-playlist support via multimodal LLM mood extraction mapped to embedding queries.",
+      "Built a Demucs-based stem separation service with an asynchronous job lifecycle (validation, model loading, separation, output writing), waveform preview metadata, and WAV/MP3 downloads.",
+      "Built the React Native (Expo) app: auth, chat playlist UI, image upload, the animated Talk-to-DJ voice screen, and stem upload/progress/preview, verified on real devices via Expo Go."
+    ],
+    "outcomes": [
+      {
+        "label": "The CLAP–InfoNCE model stabilized after 17 training epochs with clear embedding separation, eliminating the feature collapse of the earlier baselines",
+        "tier": "thesis",
+        "value": "17 epochs"
+      },
+      {
+        "label": "Zero-shot CLAP evaluation documented concrete strengths (direct emotions, tempo, timbre) and weaknesses (abstract/situational prompts) — an honest negative result used to justify fine-tuning, not a headline metric",
+        "tier": "thesis",
+        "value": "Diagnosed, not assumed"
+      },
+      {
+        "label": "Iteration 2 delivered a working multimodal prototype — text, image, and voice playlist generation plus the Talk-to-Your-DJ loop — verified on real devices",
+        "tier": "thesis",
+        "value": "Working prototype"
+      },
+      {
+        "label": "Iteration 3 delivered end-to-end asynchronous stem separation (backend API + mobile UI) isolating vocals, drums, bass, and other stems with downloadable outputs",
+        "tier": "thesis",
+        "value": "Shipped feature"
+      }
+    ],
+    "stack": [
+      "CLAP (frozen audio encoder)",
+      "InfoNCE contrastive learning",
+      "Nomic text embeddings",
+      "PyTorch",
+      "Demucs",
+      "FastAPI",
+      "Pinecone",
+      "Supabase PostgreSQL",
+      "async SQLAlchemy + Alembic",
+      "LangChain",
+      "Gemini",
+      "GROQ (LLaMA 3 + Whisper)",
+      "React Native (Expo)"
+    ],
+    "limitations": [
+      "No quantitative recommendation-quality benchmark (accuracy, MAP, nDCG, latency) was measured — outcomes are qualitative, and the honest next step is a held-out evaluation against a labeled emotion set.",
+      "The pretrained encoder remains weak on abstract and situational prompts; closing that gap likely needs targeted training data for those cases, not just more epochs.",
+      "Some integrations are partial: Google OAuth was in progress and Spotify export was only finalized in the final iteration — the prototype is a research demonstrator, not a launched app with users.",
+      "Training relied on public sources with real class imbalance and short audio previews; a production system would need broader, balanced, fully-licensed audio."
+    ],
+    "mediaNotes": [
+      "Show a clean architecture diagram of the cross-modal core: frozen CLAP audio encoder → trained projection head → shared latent space with Nomic text embeddings, aligned by InfoNCE — captioned as the design that resolved feature collapse.",
+      "Show the research-arc timeline as a simple three-step figure (naive baselines → feature collapse / zero-shot diagnosis → CLAP + InfoNCE), captioned honestly as the path taken.",
+      "A sanitized still of the Talk-to-Your-DJ voice screen is fine if it contains no personal data. Do NOT publish student roll numbers, supervisor names beyond the institutional thesis context, or any real user audio/accounts."
+    ],
+    "_key": "melodymind"
+  }
+]

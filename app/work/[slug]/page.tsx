@@ -1,620 +1,203 @@
-import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowRight,
-  BriefcaseBusiness,
-  CalendarDays,
-  CheckCircle2,
-  Database,
-  Gauge,
-  GitBranch,
-  Layers3,
-  Route,
-  ShieldCheck,
-  Sparkles,
-  Workflow
-} from "lucide-react";
-import { CarouselRail } from "@/components/CarouselRail";
-import { ProjectDocumentation } from "@/components/ProjectDocumentation";
-import { ProjectLinks } from "@/components/ProjectLinks";
-import { ProjectMedia } from "@/components/ProjectMedia";
-import { ProjectStory } from "@/components/ProjectStory";
+import { ArrowLeft, ArrowRight, Lock } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
-import { featuredProjects, getProject, siteUrl, type Project } from "@/data/portfolio";
-import { getProjectDocumentation, type ProjectDocumentation as ProjectDocumentationType } from "@/data/project-docs";
+import { Provenance, StatBlock } from "@/components/Evidence";
+import { featuredProjects, getProject, projectMedia, siteUrl } from "@/data/portfolio";
 
-type ProjectPageProps = {
-  params: Promise<{ slug: string }>;
-};
+type Props = { params: Promise<{ slug: string }> };
 
 export function generateStaticParams() {
   return featuredProjects.map((project) => ({ slug: project.slug }));
 }
 
-export async function generateMetadata({ params }: ProjectPageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const project = getProject(slug);
-
   if (!project) {
-    return {
-      title: "Project not found"
-    };
+    return { title: "Project not found" };
   }
-
   return {
     title: project.title,
-    description: project.pitch,
-    alternates: {
-      canonical: `${siteUrl}/work/${project.slug}/`
-    },
+    description: project.oneLiner,
+    alternates: { canonical: `${siteUrl}/work/${project.slug}/` },
     openGraph: {
-      title: `${project.title} | Mustafa Iqbal`,
-      description: project.pitch,
-      url: `${siteUrl}/work/${project.slug}/`,
-      images: project.media[0]?.type === "image" ? [project.media[0].src] : [project.media[0]?.poster || "/og-image.png"]
+      title: `${project.title} — Mustafa Iqbal`,
+      description: project.oneLiner,
+      url: `${siteUrl}/work/${project.slug}/`
     }
   };
 }
 
-export default async function ProjectPage({ params }: ProjectPageProps) {
+export default async function ProjectPage({ params }: Props) {
   const { slug } = await params;
   const project = getProject(slug);
-
   if (!project) {
     notFound();
   }
 
-  const Icon = project.icon;
-  const documentation = getProjectDocumentation(project.slug);
-  const heroMedia = project.media.length ? project.media.slice(0, 1) : project.thumbnail ? [project.thumbnail] : [];
-  const heroTags = Array.from(new Set([project.category, project.status, project.confidentiality].filter(Boolean)));
+  const media = projectMedia(project.slug);
 
   return (
-    <main id="top" className={`project-page project-page-${project.slug} case-layout-${project.caseStudy.layoutKind}`}>
-      <section className="project-hero">
-        <div className="section-inner project-hero-grid">
-          <Reveal className="project-hero-copy">
-            <a className="text-link back-link" href="/work/">
-              <ArrowLeft size={17} aria-hidden="true" />
-              Work index
-            </a>
-            <div className="metadata-row">
-              {heroTags.map((tag) => (
-                <span key={tag}>{tag}</span>
-              ))}
+    <main id="main">
+      <section className="case-hero">
+        <div className="wrap prose">
+          <a className="textlink case-back" href="/work/" style={{ color: "var(--muted)" }}>
+            <ArrowLeft aria-hidden="true" />
+            All work
+          </a>
+          <p className="eyebrow" style={{ margin: 0 }}>
+            {project.category}
+          </p>
+          <h1>{project.title}</h1>
+          <p className="case-hero__sub">{project.oneLiner}</p>
+          <div className="case-facts">
+            <div className="case-fact">
+              <span>Role</span>
+              <strong>{project.role}</strong>
             </div>
-            <h1>{project.title}</h1>
-            <p>{project.pitch}</p>
-            <div className="role-grid">
-              <div>
-                <BriefcaseBusiness size={18} aria-hidden="true" />
-                <span>Role</span>
-                <strong>{project.role}</strong>
-              </div>
-              <div>
-                <CalendarDays size={18} aria-hidden="true" />
-                <span>Period</span>
-                <strong>{project.dates}</strong>
-              </div>
-              <div>
-                <Icon size={18} aria-hidden="true" />
-                <span>Domain</span>
-                <strong>{project.category}</strong>
-              </div>
+            <div className="case-fact">
+              <span>Timeline</span>
+              <strong>{project.dates}</strong>
             </div>
-            <ProjectLinks project={project} />
+            <div className="case-fact">
+              <span>Status</span>
+              <strong>{project.status}</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="wrap">
+        <div className="case-metrics">
+          <StatBlock metric={project.featuredMetric} />
+          {project.metrics.map((metric) => (
+            <StatBlock key={metric.label} metric={metric} />
+          ))}
+        </div>
+      </section>
+
+      <section className="wrap">
+        <div className="case-body">
+          {project.isPrivate && project.privateNote ? (
+            <p className="private-note">
+              <Lock aria-hidden="true" />
+              {project.privateNote}
+            </p>
+          ) : null}
+
+          <Reveal as="section" className="case-block">
+            <h2>The problem</h2>
+            <p>{project.problem}</p>
           </Reveal>
 
-          {heroMedia.length ? (
-            <Reveal className="project-hero-media" delay={0.08}>
-              <ProjectMedia media={heroMedia} featured />
+          {project.constraints.length ? (
+            <Reveal as="section" className="case-block">
+              <h2>Constraints</h2>
+              <ul className="plain-list">
+                {project.constraints.map((item) => (
+                  <li key={item}>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+          ) : null}
+
+          <Reveal as="section" className="case-block">
+            <h2>Approach &amp; key decisions</h2>
+            <ul className="decision-list">
+              {project.approach.map((decision) => (
+                <li className="decision" key={decision.decision}>
+                  <h3>{decision.decision}</h3>
+                  <p>{decision.why}</p>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+
+          <Reveal as="section" className="case-block">
+            <h2>What I built</h2>
+            <ul className="plain-list">
+              {project.implementation.map((item) => (
+                <li key={item}>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+
+          {project.outcomes.length ? (
+            <Reveal as="section" className="case-block">
+              <h2>Outcomes</h2>
+              <ul className="stack-v" style={{ margin: 0, padding: 0, listStyle: "none", gap: 18 }}>
+                {project.outcomes.map((metric) => (
+                  <li key={metric.label} style={{ display: "grid", gap: 6 }}>
+                    <span style={{ color: "var(--ink)", lineHeight: 1.55 }}>
+                      {metric.value ? (
+                        <strong className="mono" style={{ fontWeight: 500 }}>
+                          {metric.value}{" "}
+                        </strong>
+                      ) : null}
+                      {metric.label}
+                    </span>
+                    <Provenance tier={metric.tier} source={metric.source} />
+                  </li>
+                ))}
+              </ul>
+            </Reveal>
+          ) : null}
+
+          {media.length ? (
+            <Reveal as="section" className="case-block" style={{ maxWidth: "none" }}>
+              <h2>Selected media</h2>
+              <div className="stack-v" style={{ gap: 20 }}>
+                {media.map((item) => (
+                  <figure className="figure" key={item.src}>
+                    <button type="button" data-lightbox-open={item.src} data-lightbox-alt={item.alt}>
+                      <img src={item.src} alt={item.alt} loading="lazy" decoding="async" width={1200} height={750} />
+                    </button>
+                    <figcaption>{item.caption}</figcaption>
+                  </figure>
+                ))}
+              </div>
+            </Reveal>
+          ) : null}
+
+          <Reveal as="section" className="case-block">
+            <h2>Stack</h2>
+            <div className="chips">
+              {project.stack.map((item) => (
+                <span className="chip" key={item}>
+                  {item}
+                </span>
+              ))}
+            </div>
+          </Reveal>
+
+          {project.limitations.length ? (
+            <Reveal as="section" className="case-block">
+              <h2>Limitations &amp; what&apos;s next</h2>
+              <ul className="plain-list">
+                {project.limitations.map((item) => (
+                  <li key={item}>
+                    <span>{item}</span>
+                  </li>
+                ))}
+              </ul>
             </Reveal>
           ) : null}
         </div>
       </section>
 
-      <section className="proof-band project-proof-band" aria-label={`${project.title} proof metrics`}>
-        <div className="section-inner proof-band-grid">
-          <div className="metric featured-metric">
-            <strong data-decode suppressHydrationWarning>{project.featuredMetric.value}</strong>
-            <span>{project.featuredMetric.label}</span>
-          </div>
-          {project.metrics.map((metric) => (
-            <div className="metric" key={`${metric.value}-${metric.label}`}>
-              <strong data-decode suppressHydrationWarning>{metric.value}</strong>
-              <span>{metric.label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <ProjectStory slug={project.slug} />
-
-      <CaseStudyBody project={project} documentation={documentation} />
-
-      <section className="next-work-strip" aria-label="More work">
-        <div className="section-inner next-work-inner">
-          <a className="text-link" href="/work/">
-            More projects
-            <ArrowRight size={17} aria-hidden="true" />
+      <section className="section section--divided">
+        <div className="wrap">
+          <a className="textlink" href="/work/">
+            More work
+            <ArrowRight aria-hidden="true" />
           </a>
         </div>
       </section>
     </main>
-  );
-}
-
-function CaseStudyBody({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
-  switch (project.caseStudy.layoutKind) {
-    case "platform":
-      return <PlatformCase project={project} documentation={documentation} />;
-    case "performance":
-      return <PerformanceCase project={project} documentation={documentation} />;
-    case "classification":
-      return <ClassificationCase project={project} documentation={documentation} />;
-    case "cad":
-      return <CadCase project={project} documentation={documentation} />;
-    case "music":
-      return <MusicCase project={project} documentation={documentation} />;
-    case "rag":
-      return <RagCase project={project} documentation={documentation} />;
-    default:
-      return null;
-  }
-}
-
-function TechnicalPanels({ project, className = "" }: { project: Project; className?: string }) {
-  const panels = project.caseStudy.technicalPanels.map((panel, index) => (
-    <Reveal as="article" className="tech-panel" key={panel.title} delay={index * 0.04}>
-      <span>{panel.eyebrow}</span>
-      <h3>{panel.title}</h3>
-      <p>{panel.text}</p>
-      <ul>
-        {panel.items.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ul>
-    </Reveal>
-  ));
-
-  if (className.includes("vertical-panels")) {
-    return <div className={`technical-panels ${className}`}>{panels}</div>;
-  }
-
-  return (
-    <CarouselRail label={`${project.title} technical panels`} className={`technical-carousel ${className}`} itemClassName="technical-carousel-item">
-      {panels}
-    </CarouselRail>
-  );
-}
-
-function CaseIntro({ project, label }: { project: Project; label: string }) {
-  return (
-    <Reveal className="case-intro">
-      <p className="eyebrow">{label}</p>
-      <h2>{project.summary}</h2>
-      <p>{project.problem}</p>
-    </Reveal>
-  );
-}
-
-function StackStrip({ project }: { project: Project }) {
-  return (
-    <Reveal className="case-stack-strip">
-      {project.stack.map((item) => (
-        <span key={item}>{item}</span>
-      ))}
-    </Reveal>
-  );
-}
-
-function PlatformCase({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
-  const platformLayers = [
-    ["Product surface", ["Dashboard", "Agent modules", "Admin tools", "Operations views"]],
-    ["Control plane", ["Accounts", "Profiles", "Profile groups", "Agent access"]],
-    ["Commercial", ["Stripe", "Credits", "Invoices", "Usage records"]],
-    ["AI + data", ["Pinecone", "Knowledge base", "Assets", "Responses"]],
-    ["External services", ["S3", "SES", "SQS", "Google APIs", "LLM providers"]]
-  ];
-
-  return (
-    <>
-      <section className="section case-platform-overview" aria-labelledby="platform-title">
-        <div className="section-inner platform-grid">
-          <CaseIntro project={project} label="Platform architecture" />
-          <Reveal className="platform-stack-map" delay={0.08}>
-            {platformLayers.map(([title, items], index) => (
-              <div className="platform-stack-layer" key={title as string} style={{ "--layer-index": index } as CSSProperties}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <strong>{title}</strong>
-                <ul>
-                  {(items as string[]).map((item) => (
-                    <li key={item}>{item}</li>
-                  ))}
-                </ul>
-              </div>
-            ))}
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section section-muted" aria-labelledby="platform-technical-title">
-        <div className="section-inner platform-deep-dive">
-          <Reveal className="section-heading">
-            <p className="eyebrow">Technical read</p>
-            <h2 id="platform-technical-title">A SaaS control plane around agent workflows.</h2>
-            <p>{project.caseStudy.visualSpec}</p>
-          </Reveal>
-          <TechnicalPanels project={project} />
-        </div>
-      </section>
-
-      <section className="section case-media-section" aria-labelledby="platform-media-title">
-        <div className="section-inner case-documentation">
-          <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Architecture explorer</p>
-            <h2 id="platform-media-title">How the private platform holds together.</h2>
-            <p>Inspect the tenancy model, agent modules, billing layer, knowledge assets, and cloud integrations behind the product.</p>
-          </Reveal>
-          <ProjectDocumentation documentation={documentation} />
-          <ProjectMedia media={project.media} />
-        </div>
-      </section>
-    </>
-  );
-}
-
-function PerformanceCase({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
-  const stages = [
-    ["OAuth", "offline Google Business Profile connection"],
-    ["Import", "accounts and business locations"],
-    ["Sync", "paginated reviews and batch upserts"],
-    ["Filter", "skip replied, low-priority, existing drafts"],
-    ["Draft", "parallel, throttled, or Batch API"],
-    ["Publish", "manual approval and reply endpoint"]
-  ];
-
-  return (
-    <>
-      <section className="section case-performance" aria-labelledby="performance-title">
-        <div className="section-inner performance-grid">
-          <div>
-            <CaseIntro project={project} label="Performance engineering" />
-            <StackStrip project={project} />
-          </div>
-          <Reveal className="performance-meter" delay={0.08}>
-            <span>Before</span>
-            <strong>60-120 min</strong>
-            <em>2000-review workflow</em>
-            <span>After</span>
-            <strong>10-20 min</strong>
-            <em>documented optimized path</em>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section section-muted" aria-labelledby="workflow-title">
-        <div className="section-inner">
-          <Reveal className="section-heading">
-            <p className="eyebrow">Workflow compression</p>
-            <h2 id="workflow-title">The important work moved before the model call.</h2>
-          </Reveal>
-          <CarouselRail label="Revvy workflow stages" className="performance-stage-carousel" itemClassName="performance-stage-item">
-            {stages.map(([title, text], index) => (
-              <Reveal as="article" className="perf-stage" key={title} delay={index * 0.035}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <h3>{title}</h3>
-                <p>{text}</p>
-              </Reveal>
-            ))}
-          </CarouselRail>
-        </div>
-      </section>
-
-      <section className="section" aria-labelledby="performance-implementation-title">
-        <div className="section-inner split-case">
-          <TechnicalPanels project={project} className="vertical-panels" />
-          <Reveal className="implementation-ledger" delay={0.08}>
-            <p className="eyebrow">Implementation ledger</p>
-            <h2 id="performance-implementation-title">What changed technically.</h2>
-            <ul>
-              {[...project.implementation, ...project.outcomes].map((item) => (
-                <li key={item}>
-                  <CheckCircle2 size={18} aria-hidden="true" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section section-muted case-media-section" aria-labelledby="revvy-media-title">
-        <div className="section-inner case-documentation">
-          <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Architecture explorer</p>
-            <h2 id="revvy-media-title">Review automation from OAuth to published reply.</h2>
-            <p>Inspect the workflow, data model, cache behavior, and performance path behind the documented review-response speedup.</p>
-          </Reveal>
-          <ProjectDocumentation documentation={documentation} />
-          <ProjectMedia media={project.media} />
-        </div>
-      </section>
-    </>
-  );
-}
-
-function ClassificationCase({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
-  const loop = ["Gmail sync", "Contact groups", "Thread context", "LLM JSON log", "Gmail labels", "User correction"];
-  const routing = [
-    ["Known sender", "Contact group rule applies before any model call."],
-    ["Ambiguous thread", "Subject, sender, recipients, and recent context go to structured AI routing."],
-    ["Low confidence", "Decision stays inspectable through categorization logs."],
-    ["Correction", "User fixes update the label path instead of hiding the miss."]
-  ];
-  const categories = ["Priority", "Financial", "Scheduling", "Team", "Orders", "Newsletters", "FYI/CC", "Uncategorized"];
-
-  return (
-    <>
-      <section className="section case-classification" aria-labelledby="classification-title">
-        <div className="section-inner classification-grid">
-          <CaseIntro project={project} label="Email classification loop" />
-          <Reveal className="classification-loop-shell" delay={0.08}>
-            <CarouselRail label="Emmy classification loop" className="classification-loop-carousel" itemClassName="classification-loop-item">
-              {loop.map((item, index) => (
-                <article className="classification-step" key={item}>
-                  <span>{String(index + 1).padStart(2, "0")}</span>
-                  <strong>{item}</strong>
-                </article>
-              ))}
-            </CarouselRail>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section section-muted" aria-labelledby="taxonomy-title">
-        <div className="section-inner email-taxonomy-grid">
-          <Reveal className="section-heading">
-            <p className="eyebrow">Product model</p>
-            <h2 id="taxonomy-title">Rules, context, and logs replaced blind classification.</h2>
-            <p>Built Emmy with clear places for deterministic routing, model reasoning, and user correction.</p>
-          </Reveal>
-          <Reveal className="email-routing-board" delay={0.08}>
-            <div className="routing-rule-grid">
-              {routing.map(([title, text]) => (
-                <article key={title}>
-                  <strong>{title}</strong>
-                  <p>{text}</p>
-                </article>
-              ))}
-            </div>
-            <div className="category-ribbon" aria-label="Emmy default categories">
-              {categories.map((category) => (
-                <span key={category}>{category}</span>
-              ))}
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section" aria-labelledby="classification-panels-title">
-        <div className="section-inner split-case">
-          <TechnicalPanels project={project} className="vertical-panels" />
-          <Reveal className="json-log-panel" delay={0.08}>
-            <p className="eyebrow">Inspectable output</p>
-            <h2 id="classification-panels-title">The AI decision is stored as a structured decision log.</h2>
-            <pre>{`{
-  "Sender Email": "...",
-  "Subject": "...",
-  "AddressedTo": "Direct | CC | BCC | Other",
-  "Category": "Priority Inbox",
-  "Reasoning": "..."
-}`}</pre>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section section-muted case-media-section" aria-labelledby="emmy-media-title">
-        <div className="section-inner case-documentation">
-          <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Architecture explorer</p>
-            <h2 id="emmy-media-title">Gmail automation data model and decision loop.</h2>
-            <p>Inspect how account sync, contact rules, categorization logs, labels, and correction loops make the classifier reviewable.</p>
-          </Reveal>
-          <ProjectDocumentation documentation={documentation} />
-          <ProjectMedia media={project.media} />
-        </div>
-      </section>
-    </>
-  );
-}
-
-function CadCase({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
-  const contract = [
-    "AI is off by default",
-    "External calls require explicit permission",
-    "AI-generated coordinates are never accepted",
-    "Malformed output is rejected",
-    "Uncertain geometry remains visible",
-    "No BOQ output until geometry is validated"
-  ];
-
-  return (
-    <>
-      <section className="section case-cad-contract" aria-labelledby="cad-title">
-        <div className="section-inner cad-contract-grid">
-          <CaseIntro project={project} label="CAD safety contract" />
-          <Reveal className="contract-panel" delay={0.08}>
-            {contract.map((item) => (
-              <div key={item}>
-                <ShieldCheck size={18} aria-hidden="true" />
-                <span>{item}</span>
-              </div>
-            ))}
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section section-muted" aria-labelledby="cad-pipeline-title">
-        <div className="section-inner cad-pipeline">
-          <Reveal className="section-heading">
-            <p className="eyebrow">Pipeline</p>
-            <h2 id="cad-pipeline-title">Geometry first, intelligence second, review always.</h2>
-          </Reveal>
-          <TechnicalPanels project={project} />
-        </div>
-      </section>
-
-      <section className="section case-media-section" aria-labelledby="cad-artifacts-title">
-        <div className="section-inner">
-          <Reveal className="section-heading">
-            <p className="eyebrow">Architecture explorer</p>
-            <h2 id="cad-artifacts-title">CAD artifact graph and reconstruction outputs.</h2>
-            <p>Inspect how CAD extraction, drawing contexts, evidence groups, semantic affordances, and safety constraints stay separated.</p>
-          </Reveal>
-          <ProjectDocumentation documentation={documentation} />
-          <ProjectMedia media={project.media} />
-        </div>
-      </section>
-    </>
-  );
-}
-
-function MusicCase({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
-  const modelSteps = [
-    ["Data", "Reddit emotions, Last.fm tags, Genius lyrics, Deezer previews"],
-    ["Baseline", "Lyrics/audio prototypes exposed feature collapse"],
-    ["CLAP", "Zero-shot model handled basic emotion but missed abstract context"],
-    ["InfoNCE", "Projection aligned CLAP audio with Nomic text embeddings"],
-    ["Product", "FastAPI, Pinecone, Expo, voice, image, Spotify, stem separation"]
-  ];
-
-  return (
-    <>
-      <section className="section case-music" aria-labelledby="music-title">
-        <div className="section-inner music-grid">
-          <CaseIntro project={project} label="Thesis-backed product" />
-          <Reveal className="music-model-journey-shell" delay={0.08}>
-            <CarouselRail label="MelodyMind model journey" className="music-journey-carousel" itemClassName="music-journey-item">
-            {modelSteps.map(([title, text], index) => (
-              <div key={title}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <strong>{title}</strong>
-                <p>{text}</p>
-              </div>
-            ))}
-            </CarouselRail>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section section-muted" aria-labelledby="music-implementation-title">
-        <div className="section-inner split-case">
-          <TechnicalPanels project={project} className="vertical-panels" />
-          <Reveal className="music-module-card" delay={0.08}>
-            <p className="eyebrow">Delivered modules</p>
-            <h2 id="music-implementation-title">Research model behind a complete product surface.</h2>
-            <ul>
-              <li>Sentiment and context analysis</li>
-              <li>Interactive playlist generation</li>
-              <li>Talk-to-Your-DJ voice updates</li>
-              <li>Spotify playlist export</li>
-              <li>Stem separation and waveform support</li>
-              <li>User analytics and system logs</li>
-            </ul>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section case-media-section" aria-labelledby="music-media-title">
-        <div className="section-inner case-documentation">
-          <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Architecture explorer</p>
-            <h2 id="music-media-title">Thesis-backed model, product, and multimodal flow.</h2>
-            <p>Inspect how model alignment, retrieval, backend services, mobile UX, voice, image input, Spotify export, and stem separation connect.</p>
-          </Reveal>
-          <ProjectDocumentation documentation={documentation} />
-          <ProjectMedia media={project.media} />
-        </div>
-      </section>
-    </>
-  );
-}
-
-function RagCase({ project, documentation }: { project: Project; documentation?: ProjectDocumentationType }) {
-  const lanes = [
-    { icon: Database, title: "Ingest", text: "CVs, GitHub, LinkedIn, ORIC, personal websites" },
-    { icon: GitBranch, title: "Embed", text: "Nomic vectors over candidate and role context" },
-    { icon: Gauge, title: "Retrieve", text: "Weaviate semantic candidate-job matching" },
-    { icon: Route, title: "Interview", text: "Groq Llama 3 agent with structured question flow" },
-    { icon: Layers3, title: "Deploy", text: "FastAPI services with Docker Compose" }
-  ];
-
-  return (
-    <>
-      <section className="section case-rag" aria-labelledby="rag-title">
-        <div className="section-inner rag-grid">
-          <CaseIntro project={project} label="Research lab platform" />
-          <Reveal className="leadership-card" delay={0.08}>
-            <span>Team lead</span>
-            <strong>4-person AI research team</strong>
-            <p>Led architecture and delivery across ingestion, retrieval, interview flow, and service deployment.</p>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section section-muted" aria-labelledby="rag-flow-title">
-        <div className="section-inner">
-          <Reveal className="section-heading">
-            <p className="eyebrow">System flow</p>
-            <h2 id="rag-flow-title">A recruitment workflow, not a standalone chatbot.</h2>
-          </Reveal>
-          <CarouselRail label="Recruitment RAG flow" className="rag-lane-carousel" itemClassName="rag-lane-item">
-            {lanes.map((lane, index) => {
-              const LaneIcon = lane.icon;
-              return (
-                <Reveal as="article" className="rag-lane" key={lane.title} delay={index * 0.04}>
-                  <LaneIcon size={24} aria-hidden="true" />
-                  <h3>{lane.title}</h3>
-                  <p>{lane.text}</p>
-                </Reveal>
-              );
-            })}
-          </CarouselRail>
-        </div>
-      </section>
-
-      <section className="section" aria-labelledby="rag-panels-title">
-        <div className="section-inner split-case">
-          <TechnicalPanels project={project} className="vertical-panels" />
-          <Reveal className="implementation-ledger" delay={0.08}>
-            <p className="eyebrow">Outcomes</p>
-            <h2 id="rag-panels-title">Delivered research platform capabilities.</h2>
-            <ul>
-              {project.outcomes.map((item) => (
-                <li key={item}>
-                  <CheckCircle2 size={18} aria-hidden="true" />
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section section-muted case-media-section" aria-labelledby="rag-media-title">
-        <div className="section-inner case-documentation">
-          <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Architecture explorer</p>
-            <h2 id="rag-media-title">Recruitment ingestion, retrieval, interview, and deployment flow.</h2>
-            <p>Inspect how candidate ingestion, semantic retrieval, job enrichment, interview orchestration, and deployment boundaries fit together.</p>
-          </Reveal>
-          <ProjectDocumentation documentation={documentation} />
-          <ProjectMedia media={project.media} />
-        </div>
-      </section>
-    </>
   );
 }

@@ -1,55 +1,58 @@
-import { featuredProjects, profile } from "@/data/portfolio";
+import { ArrowRight } from "lucide-react";
+import { FaGithub, FaLinkedinIn } from "react-icons/fa6";
+import { navigation, profile } from "@/data/portfolio";
 
 export function SiteFooter() {
   return (
-    <footer className="site-footer">
-      <div className="section-inner footer-wordmark" aria-hidden="true">
-        Mustafa Iqbal
-      </div>
-      <div className="section-inner footer-grid">
-        <div className="footer-brand">
-          <strong>{profile.name}</strong>
-          <p>{profile.summary}</p>
-          <div className="footer-meta">
-            <span>{profile.location}</span>
-            <span>Remote-first</span>
+    <>
+      <section className="cta-band" aria-labelledby="cta-title">
+        <div className="wrap">
+          <p className="eyebrow">Get in touch</p>
+          <h2 id="cta-title">Have a workflow worth automating?</h2>
+          <p>I build the AI systems that run it end to end — and I&apos;m looking for the roles where that ships.</p>
+          <a className="btn btn--primary" href="/contact/">
+            Get in touch
+            <ArrowRight aria-hidden="true" />
+          </a>
+        </div>
+      </section>
+
+      <footer className="site-footer">
+        <div className="wrap">
+          <div className="footer-grid">
+            <div className="footer-brand">
+              <strong>{profile.name}</strong>
+              <p>{profile.bioShort}</p>
+            </div>
+            <nav className="footer-col" aria-label="Sitemap">
+              <h3>Sitemap</h3>
+              <a href="/">Home</a>
+              {navigation.map((item) => (
+                <a href={item.href} key={item.href}>
+                  {item.label}
+                </a>
+              ))}
+            </nav>
+            <nav className="footer-col" aria-label="Elsewhere">
+              <h3>Elsewhere</h3>
+              <a href={`mailto:${profile.email}`}>Email</a>
+              <a href={profile.github} target="_blank" rel="noreferrer">
+                <FaGithub aria-hidden="true" style={{ display: "inline", marginRight: 8, verticalAlign: "-2px" }} />
+                GitHub
+              </a>
+              <a href={profile.linkedIn} target="_blank" rel="noreferrer">
+                <FaLinkedinIn aria-hidden="true" style={{ display: "inline", marginRight: 8, verticalAlign: "-2px" }} />
+                LinkedIn
+              </a>
+              <a href={profile.resume}>Résumé (PDF)</a>
+            </nav>
+          </div>
+          <div className="footer-bottom">
+            <span>© 2026 {profile.name}</span>
+            <span>{profile.location} · Built with Next.js</span>
           </div>
         </div>
-        <nav aria-label="Footer sitemap">
-          <h3>Sitemap</h3>
-          <a href="/">Home</a>
-          <a href="/work/">Work</a>
-          <a href="/resume/">Resume</a>
-          <a href="/about/">About</a>
-          <a href="/contact/">Contact</a>
-        </nav>
-        <nav aria-label="Featured project links">
-          <h3>Featured Work</h3>
-          {featuredProjects.slice(0, 5).map((project) => (
-            <a href={`/work/${project.slug}/`} key={project.slug}>
-              {project.title}
-            </a>
-          ))}
-        </nav>
-        <nav aria-label="Profile links">
-          <h3>Links</h3>
-          <a href={`mailto:${profile.email}`}>Email</a>
-          <a href={profile.linkedIn} target="_blank" rel="noreferrer">
-            LinkedIn
-          </a>
-          <a href={profile.github} target="_blank" rel="noreferrer">
-            GitHub
-          </a>
-          <a href={profile.resume}>Resume PDF</a>
-        </nav>
-      </div>
-      <div className="section-inner footer-bottom">
-        <span className="footer-status">
-          <i aria-hidden="true" />
-          Status: open to remote roles
-        </span>
-        <span>Built by Mustafa Iqbal.</span>
-      </div>
-    </footer>
+      </footer>
+    </>
   );
 }

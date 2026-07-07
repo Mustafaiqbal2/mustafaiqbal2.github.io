@@ -1,21 +1,70 @@
+"use client";
+
+import { useState } from "react";
 import { Send } from "lucide-react";
 
-export function ContactForm({ accessKey }: { accessKey: string }) {
-  return (
-    <form className="contact-form" data-contact-form>
-      <input type="hidden" name="access_key" value={accessKey} />
-      <input type="checkbox" name="botcheck" className="botcheck" tabIndex={-1} autoComplete="off" aria-hidden="true" />
+type Status = "idle" | "loading" | "success" | "error";
 
+export function ContactForm() {
+  const accessKey = process.env.NEXT_PUBLIC_WEB3FORMS_ACCESS_KEY || "";
+  const [status, setStatus] = useState<Status>("idle");
+  const [message, setMessage] = useState("");
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const payload: Record<string, string> = {
+      access_key: accessKey,
+      subject: `Portfolio message from ${String(data.get("name") || "a visitor")}`,
+      from_name: String(data.get("name") || "Portfolio visitor")
+    };
+    data.forEach((value, key) => {
+      payload[key] = String(value);
+    });
+
+    setStatus("loading");
+    setMessage("Sending…");
+
+    try {
+      const response = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(payload)
+      });
+      const body = await response.json();
+      if (!response.ok || !body.success) {
+        throw new Error(body.message || "That didn't send.");
+      }
+      form.reset();
+      setStatus("success");
+      setMessage("Got it — I'll reply from my inbox soon.");
+    } catch (error) {
+      setStatus("error");
+      setMessage(error instanceof Error ? error.message : "That didn't send. Email me directly and it'll reach me.");
+    }
+  }
+
+  return (
+    <form className="form card" style={{ padding: 24 }} onSubmit={handleSubmit}>
+      <input
+        type="checkbox"
+        name="botcheck"
+        tabIndex={-1}
+        autoComplete="off"
+        aria-hidden="true"
+        style={{ position: "absolute", left: "-9999px" }}
+      />
       <label>
         Name
         <input name="name" type="text" autoComplete="name" required />
       </label>
       <label>
         Email
-        <input name="email" type="email" autoComplete="email" required />
+        <input name="email" type="email" inputMode="email" autoComplete="email" required />
       </label>
       <label>
-        Role or company
+        Role or company (optional)
         <input name="company" type="text" autoComplete="organization" />
       </label>
       <label>
@@ -23,14 +72,14 @@ export function ContactForm({ accessKey }: { accessKey: string }) {
         <textarea name="message" required rows={6} />
       </label>
 
-      <button className="button primary" type="submit" data-contact-submit>
-        <Send size={18} aria-hidden="true" />
-        <span data-submit-label>Send message</span>
+      <button className="btn btn--primary" type="submit" disabled={status === "loading"}>
+        <Send aria-hidden="true" />
+        {status === "loading" ? "Sending…" : "Send message"}
       </button>
 
-      <div className="form-status" role="status" aria-live="polite" aria-atomic="true" data-form-status>
-        <span data-form-status-message />
-      </div>
+      <p className="form-status" role="status" aria-live="polite" data-status={status === "idle" ? undefined : status}>
+        {message}
+      </p>
     </form>
   );
 }

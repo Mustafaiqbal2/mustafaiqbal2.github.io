@@ -1,71 +1,71 @@
 import type { Metadata } from "next";
-import { Mail } from "lucide-react";
+import { Copy, Download, Mail } from "lucide-react";
 import { FaGithub, FaLinkedinIn } from "react-icons/fa6";
-import { ContactActions } from "@/components/ContactActions";
+import { ContactForm } from "@/components/ContactForm";
 import { Reveal } from "@/components/Reveal";
 import { profile, siteUrl } from "@/data/portfolio";
 
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Reach Mustafa Iqbal about remote software engineering roles in AI automation, LLM and RAG systems, and full-stack product work. Email gets a fast reply.",
-  alternates: {
-    canonical: `${siteUrl}/contact/`
-  }
+    "Get in touch about new-grad and junior AI/full-stack roles, or to discuss any project in detail. Based in Islamabad; open to remote and relocation.",
+  alternates: { canonical: `${siteUrl}/contact/` }
 };
-
-const contactOptions = [
-  {
-    label: "Email",
-    value: profile.email,
-    href: `mailto:${profile.email}`,
-    icon: Mail
-  },
-  {
-    label: "LinkedIn",
-    value: "linkedin.com/in/mustafa-iqbal-ba42b424b",
-    href: profile.linkedIn,
-    icon: FaLinkedinIn
-  },
-  {
-    label: "GitHub",
-    value: "github.com/Mustafaiqbal2",
-    href: profile.github,
-    icon: FaGithub
-  }
-];
 
 export default function ContactPage() {
   return (
-    <main id="top">
-      <section className="page-hero contact-page-hero">
-        <div className="section-inner contact-page-grid">
-          <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Contact</p>
-            <h1>Let&apos;s talk about the role.</h1>
-            <p>
-              Email me directly, or use the form — I reply from my own inbox, usually within a day. If you can, include
-              the role or product area and a rough timeline, and I&apos;ll come back with specifics on how I&apos;d
-              approach it. I&apos;m open to remote software engineering roles across AI automation, product engineering,
-              and full-stack delivery.
-            </p>
-            <ContactActions links={profile} />
-          </Reveal>
-          <Reveal className="contact-options-panel" delay={0.08}>
-            {contactOptions.map((option) => {
-              const Icon = option.icon;
-              return (
-                <a href={option.href} target={option.href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" key={option.label}>
-                  <Icon size={22} aria-hidden="true" />
-                  <span>{option.label}</span>
-                  <strong>{option.value}</strong>
+    <main id="main">
+      <section className="section">
+        <div className="wrap">
+          <div className="about-split">
+            <Reveal>
+              <p className="eyebrow">Get in touch</p>
+              <h1>Let&apos;s talk about the role.</h1>
+              <p className="lede" style={{ marginTop: 20 }}>
+                I&apos;m a final-year CS student graduating in 2026, looking for new-grad and junior roles where I can
+                ship production AI automation and full-stack systems. If you&apos;re hiring for that — or want to talk
+                through any of the projects here in detail — I&apos;d like to hear from you.
+              </p>
+              <p style={{ marginTop: 16, color: "var(--ink-2)", lineHeight: 1.7 }}>
+                Much of my work is private or client-bound; I&apos;m glad to walk through the architecture and my
+                specific contribution, and to share more under NDA.
+              </p>
+
+              <div className="stack-v" style={{ gap: 12, marginTop: 28 }}>
+                <a className="textlink" href={`mailto:${profile.email}`} style={{ fontSize: "1.05rem" }}>
+                  <Mail aria-hidden="true" />
+                  {profile.email}
                 </a>
-              );
-            })}
-          </Reveal>
+                <button className="textlink" type="button" data-copy={profile.email} style={{ justifySelf: "start", background: "transparent", border: 0, padding: 0 }}>
+                  <Copy aria-hidden="true" />
+                  <span data-copy-label>Copy email</span>
+                </button>
+                <div className="btn-row" style={{ marginTop: 8 }}>
+                  <a className="btn btn--ghost" href={profile.github} target="_blank" rel="noreferrer">
+                    <FaGithub aria-hidden="true" />
+                    GitHub
+                  </a>
+                  <a className="btn btn--ghost" href={profile.linkedIn} target="_blank" rel="noreferrer">
+                    <FaLinkedinIn aria-hidden="true" />
+                    LinkedIn
+                  </a>
+                  <a className="btn btn--ghost" href={profile.resume}>
+                    <Download aria-hidden="true" />
+                    Résumé
+                  </a>
+                </div>
+                <p className="muted" style={{ marginTop: 12, fontSize: "0.9rem" }}>
+                  Based in {profile.location}. Open to remote and relocation.
+                </p>
+              </div>
+            </Reveal>
+
+            <Reveal delay={0.08}>
+              <ContactForm />
+            </Reveal>
+          </div>
         </div>
       </section>
-
     </main>
   );
 }

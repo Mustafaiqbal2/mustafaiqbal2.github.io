@@ -1,92 +1,69 @@
-import { FileText, Mail, Menu, X } from "lucide-react";
-import { FaGithub, FaLinkedinIn } from "react-icons/fa6";
+import { ArrowUpRight, Download, Mail, Menu, X } from "lucide-react";
 import { navigation, profile } from "@/data/portfolio";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function SiteHeader() {
   return (
-    <header className="site-header">
-      <div className="brand">
-        <button
-          className="avatar-button"
-          type="button"
-          data-image-lightbox={profile.photo}
-          data-image-alt="Mustafa Iqbal"
-          aria-label="Open Mustafa Iqbal photo"
-        >
-          <img className="brand-avatar" src={profile.photo} alt="" width={48} height={48} />
-        </button>
-        <span className="brand-copy">
-          <a href="/">{profile.name}</a>
-          <small>{profile.shortTitle}</small>
-        </span>
+    <header className="site-header" data-header>
+      <div className="wrap site-header__inner">
+        <a className="brand" href="/">
+          <span className="brand__name">{profile.name}</span>
+          <span className="brand__role">{profile.shortTitle}</span>
+        </a>
+
+        <nav className="nav-desktop" aria-label="Primary">
+          {navigation.map((item) => (
+            <a href={item.href} key={item.href} data-nav-link>
+              {item.label}
+            </a>
+          ))}
+        </nav>
+
+        <div className="header-actions">
+          <ThemeToggle />
+          <button className="nav-toggle" type="button" data-nav-toggle aria-expanded="false" aria-controls="mobile-nav">
+            <Menu aria-hidden="true" />
+            Menu
+          </button>
+        </div>
       </div>
 
-      <nav className="nav-links" aria-label="Primary navigation">
-        {navigation.map((item) => (
-          <a href={item.href} key={item.href} data-nav-link>
-            {item.label}
-          </a>
-        ))}
-      </nav>
-
-      <div className="header-actions" aria-label="Profile links">
-        <ThemeToggle />
-        <a className="desktop-link" href={`mailto:${profile.email}`} aria-label="Email Mustafa">
-          <Mail size={18} aria-hidden="true" />
-        </a>
-        <a className="desktop-link" href={profile.github} aria-label="Open GitHub" target="_blank" rel="noreferrer">
-          <FaGithub aria-hidden="true" />
-        </a>
-        <a className="desktop-link" href={profile.linkedIn} aria-label="Open LinkedIn" target="_blank" rel="noreferrer">
-          <FaLinkedinIn aria-hidden="true" />
-        </a>
-        <details className="mobile-menu" data-mobile-menu>
-          <summary aria-label="Open navigation">
-            <Menu size={18} aria-hidden="true" />
-          </summary>
-          <button className="mobile-menu-backdrop" type="button" data-mobile-menu-close aria-label="Close navigation" />
-          <div className="mobile-menu-panel">
-            <div className="mobile-menu-head">
-              <div>
-                <strong>{profile.name}</strong>
-                <span>{profile.shortTitle}</span>
-              </div>
-              <button type="button" data-mobile-menu-close aria-label="Close navigation">
-                <X size={18} aria-hidden="true" />
-              </button>
-            </div>
-            <div className="mobile-theme-row">
-              <span>Theme</span>
-              <ThemeToggle />
-            </div>
-            <nav className="mobile-menu-nav" aria-label="Mobile primary navigation">
-              {navigation.map((item) => (
-                <a href={item.href} key={item.href} data-nav-link>
-                  {item.label}
-                </a>
-              ))}
-            </nav>
-            <div className="mobile-menu-actions" aria-label="Contact and profile links">
-              <a href={`mailto:${profile.email}`}>
-                <Mail size={18} aria-hidden="true" />
-                Email
-              </a>
-              <a href={profile.github} target="_blank" rel="noreferrer">
-                <FaGithub aria-hidden="true" />
-                GitHub
-              </a>
-              <a href={profile.linkedIn} target="_blank" rel="noreferrer">
-                <FaLinkedinIn aria-hidden="true" />
-                LinkedIn
-              </a>
-              <a href={profile.resume}>
-                <FileText size={18} aria-hidden="true" />
-                Resume
-              </a>
-            </div>
+      <div className="nav-mobile" id="mobile-nav" data-mobile-nav hidden>
+        <button className="nav-mobile__backdrop" type="button" data-nav-backdrop aria-label="Close menu" />
+        <div className="nav-mobile__panel" role="dialog" aria-modal="true" aria-label="Menu">
+          <div className="nav-mobile__top">
+            <span className="brand__name">{profile.name}</span>
+            <button className="nav-mobile__close" type="button" data-nav-close>
+              <X aria-hidden="true" />
+              Close
+            </button>
           </div>
-        </details>
+
+          <nav className="nav-mobile__links" aria-label="Primary">
+            {navigation.map((item) => (
+              <a href={item.href} key={item.href} data-nav-link>
+                {item.label}
+                <ArrowUpRight aria-hidden="true" />
+              </a>
+            ))}
+          </nav>
+
+          <div className="nav-mobile__actions">
+            <a className="btn btn--primary" href={`mailto:${profile.email}`}>
+              <Mail aria-hidden="true" />
+              Email me
+            </a>
+            <a className="btn btn--ghost" href={profile.resume}>
+              <Download aria-hidden="true" />
+              Download résumé
+            </a>
+          </div>
+
+          <div className="nav-mobile__theme">
+            <span>Theme</span>
+            <ThemeToggle />
+          </div>
+        </div>
       </div>
     </header>
   );

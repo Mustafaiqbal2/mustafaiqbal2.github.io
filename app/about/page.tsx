@@ -1,174 +1,139 @@
 import type { Metadata } from "next";
-import { ArrowRight, CheckCircle2, Gauge, GitBranch, Layers3, Workflow } from "lucide-react";
-import { CarouselRail } from "@/components/CarouselRail";
 import { Reveal } from "@/components/Reveal";
-import { focusAreas, principles, siteUrl } from "@/data/portfolio";
+import { education, experience, principles, profile, siteUrl } from "@/data/portfolio";
 
 export const metadata: Metadata = {
   title: "About",
   description:
-    "About Mustafa Iqbal, a software engineer focused on AI automation, full-stack product work, RAG systems, integrations, and startup delivery.",
-  alternates: {
-    canonical: `${siteUrl}/about/`
-  }
+    "AI automation engineer and final-year CS student. I turn high-volume manual workflows into autonomous, event-driven systems — with the production discipline and judgment to run them.",
+  alternates: { canonical: `${siteUrl}/about/` }
 };
-
-const operatingNotes = [
-  {
-    title: "I build around workflows, not isolated model calls.",
-    text: "Before I touch a prompt, I map the user action, the data I own, the external API's state, the failure modes, the retry path, and what the user needs to see. The model is usually the last decision, not the first."
-  },
-  {
-    title: "I reach for the seam where product polish meets backend reliability.",
-    text: "The work I keep returning to lives in OAuth, queues, caches, vector search, model cost, and UI states — the small details that make automation feel safe to hand to a real user."
-  },
-  {
-    title: "I present private work through its architecture.",
-    text: "When code or customer data can't be public, I don't hand-wave it. I show the domain model, the constraints I worked under, the decisions I made, and approved product media — enough for an engineer to evaluate the real work."
-  }
-];
-
-const buildLoop = [
-  ["Trace", "Map the real workflow and the data that actually moves through it before writing a line."],
-  ["Separate", "Deterministic logic handles the obvious cases; AI is reserved for genuine ambiguity. On Emmy, known senders route on rules and only unclear mail reaches the model."],
-  ["Instrument", "Add logs, status, cache behavior, retries, and correction surfaces — so the system is inspectable, not a black box."],
-  ["Ship", "Keep the interface clear enough that someone who didn't build it can operate and trust it."]
-];
-
-const fitSignals = [
-  "AI products where full-stack ownership matters more than a clean frontend/backend split — someone who can carry a feature from data model to shipped UI.",
-  "Automation work over messy real-world APIs — Gmail, Google Business Profile, Stripe, vector search — where correctness, cost, and recovery all matter at once.",
-  "Early teams that need technical breadth, practical judgment, and enough polish to put something in front of customers quickly."
-];
 
 export default function AboutPage() {
   return (
-    <main id="top">
-      <section className="page-hero compact-page-hero about-hero">
-        <div className="section-inner about-hero-grid">
-          <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">About</p>
-            <h1>Most AI demos work once. I build the version that runs every day.</h1>
-            <p>
-              I&apos;m a full-stack engineer who works end to end — product UI, APIs, data models, third-party
-              integrations, retrieval, and the queues, caching, and recovery paths underneath. I&apos;ve built private
-              automation products around Gmail, Google Business Profile, and Stripe, and led a four-person AI research
-              team at Genesys Research Lab. What I care about most is the part of a system that only shows up under real
-              load: state, failure, latency, and what the user is allowed to correct.
-            </p>
-            <div className="button-row">
-              <a className="button primary" href="/work/">
-                View work
-                <ArrowRight size={18} aria-hidden="true" />
-              </a>
-              <a className="button ghost" href="/resume/">
-                Resume page
-              </a>
-            </div>
-          </Reveal>
-          <Reveal className="about-range-panel" delay={0.08}>
-            {focusAreas.map((area) => {
-              const Icon = area.icon;
-              return (
-                <div key={area.title}>
-                  <Icon size={22} aria-hidden="true" />
-                  <strong>{area.title}</strong>
-                  <span>{area.text}</span>
-                </div>
-              );
-            })}
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section about-editorial-section" aria-labelledby="operating-title">
-        <div className="section-inner">
-          <Reveal className="editorial-statement">
-            <p className="eyebrow">Operating mode</p>
-            <h2 id="operating-title">I judge software by how it behaves when something goes wrong.</h2>
-            <p>
-              Anyone can make a model return text. The parts that decide whether a team can trust and maintain an
-              automation system are less visible: state, permissions, latency, failure modes, and whether a user can see
-              what happened and undo it. That&apos;s the layer I build for.
-            </p>
-          </Reveal>
-          <div className="about-note-row">
-            {operatingNotes.map((note, index) => (
-              <Reveal as="article" className="about-note" key={note.title} delay={index * 0.05}>
-                <h3>{note.title}</h3>
-                <p>{note.text}</p>
-              </Reveal>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="section section-muted about-build-loop-section" aria-labelledby="build-loop-title">
-        <div className="section-inner build-loop-grid">
-          <Reveal className="section-heading">
-            <p className="eyebrow">How I build</p>
-            <h2 id="build-loop-title">One build loop, whatever the domain.</h2>
-            <p>
-              Review automation, email triage, a CAD reconstruction engine, a multimodal music app, a recruitment RAG
-              platform — different problems, same loop. It&apos;s the loop that produced measurable results, not the
-              individual domain.
-            </p>
-          </Reveal>
-          <Reveal className="build-loop-shell" delay={0.08}>
-            <CarouselRail label="Build loop" className="build-loop-carousel" itemClassName="build-loop-item">
-              {buildLoop.map(([title, text], index) => {
-                const icons = [Workflow, GitBranch, Gauge, Layers3];
-                const Icon = icons[index];
-                return (
-                  <article className="build-step" key={title}>
-                    <Icon size={22} aria-hidden="true" />
-                    <strong>{title}</strong>
-                    <span>{text}</span>
-                  </article>
-                );
-              })}
-            </CarouselRail>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="section about-fit-section-v2" aria-labelledby="fit-title">
-        <div className="section-inner fit-editorial-grid">
-          <Reveal className="fit-callout">
-            <p className="eyebrow">Role fit</p>
-            <h2 id="fit-title">The roles that fit are broad, technical, and close to the product.</h2>
-          </Reveal>
-          <div className="fit-signal-stack">
-            {fitSignals.map((signal, index) => (
-              <Reveal as="article" className="fit-signal" key={signal} delay={index * 0.05}>
-                <CheckCircle2 size={20} aria-hidden="true" />
-                <p>{signal}</p>
-              </Reveal>
-            ))}
-            <Reveal className="fit-invite" delay={0.2}>
-              <a className="text-link" href="/contact/">
-                If that&apos;s the shape of the role, I&apos;d like to talk
-                <ArrowRight size={17} aria-hidden="true" />
-              </a>
+    <main id="main">
+      <section className="section" style={{ paddingBottom: "clamp(24px, 4vw, 40px)" }}>
+        <div className="wrap">
+          <div className="about-split">
+            <Reveal>
+              <p className="eyebrow">About</p>
+              <h1>I build production AI automation — and the systems that keep it honest.</h1>
+              <p className="lede" style={{ marginTop: 20 }}>
+                I&apos;m Mustafa Iqbal, an AI automation engineer. I take a manual, high-volume workflow and turn it into
+                a system that runs itself — reliably, cheaply, and with a human able to step in whenever it matters.
+              </p>
+            </Reveal>
+            <Reveal delay={0.08}>
+              <img
+                src={profile.photo}
+                alt="Mustafa Iqbal"
+                className="card"
+                width={640}
+                height={640}
+                style={{ width: "100%", aspectRatio: "1 / 1", objectFit: "cover", objectPosition: "50% 30%" }}
+              />
             </Reveal>
           </div>
         </div>
       </section>
 
-      <section className="section section-muted about-principles-section" aria-labelledby="principles-title">
-        <div className="section-inner">
-          <Reveal className="section-heading">
-            <p className="eyebrow">Engineering principles</p>
-            <h2 id="principles-title">The standards I hold when AI touches a real workflow.</h2>
+      <section className="section section--divided">
+        <div className="wrap prose case-body" style={{ paddingBlock: 0, maxWidth: "var(--prose)" }}>
+          <div className="case-block">
+            <h2>What I do</h2>
+            <p>
+              Most of my work follows the same shape. Start with a repetitive operational task a team is doing by hand —
+              sorting a Gmail inbox, responding to Google reviews, screening candidates, producing ad creative. Design
+              the pipeline that automates it end to end: the integration at the source, the background jobs that process
+              work asynchronously, the LLM layer that makes the judgment calls, and the dashboard that keeps an operator
+              in the loop. Then do the unglamorous engineering that decides whether it survives in production — token
+              refresh, rate-limit-safe concurrency, cost pre-filtering, batched writes, structured logging.
+            </p>
+            <p>
+              I build full-stack: TypeScript/Next.js and Python on the front, Postgres/Prisma and background-job queues
+              underneath, and OpenAI, Anthropic, or Google models in the pipeline depending on the job. I care more about
+              the architecture decisions than the framework names — why a Postgres-backed queue instead of a separate
+              broker, when to run parallel versus throttled versus batch generation, where a deterministic rule should
+              short-circuit the model entirely.
+            </p>
+          </div>
+
+          <div className="case-block">
+            <h2>How I think about the work</h2>
+            <p>
+              The habit I trust most is restraint. On my CAD-intelligence startup, I deleted a working but
+              more-sophisticated deterministic pipeline once I could show it didn&apos;t generalize — a system I can
+              defend beats one that only looks finished. On an email classifier, I evaluated the cheaper batch API and
+              rejected it because 24-hour latency was wrong for near-real-time inbox sorting. Documenting those
+              trade-offs, and admitting where a system still degrades, is the part of the job I take most seriously.
+            </p>
+            <p>
+              I also keep numbers honest. Where I cite a benchmark, it&apos;s a documented internal figure, and I say so.
+              I don&apos;t publish metrics I can&apos;t stand behind.
+            </p>
+          </div>
+
+          <div className="case-block">
+            <h2>How I build</h2>
+            <ul className="plain-list">
+              {principles.map((principle) => (
+                <li key={principle}>
+                  <span>{principle}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <section className="section section--divided">
+        <div className="wrap prose">
+          <Reveal className="section__head">
+            <p className="eyebrow">Experience</p>
+            <h2>Where I&apos;ve worked</h2>
           </Reveal>
-          <CarouselRail label="Engineering principles" className="principles-carousel" itemClassName="principle-carousel-item">
-            {principles.map((principle, index) => (
-              <Reveal as="article" className="principle-card" key={principle} delay={index * 0.04}>
-                <span>{String(index + 1).padStart(2, "0")}</span>
-                <p>{principle}</p>
+          <div className="stack-v" style={{ gap: 28 }}>
+            {experience.map((item, index) => (
+              <Reveal as="article" key={item.role} delay={index * 0.05} className="decision" style={{ borderColor: "var(--line-strong)" }}>
+                <span className="status-tag">{item.dates}</span>
+                <h3 style={{ marginTop: 6 }}>
+                  {item.role} · {item.organization}
+                </h3>
+                <p className="muted" style={{ fontSize: "0.88rem", marginTop: 2 }}>
+                  {item.location}
+                </p>
+                <ul className="plain-list" style={{ marginTop: 14 }}>
+                  {item.bullets.map((bullet) => (
+                    <li key={bullet}>
+                      <span>{bullet}</span>
+                    </li>
+                  ))}
+                </ul>
               </Reveal>
             ))}
-          </CarouselRail>
+          </div>
+        </div>
+      </section>
+
+      <section className="section section--divided">
+        <div className="wrap prose">
+          <Reveal className="section__head">
+            <p className="eyebrow">Education</p>
+            <h2>Foundation</h2>
+          </Reveal>
+          <div className="stack-v" style={{ gap: 20 }}>
+            {education.map((item) => (
+              <div key={item.program} style={{ display: "grid", gap: 6 }}>
+                <span className="status-tag">{item.dates}</span>
+                <h3>
+                  {item.program} · {item.institution}
+                </h3>
+                <p className="muted" style={{ lineHeight: 1.6 }}>
+                  {item.detail}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
     </main>

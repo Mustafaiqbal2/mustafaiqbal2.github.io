@@ -1,94 +1,64 @@
 import type { Metadata } from "next";
-import { ArrowRight, Download, GraduationCap, MapPin } from "lucide-react";
-import { CarouselRail } from "@/components/CarouselRail";
+import { Download } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
-import { education, experience, featuredProjects, profile, proofMetrics, secondaryProjects, siteUrl, skillGroups } from "@/data/portfolio";
+import { education, experience, profile, siteUrl, skillGroups } from "@/data/portfolio";
 
 export const metadata: Metadata = {
-  title: "Resume",
+  title: "Résumé",
   description:
-    "Resume page for Mustafa Iqbal: AI automation, RAG systems, full-stack product engineering, FAST-NUCES BS CS, Genesys Research Lab, and systems projects.",
-  alternates: {
-    canonical: `${siteUrl}/resume/`
-  }
+    "Experience, projects, and technical foundation. Freelance automation engineer since 2022, team lead at Genesys Research Lab, graduating FAST-NUCES 2026.",
+  alternates: { canonical: `${siteUrl}/resume/` }
 };
 
 export default function ResumePage() {
   return (
-    <main id="top">
-      <section className="page-hero resume-hero">
-        <div className="section-inner resume-hero-grid">
-          <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Resume</p>
-            <h1>Software engineer focused on AI automation, full-stack product work, and systems depth.</h1>
-            <p>
-              I have worked across OAuth-heavy integrations, async workflows, RAG/vector systems, SaaS-style product
-              surfaces, and performance-oriented systems projects.
+    <main id="main">
+      <section className="section" style={{ paddingBottom: "clamp(24px, 4vw, 40px)" }}>
+        <div className="wrap prose">
+          <Reveal>
+            <p className="eyebrow">Résumé</p>
+            <h1>Experience, projects, and foundation.</h1>
+            <p className="lede" style={{ marginTop: 20 }}>
+              Final-year CS student at FAST-NUCES Islamabad (graduating 2026), building production AI automation as a
+              freelancer since 2022, and team lead of a four-person AI research group at Genesys Research Lab in 2025.
             </p>
-            <div className="button-row">
-              <a className="button primary" href={profile.resume}>
+            <div className="btn-row" style={{ marginTop: 26 }}>
+              <a className="btn btn--primary" href={profile.resume}>
+                <Download aria-hidden="true" />
                 Download PDF
-                <Download size={18} aria-hidden="true" />
               </a>
-              <a className="button ghost" href="/work/">
-                Case studies
-                <ArrowRight size={18} aria-hidden="true" />
+              <a className="btn btn--ghost" href="/work/">
+                View case studies
               </a>
             </div>
-          </Reveal>
-          <Reveal className="resume-fact-panel" delay={0.08}>
-            <div>
-              <MapPin size={18} aria-hidden="true" />
-              <span>Location</span>
-              <strong>{profile.location}</strong>
-            </div>
-            <div>
-              <GraduationCap size={18} aria-hidden="true" />
-              <span>Education</span>
-              <strong>BS Computer Science, FAST-NUCES, 2026</strong>
-            </div>
-            <div>
-              <span className="panel-dot" aria-hidden="true" />
-              <span>Focus</span>
-              <strong>AI automation, RAG, full-stack systems</strong>
-            </div>
-          </Reveal>
-        </div>
-      </section>
-
-      <section className="proof-band resume-proof-band" aria-label="Resume proof metrics">
-        <div className="section-inner proof-band-grid">
-          {proofMetrics.map((metric) => (
-            <div className="metric" key={metric.label}>
-              <strong data-decode suppressHydrationWarning>{metric.value}</strong>
-              <span>{metric.label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="section" aria-labelledby="experience-title">
-        <div className="section-inner resume-grid">
-          <Reveal className="section-heading sticky-heading">
-            <p className="eyebrow">Experience</p>
-            <h2 id="experience-title">Work experience that maps to startup engineering.</h2>
-            <p>
-              My pattern is consistent: define the workflow, integrate the external systems, make background work
-              observable, and keep the product usable when AI is uncertain.
+            <p className="private-note" style={{ marginTop: 24 }}>
+              Several projects are private products or client engagements. I describe them by problem, scale, technology,
+              and my role — customer data, client identities, and proprietary internals stay confidential and can be
+              discussed under NDA.
             </p>
           </Reveal>
-          <div className="timeline">
+        </div>
+      </section>
+
+      <section className="section section--divided">
+        <div className="wrap prose">
+          <Reveal className="section__head">
+            <p className="eyebrow">Experience</p>
+            <h2>Work history</h2>
+          </Reveal>
+          <div className="stack-v" style={{ gap: 28 }}>
             {experience.map((item, index) => (
-              <Reveal as="article" className="timeline-item" key={`${item.role}-${item.organization}`} delay={index * 0.05}>
-                <span className="timeline-date">{item.dates}</span>
-                <h3>{item.role}</h3>
-                <p>
-                  {item.organization} / {item.location}
+              <Reveal as="article" key={item.role} delay={index * 0.05} className="decision" style={{ borderColor: "var(--line-strong)" }}>
+                <span className="status-tag">{item.dates}</span>
+                <h3 style={{ marginTop: 6 }}>
+                  {item.role} · {item.organization}
+                </h3>
+                <p className="muted" style={{ fontSize: "0.88rem", marginTop: 2 }}>
+                  {item.location}
                 </p>
-                <ul className="check-list">
+                <ul className="plain-list" style={{ marginTop: 14 }}>
                   {item.bullets.map((bullet) => (
                     <li key={bullet}>
-                      <span className="check-dot" aria-hidden="true" />
                       <span>{bullet}</span>
                     </li>
                   ))}
@@ -99,121 +69,48 @@ export default function ResumePage() {
         </div>
       </section>
 
-      <section className="section section-muted resume-achievement-section" aria-labelledby="resume-projects-title">
-        <div className="section-inner">
-          <Reveal className="section-heading wide-heading">
-            <p className="eyebrow">Selected work</p>
-            <h2 id="resume-projects-title">Selected project work.</h2>
-            <p>
-              Selected projects with role, stack, outcome, architecture decisions, and implementation notes.
-            </p>
+      <section className="section section--divided">
+        <div className="wrap prose">
+          <Reveal className="section__head">
+            <p className="eyebrow">Skills</p>
+            <h2>Technical foundation</h2>
           </Reveal>
-          <CarouselRail label="Selected engineering work" className="achievement-carousel" itemClassName="achievement-carousel-item">
-            {featuredProjects.map((project, index) => {
-              const media = project.thumbnail || project.media[0];
-
-              return (
-                <Reveal as="article" className="achievement-card" key={project.slug} delay={index * 0.035}>
-                  {media ? (
-                    <a className="achievement-media" href={`/work/${project.slug}/`} aria-label={`Open ${project.title} details`}>
-                      {media.darkSrc ? (
-                        <>
-                          <img className="theme-media-light" src={media.src} alt={media.alt} loading="lazy" decoding="async" />
-                          <img className="theme-media-dark" src={media.darkSrc} alt="" loading="lazy" decoding="async" />
-                        </>
-                      ) : (
-                        <img src={media.type === "video" ? media.poster || media.src : media.src} alt={media.alt} loading="lazy" decoding="async" />
-                      )}
-                    </a>
-                  ) : null}
-                  <div className="achievement-content">
-                    <span>{project.category}</span>
-                    <h3>{project.title}</h3>
-                    <p>{project.summary}</p>
-                    <div className="achievement-meta">
-                      <strong>{project.featuredMetric.value}</strong>
-                      <small>{project.featuredMetric.label}</small>
-                    </div>
-                    <div className="resume-project-meta">
-                      <span>{project.role}</span>
-                      <span>{project.stack.slice(0, 4).join(" / ")}</span>
-                    </div>
-                    <a className="text-link" href={`/work/${project.slug}/`}>
-                      Details
-                      <ArrowRight size={17} aria-hidden="true" />
-                    </a>
-                  </div>
-                </Reveal>
-              );
-            })}
-          </CarouselRail>
-        </div>
-      </section>
-
-      <section className="section" aria-labelledby="education-title">
-        <div className="section-inner resume-grid">
-          <Reveal className="section-heading sticky-heading">
-            <p className="eyebrow">Education</p>
-            <h2 id="education-title">Computer science foundation with systems-heavy project work.</h2>
-            <p>
-              My degree supports the product work with fundamentals across operating systems, compilers, databases,
-              parallel computing, AI, and software engineering.
-            </p>
-          </Reveal>
-          <div className="education-list">
-            {education.map((item) => (
-              <Reveal as="article" className="education-card" key={`${item.program}-${item.institution}`}>
-                <span className="timeline-date">{item.dates}</span>
-                <div>
-                  <h3>{item.program}</h3>
-                  <p>{item.institution}</p>
+          <div className="stack-v" style={{ gap: 24 }}>
+            {skillGroups.map((group) => (
+              <div key={group.title} style={{ display: "grid", gap: 10 }}>
+                <span className="status-tag">{group.title}</span>
+                <div className="chips">
+                  {group.items.map((item) => (
+                    <span className="chip" key={item}>
+                      {item}
+                    </span>
+                  ))}
                 </div>
-                <p>{item.detail}</p>
-              </Reveal>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      <section className="section section-muted" aria-labelledby="skills-title">
-        <div className="section-inner">
-          <Reveal className="section-heading">
-            <p className="eyebrow">Skills</p>
-            <h2 id="skills-title">Technical range.</h2>
+      <section className="section section--divided">
+        <div className="wrap prose">
+          <Reveal className="section__head">
+            <p className="eyebrow">Education</p>
+            <h2>Education</h2>
           </Reveal>
-          <CarouselRail label="Skill groups" className="skills-carousel" itemClassName="skill-carousel-item" auto>
-            {skillGroups.map((group, index) => (
-              <Reveal as="article" className="skill-card" key={group.title} delay={index * 0.04}>
-                <h3>{group.title}</h3>
-                <div className="metadata-list">
-                  {group.items.map((item) => (
-                    <span key={item}>{item}</span>
-                  ))}
-                </div>
-              </Reveal>
+          <div className="stack-v" style={{ gap: 20 }}>
+            {education.map((item) => (
+              <div key={item.program} style={{ display: "grid", gap: 6 }}>
+                <span className="status-tag">{item.dates}</span>
+                <h3>
+                  {item.program} · {item.institution}
+                </h3>
+                <p className="muted" style={{ lineHeight: 1.6 }}>
+                  {item.detail}
+                </p>
+              </div>
             ))}
-          </CarouselRail>
-        </div>
-      </section>
-
-      <section className="section" aria-labelledby="systems-title">
-        <div className="section-inner">
-          <Reveal className="section-heading">
-            <p className="eyebrow">Systems depth</p>
-            <h2 id="systems-title">Performance and fundamentals behind the product work.</h2>
-            <p>
-              Additional projects across performance, distributed compute, compiler construction, and retrieval.
-            </p>
-          </Reveal>
-          <CarouselRail label="Systems depth projects" className="systems-carousel" itemClassName="systems-carousel-item" auto>
-            {secondaryProjects.slice(0, 6).map((project) => (
-              <article className="compact-row systems-card" key={project.title}>
-                <span>{project.signal}</span>
-                <strong>{project.title}</strong>
-                <p>{project.summary}</p>
-              </article>
-            ))}
-          </CarouselRail>
+          </div>
         </div>
       </section>
     </main>
