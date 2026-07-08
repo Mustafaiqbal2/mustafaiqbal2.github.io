@@ -21,15 +21,26 @@ const coreStack = [
 export default function Home() {
   return (
     <main id="main">
-      <section className="hero" aria-labelledby="hero-title">
+      <section className="hero" aria-labelledby="hero-title" data-hero>
+        <canvas className="hero__field" data-hero-field aria-hidden="true" />
         <div className="wrap hero-grid hero-grid--split">
-          <div>
+          <div className="hero__copy">
             <p className="hero__avail">
               <i aria-hidden="true" />
               Open to new-grad &amp; junior roles · Islamabad, PK · graduating 2026
             </p>
-            <h1 className="hero__statement" id="hero-title">
-              I build AI automation that runs in <em>production</em> — not demos.
+            <h1 className="hero__statement" id="hero-title" data-hero-statement>
+              <span className="hero__line">
+                <span>I build AI automation</span>
+              </span>
+              <span className="hero__line">
+                <span>
+                  that runs in <em data-hero-anchor>production</em>
+                </span>
+              </span>
+              <span className="hero__line">
+                <span>— not demos.</span>
+              </span>
             </h1>
             <p className="hero__sub">
               I turn high-volume operational work — inbox triage, review response, candidate evaluation, creative
@@ -88,11 +99,11 @@ export default function Home() {
               customer data.
             </p>
           </Reveal>
-          <Reveal className="work-list" delay={0.05}>
+          <div className="work-list" data-stagger>
             {homeProjects.map((project, index) => (
               <WorkRow project={project} index={index} key={project.slug} />
             ))}
-          </Reveal>
+          </div>
           <div style={{ marginTop: 32 }}>
             <a className="textlink" href="/work/">
               See all work
@@ -111,11 +122,11 @@ export default function Home() {
             <h2 id="how-title">Production thinking, not just prompts</h2>
             <p>The model is usually the last decision, not the first. Most of the engineering is everything around it.</p>
           </Reveal>
-          <div className="pillar-grid">
+          <div className="pillar-grid" data-stagger>
             {pillars.map((pillar, index) => {
               const Icon = pillar.icon;
               return (
-                <Reveal as="article" className="pillar" key={pillar.title} delay={index * 0.05}>
+                <Reveal as="article" className="pillar" variant="scale" key={pillar.title} delay={index * 0.06}>
                   <Icon aria-hidden="true" />
                   <h3>{pillar.title}</h3>
                   <p>{pillar.text}</p>

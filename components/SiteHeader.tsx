@@ -27,6 +27,7 @@ export function SiteHeader() {
           </button>
         </div>
       </div>
+      <span className="site-header__progress" data-header-progress aria-hidden="true" />
 
       <div className="nav-mobile" id="mobile-nav" data-mobile-nav hidden>
         <button className="nav-mobile__backdrop" type="button" data-nav-backdrop aria-label="Close menu" />

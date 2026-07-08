@@ -6,9 +6,9 @@ export function SiteFooter() {
   return (
     <>
       <section className="cta-band" aria-labelledby="cta-title">
-        <div className="wrap">
+        <div className="wrap reveal" data-reveal="scale">
           <p className="eyebrow">Get in touch</p>
-          <h2 id="cta-title">Have a workflow worth automating?</h2>
+          <h2 id="cta-title">Have a workflow worth <em>automating</em>?</h2>
           <p>I build the AI systems that run it end to end — and I&apos;m looking for the roles where that ships.</p>
           <a className="btn btn--primary" href="/contact/">
             Get in touch
@@ -19,12 +19,12 @@ export function SiteFooter() {
 
       <footer className="site-footer">
         <div className="wrap">
-          <div className="footer-grid">
-            <div className="footer-brand">
+          <div className="footer-grid" data-stagger>
+            <div className="footer-brand reveal">
               <strong>{profile.name}</strong>
               <p>{profile.bioShort}</p>
             </div>
-            <nav className="footer-col" aria-label="Sitemap">
+            <nav className="footer-col reveal" aria-label="Sitemap">
               <h3>Sitemap</h3>
               <a href="/">Home</a>
               {navigation.map((item) => (
@@ -33,7 +33,7 @@ export function SiteFooter() {
                 </a>
               ))}
             </nav>
-            <nav className="footer-col" aria-label="Elsewhere">
+            <nav className="footer-col reveal" aria-label="Elsewhere">
               <h3>Elsewhere</h3>
               <a href={`mailto:${profile.email}`}>Email</a>
               <a href={profile.github} target="_blank" rel="noreferrer">

@@ -1,10 +1,15 @@
+import type { CSSProperties } from "react";
 import { ArrowUpRight } from "lucide-react";
 import { Provenance } from "@/components/Evidence";
 import type { CaseStudy } from "@/data/portfolio";
 
 export function WorkRow({ project, index }: { project: CaseStudy; index: number }) {
   return (
-    <article className="work-row">
+    <article
+      className="work-row reveal"
+      data-reveal="left"
+      style={{ "--reveal-delay": `${index * 60}ms` } as CSSProperties}
+    >
       <a href={`/work/${project.slug}/`}>
         <span className="work-row__index">{String(index + 1).padStart(2, "0")}</span>
         <span className="work-row__main">

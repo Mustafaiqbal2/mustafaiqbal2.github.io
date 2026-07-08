@@ -71,9 +71,9 @@ export default function ResumePage() {
             <p className="eyebrow">Skills</p>
             <h2>Technical foundation</h2>
           </Reveal>
-          <div className="editorial__body stack-v" style={{ gap: 24 }}>
-            {skillGroups.map((group) => (
-              <div key={group.title} style={{ display: "grid", gap: 10 }}>
+          <div className="editorial__body stack-v" style={{ gap: 24 }} data-stagger>
+            {skillGroups.map((group, index) => (
+              <Reveal as="article" key={group.title} delay={index * 0.05} style={{ display: "grid", gap: 10 }}>
                 <span className="status-tag">{group.title}</span>
                 <div className="chips">
                   {group.items.map((item) => (
@@ -82,7 +82,7 @@ export default function ResumePage() {
                     </span>
                   ))}
                 </div>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>
@@ -94,9 +94,9 @@ export default function ResumePage() {
             <p className="eyebrow">Education</p>
             <h2>Education</h2>
           </Reveal>
-          <div className="editorial__body stack-v" style={{ gap: 20 }}>
-            {education.map((item) => (
-              <div key={item.program} style={{ display: "grid", gap: 6 }}>
+          <div className="editorial__body stack-v" style={{ gap: 20 }} data-stagger>
+            {education.map((item, index) => (
+              <Reveal as="article" key={item.program} delay={index * 0.05} style={{ display: "grid", gap: 6 }}>
                 <span className="status-tag">{item.dates}</span>
                 <h3>
                   {item.program} · {item.institution}
@@ -104,7 +104,7 @@ export default function ResumePage() {
                 <p className="muted" style={{ lineHeight: 1.6 }}>
                   {item.detail}
                 </p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>

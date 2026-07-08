@@ -30,11 +30,11 @@ export default function WorkPage() {
 
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="wrap">
-          <Reveal className="work-list">
+          <div className="work-list" data-stagger>
             {featuredProjects.map((project, index) => (
               <WorkRow project={project} index={index} key={project.slug} />
             ))}
-          </Reveal>
+          </div>
         </div>
       </section>
 

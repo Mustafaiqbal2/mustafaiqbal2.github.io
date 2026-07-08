@@ -23,7 +23,7 @@ export default function AboutPage() {
                 a system that runs itself — reliably, cheaply, and with a human able to step in whenever it matters.
               </p>
             </Reveal>
-            <Reveal delay={0.08}>
+            <Reveal className="about-photo-wrap" delay={0.08}>
               <img
                 src={profile.photo}
                 alt="Mustafa Iqbal"
@@ -125,9 +125,9 @@ export default function AboutPage() {
             <p className="eyebrow">Education</p>
             <h2>Foundation</h2>
           </Reveal>
-          <div className="editorial__body stack-v" style={{ gap: 20 }}>
-            {education.map((item) => (
-              <div key={item.program} style={{ display: "grid", gap: 6 }}>
+          <div className="editorial__body stack-v" style={{ gap: 20 }} data-stagger>
+            {education.map((item, index) => (
+              <Reveal as="article" key={item.program} delay={index * 0.05} style={{ display: "grid", gap: 6 }}>
                 <span className="status-tag">{item.dates}</span>
                 <h3>
                   {item.program} · {item.institution}
@@ -135,7 +135,7 @@ export default function AboutPage() {
                 <p className="muted" style={{ lineHeight: 1.6 }}>
                   {item.detail}
                 </p>
-              </div>
+              </Reveal>
             ))}
           </div>
         </div>

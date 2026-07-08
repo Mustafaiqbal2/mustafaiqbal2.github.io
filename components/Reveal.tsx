@@ -7,10 +7,11 @@ type RevealProps = {
   children: ReactNode;
   className?: string;
   delay?: number;
+  variant?: "up" | "scale" | "left" | "right" | "fade";
   style?: CSSProperties;
 };
 
-export function Reveal({ as = "div", children, className, delay = 0, style: styleProp }: RevealProps) {
+export function Reveal({ as = "div", children, className, delay = 0, variant, style: styleProp }: RevealProps) {
   const classes = ["reveal", className].filter(Boolean).join(" ");
   const style = {
     ...(delay ? ({ "--reveal-delay": `${delay}s` } as CSSProperties) : {}),
@@ -19,7 +20,7 @@ export function Reveal({ as = "div", children, className, delay = 0, style: styl
 
   const Tag = as;
   return (
-    <Tag className={classes} style={style}>
+    <Tag className={classes} style={style} data-reveal={variant}>
       {children}
     </Tag>
   );
