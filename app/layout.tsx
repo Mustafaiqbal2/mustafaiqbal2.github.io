@@ -78,6 +78,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   const themeScript = `
     (function () {
+      document.documentElement.classList.remove("no-js");
       function resolveTheme(pref) {
         var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         return pref === "system" ? (systemDark ? "dark" : "light") : pref;
@@ -102,12 +103,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         var pref = "system";
         try { pref = localStorage.getItem("theme-preference") || "system"; } catch (e) {}
         updateControls(pref);
-        updateActiveNav();
-        setupHeaderState();
-        setupReveals();
-        setupMobileNav();
-        setupLightbox();
-        setupCopyButtons();
+        [updateActiveNav, setupHeaderState, setupReveals, setupMobileNav, setupLightbox, setupCopyButtons].forEach(function (fn) {
+          try { fn(); } catch (e) {}
+        });
         var media = window.matchMedia("(prefers-color-scheme: dark)");
         media.addEventListener("change", function () {
           var p = "system";
@@ -222,26 +220,35 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         var box = document.querySelector("[data-lightbox]");
         if (!box) { return; }
         var image = box.querySelector("img");
+        var lastTrigger = null;
+        function close() {
+          box.setAttribute("hidden", "");
+          document.body.classList.remove("nav-open");
+          if (lastTrigger && lastTrigger.focus) { lastTrigger.focus(); }
+        }
         document.addEventListener("click", function (event) {
           var trigger = event.target && event.target.closest ? event.target.closest("[data-lightbox-open]") : null;
           if (trigger && image) {
-            var src = trigger.getAttribute("data-lightbox-open");
-            var alt = trigger.getAttribute("data-lightbox-alt") || "";
-            image.setAttribute("src", src);
-            image.setAttribute("alt", alt);
+            lastTrigger = trigger;
+            image.setAttribute("src", trigger.getAttribute("data-lightbox-open"));
+            image.setAttribute("alt", trigger.getAttribute("data-lightbox-alt") || "");
             box.removeAttribute("hidden");
             document.body.classList.add("nav-open");
-            var closeBtn = box.querySelector("[data-lightbox-close]");
+            var closeBtn = box.querySelector(".lightbox__close");
             if (closeBtn) { closeBtn.focus(); }
             return;
           }
-          var closer = event.target && event.target.closest ? event.target.closest("[data-lightbox-close]") : null;
-          if (closer) { box.setAttribute("hidden", ""); document.body.classList.remove("nav-open"); }
+          if (event.target && event.target.closest && event.target.closest("[data-lightbox-close]")) { close(); }
         });
         document.addEventListener("keydown", function (event) {
-          if (event.key === "Escape" && !box.hasAttribute("hidden")) {
-            box.setAttribute("hidden", "");
-            document.body.classList.remove("nav-open");
+          if (box.hasAttribute("hidden")) { return; }
+          if (event.key === "Escape") { event.preventDefault(); close(); }
+          if (event.key === "Tab") {
+            var f = Array.prototype.slice.call(box.querySelectorAll("[data-lightbox-close]"));
+            if (!f.length) { return; }
+            var firstEl = f[0], lastEl = f[f.length - 1];
+            if (event.shiftKey && document.activeElement === firstEl) { event.preventDefault(); lastEl.focus(); }
+            else if (!event.shiftKey && document.activeElement === lastEl) { event.preventDefault(); firstEl.focus(); }
           }
         });
       }
@@ -285,7 +292,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   };
 
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" className="no-js" suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
@@ -301,7 +308,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             <img alt="" />
           </div>
         </div>
-        <div className="toast-region" data-toast-region aria-live="polite" aria-atomic="true" />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
       </body>
     </html>

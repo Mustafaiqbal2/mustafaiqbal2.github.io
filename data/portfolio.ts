@@ -65,7 +65,7 @@ export const provenanceLabel: Record<ProvenanceTier, { glyph: string; label: str
   "self-reported": { glyph: "◧", label: "Self-reported" },
   target: { glyph: "□", label: "Target" },
   team: { glyph: "■", label: "Team lead" },
-  thesis: { glyph: "■", label: "Thesis" },
+  thesis: { glyph: "◧", label: "Thesis" },
   private: { glyph: "□", label: "Private" }
 };
 

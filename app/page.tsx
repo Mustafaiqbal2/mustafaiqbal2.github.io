@@ -2,7 +2,7 @@ import { ArrowRight, FileText } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { StatBlock } from "@/components/Evidence";
 import { WorkRow } from "@/components/WorkRow";
-import { evidence, featuredProjects, pillars, platformContribution, profile } from "@/data/portfolio";
+import { evidence, featuredProjects, pillars, profile } from "@/data/portfolio";
 
 const homeProjects = featuredProjects.slice(0, 4);
 
@@ -138,7 +138,11 @@ export default function Home() {
             <Reveal className="stack-v" delay={0.06}>
               <p style={{ color: "var(--ink-2)", lineHeight: 1.7 }}>
                 I led a four-person AI research team at Genesys Research Lab, delivering a RAG-based recruitment
-                evaluation platform on lab infrastructure. {platformContribution.summary}
+                evaluation platform on lab infrastructure.
+              </p>
+              <p style={{ color: "var(--ink-2)", lineHeight: 1.7 }}>
+                Separately, I contributed across a production multi-tenant agentic AI SaaS platform — multi-tenant
+                billing, multi-model routing, an AWS pipeline, and vector search — as one engineer on a larger team.
               </p>
               <p style={{ color: "var(--ink-2)", lineHeight: 1.7 }}>
                 I co-built a multimodal music-recommendation system as a final-year thesis, and I&apos;m the technical
