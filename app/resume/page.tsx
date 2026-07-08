@@ -13,8 +13,8 @@ export const metadata: Metadata = {
 export default function ResumePage() {
   return (
     <main id="main">
-      <section className="section" style={{ paddingBottom: "clamp(24px, 4vw, 40px)" }}>
-        <div className="wrap prose">
+      <section className="section page-hero">
+        <div className="wrap">
           <Reveal>
             <p className="eyebrow">Résumé</p>
             <h1>Experience, projects, and foundation.</h1>
@@ -32,22 +32,17 @@ export default function ResumePage() {
                 Request a PDF
               </a>
             </div>
-            <p className="private-note" style={{ marginTop: 24 }}>
-              Several projects are private products or client engagements. I describe them by problem, scale, technology,
-              and my role — customer data, client identities, and proprietary internals stay confidential and can be
-              discussed under NDA.
-            </p>
           </Reveal>
         </div>
       </section>
 
       <section className="section section--divided">
-        <div className="wrap prose">
-          <Reveal className="section__head">
+        <div className="wrap editorial">
+          <Reveal className="editorial__aside">
             <p className="eyebrow">Experience</p>
             <h2>Work history</h2>
           </Reveal>
-          <div className="stack-v" style={{ gap: 28 }}>
+          <div className="editorial__body stack-v" style={{ gap: 28 }}>
             {experience.map((item, index) => (
               <Reveal as="article" key={item.role} delay={index * 0.05} className="decision" style={{ borderColor: "var(--line-strong)" }}>
                 <span className="status-tag">{item.dates}</span>
@@ -71,12 +66,12 @@ export default function ResumePage() {
       </section>
 
       <section className="section section--divided">
-        <div className="wrap prose">
-          <Reveal className="section__head">
+        <div className="wrap editorial">
+          <Reveal className="editorial__aside">
             <p className="eyebrow">Skills</p>
             <h2>Technical foundation</h2>
           </Reveal>
-          <div className="stack-v" style={{ gap: 24 }}>
+          <div className="editorial__body stack-v" style={{ gap: 24 }}>
             {skillGroups.map((group) => (
               <div key={group.title} style={{ display: "grid", gap: 10 }}>
                 <span className="status-tag">{group.title}</span>
@@ -94,12 +89,12 @@ export default function ResumePage() {
       </section>
 
       <section className="section section--divided">
-        <div className="wrap prose">
-          <Reveal className="section__head">
+        <div className="wrap editorial">
+          <Reveal className="editorial__aside">
             <p className="eyebrow">Education</p>
             <h2>Education</h2>
           </Reveal>
-          <div className="stack-v" style={{ gap: 20 }}>
+          <div className="editorial__body stack-v" style={{ gap: 20 }}>
             {education.map((item) => (
               <div key={item.program} style={{ display: "grid", gap: 6 }}>
                 <span className="status-tag">{item.dates}</span>

@@ -6,6 +6,18 @@ import { evidence, featuredProjects, pillars, platformContribution, profile } fr
 
 const homeProjects = featuredProjects.slice(0, 4);
 
+const coreStack = [
+  "Next.js",
+  "TypeScript",
+  "Python · FastAPI",
+  "PostgreSQL · Prisma",
+  "OpenAI · Anthropic · Google",
+  "Pinecone · Weaviate",
+  "AWS",
+  "Docker",
+  "pg-boss · Inngest"
+];
+
 export default function Home() {
   return (
     <main id="main">
@@ -52,6 +64,17 @@ export default function Home() {
         </div>
       </section>
 
+      <div className="stackstrip section--alt" aria-label="Core stack">
+        <div className="wrap stackstrip__inner">
+          <span className="stackstrip__label">Core stack</span>
+          <div className="stackstrip__items">
+            {coreStack.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <section className="section section--divided" aria-labelledby="work-title">
         <div className="wrap">
           <Reveal className="section__head">
@@ -79,7 +102,7 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="section section--divided" aria-labelledby="how-title">
+      <section className="section section--alt" aria-labelledby="how-title">
         <div className="wrap">
           <Reveal className="section__head">
             <p className="eyebrow">

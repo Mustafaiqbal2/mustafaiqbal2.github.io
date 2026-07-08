@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 export default function WorkPage() {
   return (
     <main id="main">
-      <section className="section" style={{ paddingBottom: "clamp(24px, 4vw, 40px)" }}>
-        <div className="wrap prose">
+      <section className="section page-hero">
+        <div className="wrap">
           <Reveal>
             <p className="eyebrow">Selected work</p>
             <h1>Systems I designed, built, or led — and can defend.</h1>
@@ -39,13 +39,13 @@ export default function WorkPage() {
       </section>
 
       <section className="section section--divided" aria-labelledby="platform-title">
-        <div className="wrap prose">
-          <Reveal>
+        <div className="wrap editorial">
+          <Reveal className="editorial__aside">
             <p className="eyebrow">Team contribution</p>
             <h2 id="platform-title">{platformContribution.title}</h2>
-            <p className="lede" style={{ marginTop: 16 }}>
-              {platformContribution.role}
-            </p>
+          </Reveal>
+          <Reveal className="editorial__body" delay={0.06}>
+            <p className="lede">{platformContribution.role}</p>
             <p style={{ marginTop: 16, color: "var(--ink-2)", lineHeight: 1.7 }}>{platformContribution.summary}</p>
             <p className="muted" style={{ marginTop: 12, fontSize: "0.9rem" }}>
               {platformContribution.note}
