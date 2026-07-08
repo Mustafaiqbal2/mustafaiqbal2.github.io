@@ -1,4 +1,4 @@
-import { ArrowUpRight, Download, Mail, Menu, X } from "lucide-react";
+import { ArrowUpRight, FileText, Mail, Menu, X } from "lucide-react";
 import { navigation, profile } from "@/data/portfolio";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -54,8 +54,8 @@ export function SiteHeader() {
               Email me
             </a>
             <a className="btn btn--ghost" href={profile.resume}>
-              <Download aria-hidden="true" />
-              Download résumé
+              <FileText aria-hidden="true" />
+              Résumé
             </a>
           </div>
 

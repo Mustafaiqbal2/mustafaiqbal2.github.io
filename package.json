@@ -6,14 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit",
-    "prepare:data": "node scripts/extract-project-docs.mjs",
-    "prepare:media": "node scripts/prepare-media.mjs",
-    "prepare:portfolio": "npm run prepare:data && npm run prepare:media",
-    "verify:site": "node scripts/verify-site.mjs"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@xyflow/react": "^12.11.1",
     "lucide-react": "1.22.0",
     "next": "16.2.9",
     "react": "19.2.7",
@@ -25,12 +20,9 @@
     "postcss": "8.5.10"
   },
   "devDependencies": {
-    "@types/d3-force": "^3.0.10",
     "@types/node": "^24.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "d3-force": "^3.0.0",
-    "elkjs": "^0.11.1",
     "playwright-core": "^1.61.1",
     "typescript": "^5.9.0"
   }

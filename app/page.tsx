@@ -1,4 +1,4 @@
-import { ArrowRight, Download } from "lucide-react";
+import { ArrowRight, FileText } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { StatBlock } from "@/components/Evidence";
 import { WorkRow } from "@/components/WorkRow";
@@ -31,8 +31,8 @@ export default function Home() {
                 <ArrowRight aria-hidden="true" />
               </a>
               <a className="btn btn--ghost" href={profile.resume}>
-                <Download aria-hidden="true" />
-                Download résumé
+                <FileText aria-hidden="true" />
+                Read the résumé
               </a>
             </div>
           </div>

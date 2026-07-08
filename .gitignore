@@ -91,3 +91,9 @@ pnpm-debug.log*
 # Build artifacts from local packaging tools
 *.tgz
 storybook-static/
+
+# generated data + local audit artifacts (never publish)
+data/generated/
+audit-shots/
+analysis-shots/
+scripts/_*.mjs

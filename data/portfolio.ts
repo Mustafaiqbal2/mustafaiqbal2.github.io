@@ -78,7 +78,7 @@ export const profile = {
   availability: "Open to new-grad & junior roles — remote or relocation",
   github: "https://github.com/Mustafaiqbal2",
   linkedIn: "https://www.linkedin.com/in/mustafa-iqbal-ba42b424b/",
-  resume: "/resume/Mustafa_Iqbal_Full_Resume.pdf",
+  resume: "/resume/",
   photo: "/images/me.jpeg",
   positioning:
     "AI automation engineer who ships production LLM systems end to end — OAuth integrations, background-job pipelines, and cost-aware generation — with the operational discipline to run them unattended and keep every decision auditable.",
@@ -315,7 +315,7 @@ export const secondaryProjects: SecondaryProject[] = [
   }
 ];
 
-/* Honest platform-contribution note (Simplabots), shown on About/Work — not a solo case study. */
+/* Honest platform-contribution note, shown on About/Work — not a solo case study. */
 export const platformContribution = {
   title: "Production multi-tenant agentic AI SaaS",
   role: "Contributing full-stack / AI engineer on a ~20-person team",

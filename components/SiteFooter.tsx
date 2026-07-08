@@ -44,7 +44,7 @@ export function SiteFooter() {
                 <FaLinkedinIn aria-hidden="true" style={{ display: "inline", marginRight: 8, verticalAlign: "-2px" }} />
                 LinkedIn
               </a>
-              <a href={profile.resume}>Résumé (PDF)</a>
+              <a href={profile.resume}>Résumé</a>
             </nav>
           </div>
           <div className="footer-bottom">
