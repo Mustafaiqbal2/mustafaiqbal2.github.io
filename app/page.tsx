@@ -27,7 +27,7 @@ export default function Home() {
           <div className="hero__copy">
             <p className="hero__avail">
               <i aria-hidden="true" />
-              Open to new-grad &amp; junior roles · Islamabad, PK · graduating 2026
+              Open to new-grad &amp; junior roles · Islamabad, PK · CS graduate, 2026
             </p>
             <h1 className="hero__statement" id="hero-title" data-hero-statement>
               <span className="hero__line">
@@ -92,7 +92,7 @@ export default function Home() {
             <p className="eyebrow">
               <b>01</b> — Selected work
             </p>
-            <h2 id="work-title">Systems built to run unattended</h2>
+            <h2 id="work-title">Systems built to run <em>unattended</em></h2>
             <p>
               A focused set of projects, each with a clear problem, an architecture decision worth defending, and an
               honest account of what shipped. Private and client work is described by domain, scale, and role — never by
@@ -119,7 +119,7 @@ export default function Home() {
             <p className="eyebrow">
               <b>02</b> — How I work
             </p>
-            <h2 id="how-title">Production thinking, not just prompts</h2>
+            <h2 id="how-title"><em>Production</em> thinking, not just prompts</h2>
             <p>The model is usually the last decision, not the first. Most of the engineering is everything around it.</p>
           </Reveal>
           <div className="pillar-grid" data-stagger>
@@ -144,7 +144,7 @@ export default function Home() {
               <p className="eyebrow">
                 <b>03</b> — Beyond solo builds
               </p>
-              <h2 id="lead-title">Team leadership and research depth</h2>
+              <h2 id="lead-title">Team <em>leadership</em> and research depth</h2>
             </Reveal>
             <Reveal className="stack-v" delay={0.06}>
               <p style={{ color: "var(--ink-2)", lineHeight: 1.7 }}>
@@ -156,9 +156,9 @@ export default function Home() {
                 billing, multi-model routing, an AWS pipeline, and vector search — as one engineer on a larger team.
               </p>
               <p style={{ color: "var(--ink-2)", lineHeight: 1.7 }}>
-                I co-built a multimodal music-recommendation system as a final-year thesis, and I&apos;m the technical
-                founder of an early-stage startup building evidence-grounded CAD intelligence — with the discipline to
-                know when not to build.
+                I co-built a multimodal music-recommendation system as my Computer Science thesis, and I&apos;m the
+                technical founder of an early-stage startup building evidence-grounded CAD intelligence — with the
+                discipline to know when not to build.
               </p>
               <div className="btn-row" style={{ marginTop: 8 }}>
                 <a className="textlink" href="/about/">

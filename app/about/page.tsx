@@ -5,7 +5,7 @@ import { education, experience, principles, profile, siteUrl } from "@/data/port
 export const metadata: Metadata = {
   title: "About",
   description:
-    "AI automation engineer and final-year CS student. I turn high-volume manual workflows into autonomous, event-driven systems — with the production discipline and judgment to run them.",
+    "AI automation engineer and Computer Science graduate. I turn high-volume manual workflows into autonomous, event-driven systems — with the production discipline and judgment to run them.",
   alternates: { canonical: `${siteUrl}/about/` }
 };
 
@@ -41,7 +41,7 @@ export default function AboutPage() {
         <div className="wrap editorial">
           <Reveal className="editorial__aside">
             <p className="eyebrow">Approach</p>
-            <h2>How I work, end to end</h2>
+            <h2>How I <em>work</em>, end to end</h2>
           </Reveal>
           <div className="editorial__body">
             <div className="case-block">
@@ -94,7 +94,7 @@ export default function AboutPage() {
         <div className="wrap editorial">
           <Reveal className="editorial__aside">
             <p className="eyebrow">Experience</p>
-            <h2>Where I&apos;ve worked</h2>
+            <h2>Where I&apos;ve <em>worked</em></h2>
           </Reveal>
           <div className="editorial__body stack-v" style={{ gap: 28 }}>
             {experience.map((item, index) => (

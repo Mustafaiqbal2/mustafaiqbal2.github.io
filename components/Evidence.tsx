@@ -3,7 +3,7 @@ import { provenanceLabel, type Metric } from "@/data/portfolio";
 export function Provenance({ tier, source }: { tier: Metric["tier"]; source?: string }) {
   const info = provenanceLabel[tier];
   return (
-    <span className="prov" title={source ? `${info.label} — ${source}` : info.label}>
+    <span className="prov" data-tier={tier} title={source ? `${info.label} — ${source}` : info.label}>
       <span className="prov__glyph" aria-hidden="true">
         {info.glyph}
       </span>

@@ -6,22 +6,26 @@
 
 :root {
   color-scheme: light;
-  --bg: #f5f6f8;
-  --surface: #ffffff;
-  --surface-sunken: #eef0f3;
-  --line: #e3e6eb;
-  --line-strong: #ced3db;
+  /* Ink on paper: real paper is a warm off-white, real ink is cool-black.
+     Surfaces pulled a hair off pure-white; base deepened so panels genuinely lift. */
+  --bg: #edeff3;
+  --surface: #fdfcfb;
+  --surface-sunken: #e6e9ef;
+  --line: #dadfe9;
+  --line-strong: #c4cad5;
   --ink: #16181d;
   --ink-2: #464c57;
   --muted: #5c636f;
   --accent: #2a45c4;
   --accent-hover: #1f359e;
-  --accent-wash: #eaedfb;
+  --accent-wash: #e7ebfc;
   --accent-on: #ffffff;
   --success: #197a4b;
   --danger: #c0392b;
-  --shadow-1: 0 1px 2px rgba(16, 18, 22, 0.04);
-  --shadow-2: 0 12px 28px -12px rgba(16, 18, 22, 0.18);
+  /* Two-layer ambient+key, tinted toward desaturated cobalt-navy so elevation
+     belongs to the palette instead of reading as generic gray drop-shadow. */
+  --shadow-1: 0 1px 1px rgba(22, 28, 48, 0.05), 0 2px 5px -1px rgba(22, 28, 48, 0.06);
+  --shadow-2: 0 2px 6px -2px rgba(22, 28, 48, 0.10), 0 18px 40px -16px rgba(22, 28, 48, 0.20);
   --radius: 8px;
   --radius-sm: 6px;
   --header-h: 68px;
@@ -32,11 +36,12 @@
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg: #101216;
-  --surface: #171a20;
-  --surface-sunken: #0c0e12;
-  --line: rgba(255, 255, 255, 0.09);
-  --line-strong: rgba(255, 255, 255, 0.16);
+  /* Deeper floor, lifted surface, faint cobalt-tinted hairlines for cohesion. */
+  --bg: #0d0f13;
+  --surface: #1a1e25;
+  --surface-sunken: #0a0b0e;
+  --line: rgba(158, 176, 255, 0.10);
+  --line-strong: rgba(158, 176, 255, 0.17);
   --ink: #e7e9ee;
   --ink-2: #aeb4bf;
   --muted: #7e8590;
@@ -46,8 +51,8 @@
   --accent-on: #0c0e12;
   --success: #52c48c;
   --danger: #ff6b5e;
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-2: 0 16px 34px -14px rgba(0, 0, 0, 0.6);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.45);
+  --shadow-2: 0 3px 10px -3px rgba(0, 0, 0, 0.55), 0 26px 52px -20px rgba(0, 0, 0, 0.75);
 }
 
 *,
@@ -65,7 +70,11 @@ html {
 body {
   margin: 0;
   min-width: 320px;
-  background: var(--bg);
+  /* Top-lit paper: the top-center reads as lit, lower corners settle deeper —
+     surfaces stop being one dead uniform value. ~2 luminance steps, no hue shift. */
+  background-color: var(--bg);
+  background-image: radial-gradient(125% 88% at 50% -8%, #fbfcfe 0%, #eef0f4 46%, #e6e9ef 100%);
+  background-repeat: no-repeat;
   color: var(--ink);
   font-family: var(--font-sans), system-ui, -apple-system, Segoe UI, sans-serif;
   font-size: 1.0625rem;
@@ -73,6 +82,17 @@ body {
   font-weight: 400;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
+}
+
+[data-theme="dark"] body {
+  background-image: radial-gradient(125% 88% at 50% -8%, #15181f 0%, #0f1116 52%, #0a0c10 100%);
+}
+
+/* Fixed light source on desktop; plain scroll on mobile (fixed janks on iOS Safari). */
+@media (min-width: 861px) {
+  body {
+    background-attachment: fixed;
+  }
 }
 
 body.nav-open {
@@ -175,6 +195,17 @@ h3,
   font-family: var(--font-mono), ui-monospace, SFMono-Regular, monospace;
 }
 
+/* One earned cobalt keyword per heading. Wrap a single load-bearing word in <em>.
+   Kept to structure/headings — never body prose. Wraps freely on narrow screens. */
+h2 em,
+.h2 em,
+.section__head h2 em,
+.case-block h2 em {
+  font-style: normal;
+  color: var(--accent);
+  white-space: normal;
+}
+
 .eyebrow {
   display: inline-flex;
   align-items: center;
@@ -188,8 +219,20 @@ h3,
   text-transform: uppercase;
 }
 
+/* The recurring "unit marker": a 5px cobalt diamond that echoes the provenance ■
+   and the footer signature ◆ — one disciplined spot of accent atop every section. */
+.eyebrow::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  flex: none;
+  background: var(--accent);
+  border-radius: 1px;
+  transform: rotate(45deg);
+}
+
 .eyebrow b {
-  color: var(--ink-2);
+  color: var(--accent);
   font-weight: 600;
 }
 
@@ -224,7 +267,21 @@ h3,
 }
 
 .section--divided {
+  position: relative;
   border-top: 1px solid var(--line);
+}
+
+/* Ruler-origin divider: the hairline stays, but a short accent segment marks the
+   left origin like the zero-tick of a measurement rule. */
+.section--divided::before {
+  content: "";
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 56px;
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
 }
 
 .section__head {
@@ -301,7 +358,7 @@ h3,
   gap: 7px;
   color: var(--accent);
   font-weight: 550;
-  transition: gap 150ms ease, color 150ms ease;
+  transition: color 150ms ease;
 }
 
 .textlink svg {
@@ -312,7 +369,6 @@ h3,
 .textlink:hover,
 .textlink:focus-visible {
   color: var(--accent-hover);
-  gap: 10px;
 }
 
 .prose a:not(.btn):not(.textlink) {
@@ -340,6 +396,13 @@ h3,
 .prov__glyph {
   font-size: 0.72rem;
   line-height: 1;
+}
+
+/* Two-tone provenance: cobalt glyph means "this is measured" — only the highest
+   evidence tiers (documented + team lead) earn it; target/self-reported stay muted. */
+.prov[data-tier="documented"] .prov__glyph,
+.prov[data-tier="team"] .prov__glyph {
+  color: var(--accent);
 }
 
 /* ---------- Stat block ---------- */
@@ -378,6 +441,13 @@ h3,
   border: 1px solid var(--line);
   border-radius: var(--radius);
   box-shadow: var(--shadow-1);
+}
+
+/* Dark surfaces catch a hair of top light so they lift off the deep floor
+   instead of vanishing into it. */
+[data-theme="dark"] .card,
+[data-theme="dark"] .pillar {
+  box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.045);
 }
 
 .chips {
@@ -733,17 +803,20 @@ h3,
 }
 
 .work-row a {
+  position: relative;
+  isolation: isolate;
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: clamp(16px, 3vw, 40px);
   align-items: start;
-  padding: clamp(26px, 3.4vw, 40px) 4px;
-  transition: background 160ms ease, padding-inline 200ms ease;
+  /* Constant padding forever — the old inline-padding shift on hover was the
+     "clunky" reflow. Motion now comes purely from transform + opacity. */
+  padding: clamp(24px, 3.2vw, 38px) clamp(14px, 1.8vw, 24px);
 }
 
 .work-row a:hover,
 .work-row a:focus-visible {
-  background: color-mix(in srgb, var(--surface) 50%, transparent);
+  background: transparent;
 }
 
 .work-row__index {
@@ -811,13 +884,13 @@ h3,
 
 .work-row__arrow {
   color: var(--muted);
-  transition: transform 160ms ease, color 160ms ease;
+  transition: transform 300ms var(--ease), color 220ms var(--ease);
 }
 
 .work-row a:hover .work-row__arrow,
 .work-row a:focus-visible .work-row__arrow {
   color: var(--accent);
-  transform: translate(2px, -2px);
+  transform: translate(4px, -4px);
 }
 
 /* ---------- Feature cards (home focus/pillars) ---------- */
@@ -828,15 +901,32 @@ h3,
 }
 
 .pillar {
+  position: relative;
+  overflow: hidden;
   padding: 26px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  transition: border-color 160ms ease, transform 160ms ease;
+  box-shadow: var(--shadow-1);
+  transition: border-color 260ms var(--ease), transform 260ms var(--ease), box-shadow 260ms var(--ease);
 }
 
-.pillar:hover {
-  border-color: var(--line-strong);
+/* Cobalt top seam draws in on hover — the same accent-on-intent language as the rows. */
+.pillar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 320ms var(--ease);
+}
+
+.pillar svg {
+  transition: transform 300ms var(--ease);
 }
 
 .pillar svg {
@@ -958,7 +1048,7 @@ h3,
 
 .decision {
   padding-left: 20px;
-  border-left: 2px solid var(--line-strong);
+  border-left: 2px solid color-mix(in srgb, var(--accent) 55%, var(--line-strong));
 }
 
 .decision h3 {
@@ -986,7 +1076,7 @@ h3,
   height: 6px;
   margin-top: 10px;
   border-radius: 999px;
-  background: var(--line-strong);
+  background: var(--accent);
 }
 
 .private-note {
@@ -1060,10 +1150,49 @@ h3,
   font-size: 1.1rem;
 }
 
+/* The signed base of the document: a warm tonal tray, a thin cobalt seam at the
+   top edge, and a ghost-quiet "signal contour" that echoes the hero canvas field. */
 .site-footer {
+  position: relative;
+  overflow: hidden;
   padding-block: 56px 40px;
-  background: var(--surface-sunken);
+  background: linear-gradient(180deg, #eef1f5 0%, #e5e8ee 100%);
   border-top: 1px solid var(--line);
+  background-repeat: no-repeat, no-repeat;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='200' viewBox='0 0 560 200'%3E%3Cg fill='none' stroke='%232a45c4' stroke-width='1.25' opacity='0.10'%3E%3Cpath d='M0 150 C120 150 140 60 280 60 S440 150 560 150'/%3E%3Cpath d='M0 120 C120 120 160 40 300 40 S460 120 560 120'/%3E%3Cpath d='M0 175 C140 175 160 95 300 95 S470 165 560 165'/%3E%3C/g%3E%3C/svg%3E"),
+    linear-gradient(180deg, #eef1f5 0%, #e5e8ee 100%);
+  background-position: right -40px bottom -20px, 0 0;
+}
+
+[data-theme="dark"] .site-footer {
+  background:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='560' height='200' viewBox='0 0 560 200'%3E%3Cg fill='none' stroke='%238698f2' stroke-width='1.25' opacity='0.14'%3E%3Cpath d='M0 150 C120 150 140 60 280 60 S440 150 560 150'/%3E%3Cpath d='M0 120 C120 120 160 40 300 40 S460 120 560 120'/%3E%3Cpath d='M0 175 C140 175 160 95 300 95 S470 165 560 165'/%3E%3C/g%3E%3C/svg%3E") no-repeat right -40px bottom -20px,
+    linear-gradient(180deg, #0e1015 0%, #0a0c10 100%);
+  border-top-color: rgba(158, 176, 255, 0.12);
+}
+
+/* Cobalt "end of transmission" seam across the top edge */
+.site-footer::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent 42%);
+}
+
+.site-footer .wrap {
+  position: relative;
+  z-index: 1;
+}
+
+@media (max-width: 640px) {
+  .site-footer {
+    background-position: right -70px bottom -10px, 0 0;
+    background-size: 380px auto, auto;
+  }
 }
 
 .footer-grid {
@@ -1097,16 +1226,36 @@ h3,
 }
 
 .footer-col a {
+  position: relative;
   display: block;
+  width: fit-content;
   padding: 5px 0;
   color: var(--ink-2);
   font-size: 0.95rem;
   transition: color 150ms ease;
 }
 
+.footer-col a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 3px;
+  width: 100%;
+  height: 1px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 300ms var(--ease);
+}
+
 .footer-col a:hover,
 .footer-col a:focus-visible {
   color: var(--accent);
+}
+
+.footer-col a:hover::after,
+.footer-col a:focus-visible::after {
+  transform: scaleX(1);
 }
 
 .footer-bottom {
@@ -1120,6 +1269,18 @@ h3,
   color: var(--muted);
   font-family: var(--font-mono), monospace;
   font-size: 0.78rem;
+}
+
+.footer-sign {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  letter-spacing: 0.02em;
+}
+
+.footer-sign b {
+  color: var(--accent);
+  font-weight: 400;
 }
 
 /* ---------- Contact form ---------- */
@@ -1353,20 +1514,28 @@ h3,
   padding-bottom: clamp(48px, 7vw, 96px);
 }
 
+/* Directional corner light instead of a floating "AI blob": an off-canvas
+   elliptical wash falling from the top-right, grounded by a soft paper vignette. */
 .hero::before {
   content: "";
   position: absolute;
-  top: -20%;
-  right: -10%;
-  width: 60vw;
-  height: 60vw;
-  max-width: 900px;
-  max-height: 900px;
-  background: radial-gradient(circle at 50% 50%, var(--accent-wash), transparent 62%);
+  inset: 0;
+  background: radial-gradient(120% 88% at 88% -10%, var(--accent-wash) 0%, transparent 55%);
   opacity: 0.7;
-  filter: blur(6px);
   pointer-events: none;
   animation: float-slow 18s ease-in-out infinite;
+}
+
+.hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 -80px 120px -80px rgba(22, 28, 48, 0.06);
+}
+
+[data-theme="dark"] .hero::after {
+  box-shadow: inset 0 -80px 120px -80px rgba(0, 0, 0, 0.35);
 }
 
 [data-theme="dark"] .hero::before {
@@ -1491,95 +1660,221 @@ h3,
   font-weight: 500;
 }
 
-/* ---- Work rows: rich hover ---- */
-.work-row a {
-  position: relative;
-  isolation: isolate;
-}
+/* ============================================================
+   Work-row hover — one buttery, transform-only gesture.
+   Elevated panel fades + RISES (never scales), a cobalt spine grows from
+   the row's centre, and content glides right. Zero layout reflow.
+   ============================================================ */
 
+/* Elevated panel — fade + rise */
 .work-row a::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: -1;
   background: var(--surface);
+  border: 1px solid var(--line);
   border-radius: var(--radius);
   opacity: 0;
-  transform: scale(0.985);
-  transition: opacity 240ms var(--ease), transform 240ms var(--ease);
+  transform: translateY(6px);
+  transition:
+    opacity 300ms var(--ease),
+    transform 340ms var(--ease),
+    box-shadow 340ms var(--ease),
+    border-color 300ms var(--ease);
 }
 
-.work-row a:hover::before,
-.work-row a:focus-visible::before {
-  opacity: 1;
-  transform: scale(1);
-  box-shadow: var(--shadow-1);
+/* Cobalt spine — grows from the vertical centre */
+.work-row a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: clamp(20px, 2.4vw, 26px);
+  bottom: clamp(20px, 2.4vw, 26px);
+  width: 3px;
+  background: var(--accent);
+  border-radius: 999px;
+  transform: scaleY(0);
+  transform-origin: 50% 50%;
+  transition: transform 380ms var(--ease);
+  z-index: 1;
 }
 
-.work-row a {
-  transition: none;
+/* Content glides toward the spine (transform = no reflow); aside stays put */
+.work-row__index,
+.work-row__main {
+  transition: transform 420ms var(--ease), color 220ms var(--ease);
 }
 
-.work-row a:hover,
-.work-row a:focus-visible {
-  background: transparent;
+.work-row__metric {
+  transition: transform 380ms var(--ease);
 }
 
-@media (min-width: 861px) {
-  .work-row a:hover,
-  .work-row a:focus-visible {
-    padding-left: 20px;
-    padding-right: 20px;
+.chip {
+  transition: color 220ms var(--ease), border-color 220ms var(--ease);
+}
+
+.prov,
+.work-row .prov__glyph {
+  transition: color 220ms var(--ease);
+}
+
+@media (hover: hover) {
+  .work-row a:hover::before,
+  .work-row a:focus-visible::before {
+    opacity: 1;
+    transform: translateY(0);
+    border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+    box-shadow: var(--shadow-2);
+  }
+  .work-row a:hover::after,
+  .work-row a:focus-visible::after {
+    transform: scaleY(1);
+  }
+  .work-row a:hover .work-row__index,
+  .work-row a:hover .work-row__main,
+  .work-row a:focus-visible .work-row__index,
+  .work-row a:focus-visible .work-row__main {
+    transform: translateX(10px);
+  }
+  .work-row a:hover .work-row__metric {
+    transform: translateX(-3px);
+  }
+  .work-row a:hover .chip,
+  .work-row a:focus-visible .chip {
+    border-color: color-mix(in srgb, var(--accent) 30%, var(--line));
+    color: var(--ink);
+  }
+  .work-row a:hover .work-row__aside .prov__glyph,
+  .work-row a:focus-visible .work-row__aside .prov__glyph {
+    color: var(--accent);
   }
 }
 
-.work-row__index {
-  transition: color 200ms var(--ease);
+/* Keyboard focus mirrors the full gesture */
+.work-row a:focus-visible::before {
+  opacity: 1;
+  transform: translateY(0);
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--line));
+  box-shadow: var(--shadow-2);
+}
+.work-row a:focus-visible::after {
+  transform: scaleY(1);
 }
 
-.work-row a:hover .work-row__index {
+.work-row__index {
+  color: var(--muted);
+}
+.work-row a:hover .work-row__index,
+.work-row a:focus-visible .work-row__index {
   color: var(--accent);
 }
 
-/* ---- Cards / pillars: lift on hover ---- */
-.pillar {
-  transition:
-    border-color 200ms var(--ease),
-    transform 240ms var(--ease),
-    box-shadow 240ms var(--ease);
+/* Touch: a calm tap-press so mobile still acknowledges intent */
+.work-row a:active::before {
+  opacity: 1;
+  transform: translateY(0);
+  box-shadow: var(--shadow-1);
+}
+.work-row a:active::after {
+  transform: scaleY(1);
 }
 
+@media (max-width: 860px) {
+  .work-row a:hover .work-row__index,
+  .work-row a:hover .work-row__main,
+  .work-row a:focus-visible .work-row__index,
+  .work-row a:focus-visible .work-row__main {
+    transform: translateX(6px);
+  }
+}
+
+/* ---- Cards / pillars: composed lift on hover ---- */
 @media (hover: hover) {
   .pillar:hover {
     transform: translateY(-4px);
     border-color: var(--line-strong);
     box-shadow: var(--shadow-2);
   }
+  .pillar:hover::before {
+    transform: scaleX(1);
+  }
+  .pillar:hover svg {
+    transform: translateY(-2px) scale(1.06);
+  }
 }
 
-/* ---- Buttons: subtle lift ---- */
+/* ---- Buttons: lift, press, and the ghost's cobalt pop ---- */
 .btn {
   transition:
-    background 150ms ease,
-    border-color 150ms ease,
-    color 150ms ease,
-    transform 180ms var(--ease),
-    box-shadow 200ms var(--ease);
+    background 160ms ease,
+    border-color 200ms var(--ease),
+    color 160ms ease,
+    transform 220ms var(--ease),
+    box-shadow 240ms var(--ease);
+}
+
+.btn svg {
+  transition: transform 200ms var(--ease);
 }
 
 @media (hover: hover) {
   .btn--primary:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 22px -10px color-mix(in srgb, var(--accent) 70%, transparent);
+    box-shadow: 0 12px 24px -12px color-mix(in srgb, var(--accent) 65%, transparent);
   }
   .btn--ghost:hover {
     transform: translateY(-2px);
+    background: var(--accent-wash);
+    color: var(--accent);
+    border-color: color-mix(in srgb, var(--accent) 40%, var(--line-strong));
+  }
+  .btn:hover svg:last-child {
+    transform: translateX(2px);
   }
 }
 
-/* ---- textlink underline ---- */
+/* Real press feedback — the primary touch response, works everywhere */
+.btn--primary:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 10px -6px color-mix(in srgb, var(--accent) 55%, transparent);
+  transition-duration: 90ms;
+}
+.btn--ghost:active {
+  transform: translateY(0);
+  transition-duration: 90ms;
+}
+
+/* ---- textlink drawn underline ---- */
 .textlink {
   position: relative;
+}
+
+.textlink::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: 0 50%;
+  transition: transform 320ms var(--ease);
+}
+
+.textlink svg {
+  transition: transform 240ms var(--ease);
+}
+
+.textlink:hover::after,
+.textlink:focus-visible::after {
+  transform: scaleX(1);
+}
+
+.textlink:hover svg,
+.textlink:focus-visible svg {
+  transform: translateX(3px);
 }
 
 /* ---- Widen case body + facts to fill ---- */
@@ -1870,14 +2165,9 @@ main {
 .cta-band::before {
   content: "";
   position: absolute;
-  top: -40%;
-  right: -6%;
-  width: 40vw;
-  height: 40vw;
-  max-width: 560px;
-  max-height: 560px;
-  background: radial-gradient(circle at 50% 50%, var(--accent-wash), transparent 64%);
-  opacity: 0.7;
+  inset: 0;
+  background: radial-gradient(115% 90% at 92% -20%, var(--accent-wash) 0%, transparent 56%);
+  opacity: 0.75;
   pointer-events: none;
   animation: float-slow 20s ease-in-out infinite;
 }
@@ -1915,30 +2205,7 @@ main {
   transform: scaleX(1);
 }
 
-/* Work-row: animated bottom hairline + mobile arrow */
-.work-row a::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  bottom: -1px;
-  width: 100%;
-  height: 1px;
-  background: var(--accent);
-  transform: scaleX(0);
-  transform-origin: 0 50%;
-  transition: transform 500ms var(--ease);
-  z-index: 1;
-}
-
-.work-row.is-visible a::after {
-  transform: scaleX(1);
-  transition-delay: 120ms;
-}
-
-.work-row a {
-  position: relative;
-}
-
+/* (Old scroll-drawn bottom hairline removed — the ::after is now the hover spine.) */
 @media (max-width: 860px) {
   .work-row__arrow {
     display: block;

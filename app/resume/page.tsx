@@ -6,7 +6,7 @@ import { education, experience, profile, siteUrl, skillGroups } from "@/data/por
 export const metadata: Metadata = {
   title: "Résumé",
   description:
-    "Experience, projects, and technical foundation. Freelance automation engineer since 2022, team lead at Genesys Research Lab, graduating FAST-NUCES 2026.",
+    "Experience, projects, and technical foundation. Freelance automation engineer since 2022, team lead at Genesys Research Lab, FAST-NUCES Computer Science graduate, 2026.",
   alternates: { canonical: `${siteUrl}/resume/` }
 };
 
@@ -19,7 +19,7 @@ export default function ResumePage() {
             <p className="eyebrow">Résumé</p>
             <h1>Experience, projects, and foundation.</h1>
             <p className="lede" style={{ marginTop: 20 }}>
-              Final-year CS student at FAST-NUCES Islamabad (graduating 2026), building production AI automation as a
+              Computer Science graduate from FAST-NUCES Islamabad (2026), building production AI automation as a
               freelancer since 2022, and team lead of a four-person AI research group at Genesys Research Lab in 2025.
             </p>
             <div className="btn-row" style={{ marginTop: 26 }}>
@@ -40,7 +40,7 @@ export default function ResumePage() {
         <div className="wrap editorial">
           <Reveal className="editorial__aside">
             <p className="eyebrow">Experience</p>
-            <h2>Work history</h2>
+            <h2>Work <em>history</em></h2>
           </Reveal>
           <div className="editorial__body stack-v" style={{ gap: 28 }}>
             {experience.map((item, index) => (
@@ -69,7 +69,7 @@ export default function ResumePage() {
         <div className="wrap editorial">
           <Reveal className="editorial__aside">
             <p className="eyebrow">Skills</p>
-            <h2>Technical foundation</h2>
+            <h2>Technical <em>foundation</em></h2>
           </Reveal>
           <div className="editorial__body stack-v" style={{ gap: 24 }} data-stagger>
             {skillGroups.map((group, index) => (

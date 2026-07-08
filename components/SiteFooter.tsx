@@ -48,8 +48,10 @@ export function SiteFooter() {
             </nav>
           </div>
           <div className="footer-bottom">
-            <span>© 2026 {profile.name}</span>
-            <span>{profile.location} · Built with Next.js</span>
+            <span className="footer-sign">
+              <b aria-hidden="true">◆</b> Built &amp; verified by {profile.name}
+            </span>
+            <span>© 2026 · {profile.location} · Next.js</span>
           </div>
         </div>
       </footer>

@@ -22,9 +22,9 @@ export default function ContactPage() {
               <p className="eyebrow">Get in touch</p>
               <h1>Let&apos;s talk about the role.</h1>
               <p className="lede" style={{ marginTop: 20 }}>
-                I&apos;m a final-year CS student graduating in 2026, looking for new-grad and junior roles where I can
-                ship production AI automation and full-stack systems. If you&apos;re hiring for that — or want to talk
-                through any of the projects here in detail — I&apos;d like to hear from you.
+                I&apos;m a recent Computer Science graduate, looking for new-grad and junior roles where I can ship
+                production AI automation and full-stack systems. If you&apos;re hiring for that — or want to talk through
+                any of the projects here in detail — I&apos;d like to hear from you.
               </p>
               <p style={{ marginTop: 16, color: "var(--ink-2)", lineHeight: 1.7 }}>
                 Much of my work is private or client-bound; I&apos;m glad to walk through the architecture and my

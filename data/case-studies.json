@@ -657,7 +657,7 @@
     "oneLiner": "A multimodal AI music companion whose recommendation core aligns a frozen CLAP audio encoder to a text embedding space with InfoNCE contrastive learning — arrived at only after a naive baseline collapsed and the failure was diagnosed.",
     "summary": "MelodyMind generates emotion-aware playlists from text, images, and voice. The research contribution is cross-modal: a frozen CLAP audio encoder projected through a trained head into the same latent space as pre-computed Nomic text embeddings, aligned with an InfoNCE in-batch contrastive loss — a design reached by first building naive spectrogram/CNN and text-sentiment baselines, watching them collapse, and diagnosing why. It was then productized across three iterations into a working prototype: text/image/voice playlist generation, a real-time \"Talk to Your DJ\" voice loop, and Demucs-based stem separation, served through a FastAPI backend, Pinecone vector search, and a React Native app.",
     "status": "Academic",
-    "role": "Co-built as one of three team members (with Hassaan Anwar and Saad Nadeem) on a supervised final-year thesis; the thesis does not attribute specific modules to individuals, so this describes shared work, not solo ownership.",
+    "role": "Co-built as one of three team members (with Hassaan Anwar and Saad Nadeem) on our supervised Computer Science thesis; the thesis does not attribute specific modules to individuals, so this describes shared work, not solo ownership.",
     "dates": "Session 2022–2026; thesis dated May 2026. Built in three iterations: embedding research, productization, stem separation.",
     "isPrivate": false,
     "privateNote": "",
