@@ -49,7 +49,7 @@ export default function ContactPage() {
                     <FaLinkedinIn aria-hidden="true" />
                     LinkedIn
                   </a>
-                  <a className="btn btn--ghost" href={profile.resume}>
+                  <a className="btn btn--ghost" href={profile.resumePdf} download>
                     <Download aria-hidden="true" />
                     Résumé
                   </a>

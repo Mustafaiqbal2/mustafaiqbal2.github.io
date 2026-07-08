@@ -79,6 +79,7 @@ export const profile = {
   github: "https://github.com/Mustafaiqbal2",
   linkedIn: "https://www.linkedin.com/in/mustafa-iqbal-ba42b424b/",
   resume: "/resume/",
+  resumePdf: "/resume/Mustafa_Iqbal_Resume.pdf",
   photo: "/images/me.jpeg",
   positioning:
     "AI automation engineer who ships production LLM systems end to end — OAuth integrations, background-job pipelines, and cost-aware generation — with the operational discipline to run them unattended and keep every decision auditable.",

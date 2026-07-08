@@ -53,9 +53,9 @@ export function SiteHeader() {
               <Mail aria-hidden="true" />
               Email me
             </a>
-            <a className="btn btn--ghost" href={profile.resume}>
+            <a className="btn btn--ghost" href={profile.resumePdf} download>
               <FileText aria-hidden="true" />
-              Résumé
+              Download résumé
             </a>
           </div>
 

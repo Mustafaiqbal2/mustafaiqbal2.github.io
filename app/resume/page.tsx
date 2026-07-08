@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ArrowRight, Mail } from "lucide-react";
+import { ArrowRight, Download } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { education, experience, profile, siteUrl, skillGroups } from "@/data/portfolio";
 
@@ -23,13 +23,13 @@ export default function ResumePage() {
               freelancer since 2022, and team lead of a four-person AI research group at Genesys Research Lab in 2025.
             </p>
             <div className="btn-row" style={{ marginTop: 26 }}>
-              <a className="btn btn--primary" href="/work/">
+              <a className="btn btn--primary" href={profile.resumePdf} download>
+                <Download aria-hidden="true" />
+                Download PDF
+              </a>
+              <a className="btn btn--ghost" href="/work/">
                 View case studies
                 <ArrowRight aria-hidden="true" />
-              </a>
-              <a className="btn btn--ghost" href={`mailto:${profile.email}`}>
-                <Mail aria-hidden="true" />
-                Request a PDF
               </a>
             </div>
           </Reveal>

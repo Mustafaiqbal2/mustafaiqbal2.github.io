@@ -42,9 +42,9 @@ export default function Home() {
                 View the work
                 <ArrowRight aria-hidden="true" />
               </a>
-              <a className="btn btn--ghost" href={profile.resume}>
+              <a className="btn btn--ghost" href={profile.resumePdf} download>
                 <FileText aria-hidden="true" />
-                Read the résumé
+                Download résumé
               </a>
             </div>
           </div>
