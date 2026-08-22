@@ -27,7 +27,7 @@ export default function Home() {
           <div className="hero__copy">
             <p className="hero__avail">
               <i aria-hidden="true" />
-              Open to new-grad &amp; junior roles · Islamabad, PK · CS graduate, 2026
+              Available for remote roles or relocation · Islamabad, PK
             </p>
             <h1 className="hero__statement" id="hero-title" data-hero-statement>
               <span className="hero__line">

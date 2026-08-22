@@ -5,7 +5,7 @@ import { education, experience, principles, profile, siteUrl } from "@/data/port
 export const metadata: Metadata = {
   title: "About",
   description:
-    "AI automation engineer and Computer Science graduate. I turn high-volume manual workflows into autonomous, event-driven systems — with the production discipline and judgment to run them.",
+    "AI automation engineer. I turn high-volume manual workflows into autonomous, event-driven systems — with the production discipline and judgment to run them.",
   alternates: { canonical: `${siteUrl}/about/` }
 };
 

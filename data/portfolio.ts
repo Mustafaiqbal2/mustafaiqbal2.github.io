@@ -75,7 +75,7 @@ export const profile = {
   shortTitle: "AI automation · full-stack",
   email: "therealmustafaiqbal@gmail.com",
   location: "Islamabad, Pakistan",
-  availability: "Open to new-grad & junior roles — remote or relocation",
+  availability: "Available for remote roles or relocation",
   github: "https://github.com/Mustafaiqbal2",
   linkedIn: "https://www.linkedin.com/in/mustafa-iqbal-ba42b424b/",
   resume: "/resume/",

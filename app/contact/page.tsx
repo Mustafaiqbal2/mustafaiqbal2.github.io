@@ -8,7 +8,7 @@ import { profile, siteUrl } from "@/data/portfolio";
 export const metadata: Metadata = {
   title: "Contact",
   description:
-    "Get in touch about new-grad and junior AI/full-stack roles, or to discuss any project in detail. Based in Islamabad; open to remote and relocation.",
+    "Get in touch about AI and full-stack engineering roles, or to discuss any project in detail. Based in Islamabad; open to remote and relocation.",
   alternates: { canonical: `${siteUrl}/contact/` }
 };
 
@@ -22,9 +22,8 @@ export default function ContactPage() {
               <p className="eyebrow">Get in touch</p>
               <h1>Let&apos;s talk about the role.</h1>
               <p className="lede" style={{ marginTop: 20 }}>
-                I&apos;m a recent Computer Science graduate, looking for new-grad and junior roles where I can ship
-                production AI automation and full-stack systems. If you&apos;re hiring for that — or want to talk through
-                any of the projects here in detail — I&apos;d like to hear from you.
+                I build production AI automation and full-stack systems end to end. If you&apos;re hiring for that —
+                or want to talk through any of the projects here in detail — I&apos;d like to hear from you.
               </p>
               <p style={{ marginTop: 16, color: "var(--ink-2)", lineHeight: 1.7 }}>
                 Much of my work is private or client-bound; I&apos;m glad to walk through the architecture and my

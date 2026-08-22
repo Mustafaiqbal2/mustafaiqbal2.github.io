@@ -6,7 +6,7 @@ import { education, experience, profile, siteUrl, skillGroups } from "@/data/por
 export const metadata: Metadata = {
   title: "Résumé",
   description:
-    "Experience, projects, and technical foundation. Freelance automation engineer since 2022, team lead at Genesys Research Lab, FAST-NUCES Computer Science graduate, 2026.",
+    "Experience, projects, and technical foundation. Automation engineer shipping production systems since 2022; team lead at Genesys Research Lab; BS Computer Science, FAST-NUCES Islamabad.",
   alternates: { canonical: `${siteUrl}/resume/` }
 };
 
@@ -19,8 +19,8 @@ export default function ResumePage() {
             <p className="eyebrow">Résumé</p>
             <h1>Experience, projects, and foundation.</h1>
             <p className="lede" style={{ marginTop: 20 }}>
-              Computer Science graduate from FAST-NUCES Islamabad (2026), building production AI automation as a
-              freelancer since 2022, and team lead of a four-person AI research group at Genesys Research Lab in 2025.
+              Building production AI automation as a freelancer since 2022, and team lead of a four-person AI research
+              group at Genesys Research Lab in 2025. Full experience, skills, and education below.
             </p>
             <div className="btn-row" style={{ marginTop: 26 }}>
               <a className="btn btn--primary" href={profile.resumePdf} download>
