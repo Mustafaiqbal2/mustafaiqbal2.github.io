@@ -5,9 +5,9 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { BlackHole } from "@/components/BlackHole";
 import { GalaxyDoodleA, GalaxyDoodleB, ShootingStarDoodle, SketchPortrait } from "@/components/SketchPortrait";
-import { SketchPortraitReal } from "@/components/SketchPortraitReal";
 
 gsap.registerPlugin(ScrollTrigger);
+ScrollTrigger.config({ ignoreMobileResize: true });
 
 const ArrowUpRight = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -361,19 +361,24 @@ export function Landing() {
           ease: "none",
           scrollTrigger: { trigger: q(".lv-hero")[0], start: "top top", end: "bottom top", scrub: 0.6 }
         });
-        gsap.to(q(".lv-hero__foot"), {
-          yPercent: -40,
-          opacity: 0,
-          ease: "none",
-          scrollTrigger: { trigger: q(".lv-hero")[0], start: "top top", end: "70% top", scrub: 0.6 }
-        });
+        gsap.fromTo(
+          q(".lv-hero__foot"),
+          { yPercent: 0, opacity: 1 },
+          {
+            yPercent: -40,
+            opacity: 0,
+            ease: "none",
+            immediateRender: false,
+            scrollTrigger: { trigger: q(".lv-hero")[0], start: "top top", end: "70% top", scrub: 0.6 }
+          }
+        );
 
         /* ---------- ArchPHI: pin + draw the plan into a bill ---------- */
         {
           const section = q(".lv-arch")[0];
           const tl = gsap.timeline({
             scrollTrigger: desktop
-              ? { trigger: section, start: "top top", end: "+=200%", pin: true, scrub: 0.8, anticipatePin: 1 }
+              ? { trigger: section, start: "top top", end: "+=200%", pin: true, scrub: 1, anticipatePin: 1 }
               : { trigger: section, start: "top 70%", end: "bottom 60%", scrub: 0.8 }
           });
           tl.from(q(".lv-arch .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
@@ -410,7 +415,7 @@ export function Landing() {
                 start: "top top",
                 end: "+=260%",
                 pin: true,
-                scrub: 0.8,
+                scrub: 1,
                 anticipatePin: 1,
                 invalidateOnRefresh: true
               }
@@ -431,9 +436,11 @@ export function Landing() {
           const section = q(".lv-pilone")[0];
           const clicksEl = q(".lv-fig__clicks")[0] as HTMLElement;
           const counter = { v: 1070 };
+          const imprEl = q(".lv-fig__imprv")[0] as HTMLElement;
+          const impr = { v: 46200 };
           const tl = gsap.timeline({
             scrollTrigger: desktop
-              ? { trigger: section, start: "top top", end: "+=200%", pin: true, scrub: 0.8, anticipatePin: 1 }
+              ? { trigger: section, start: "top top", end: "+=200%", pin: true, scrub: 1, anticipatePin: 1 }
               : { trigger: section, start: "top 70%", end: "bottom 60%", scrub: 0.8 }
           });
           tl.from(q(".lv-pilone .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
@@ -452,6 +459,20 @@ export function Landing() {
               },
               0.4
             )
+            .from(q(".lv-fig--impr"), { y: 40, opacity: 0, duration: 0.4 }, 0.5)
+            .fromTo(
+              impr,
+              { v: 9920 },
+              {
+                v: 46200,
+                duration: 1.1,
+                ease: "none",
+                onUpdate: () => {
+                  if (imprEl) imprEl.textContent = Math.round(impr.v).toLocaleString("en-US");
+                }
+              },
+              0.55
+            )
             .from(q(".lv-fig--position"), { y: 40, opacity: 0, duration: 0.5 }, 1.2)
             .from(q(".lv-fig--ai"), { y: 40, opacity: 0, duration: 0.5 }, 1.6)
             .from(q(".lv-pilone .lv-caption"), { opacity: 0, duration: 0.4 }, 2.0);
@@ -462,7 +483,7 @@ export function Landing() {
           const section = q(".lv-talent")[0];
           const tl = gsap.timeline({
             scrollTrigger: desktop
-              ? { trigger: section, start: "top top", end: "+=220%", pin: true, scrub: 0.8, anticipatePin: 1 }
+              ? { trigger: section, start: "top top", end: "+=220%", pin: true, scrub: 1, anticipatePin: 1 }
               : { trigger: section, start: "top 72%", end: "bottom 55%", scrub: 0.8 }
           });
           tl.from(q(".lv-talent .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
@@ -489,7 +510,7 @@ export function Landing() {
           if (desktop) {
             section.classList.add("lv-about--live");
             const tl = gsap.timeline({
-              scrollTrigger: { trigger: section, start: "top top", end: "+=540%", pin: true, scrub: 0.8, anticipatePin: 1, invalidateOnRefresh: true }
+              scrollTrigger: { trigger: section, start: "top top", end: "+=540%", pin: true, scrub: 1, anticipatePin: 1, invalidateOnRefresh: true }
             });
             tl.fromTo(q(".lv-about__title"), { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.4 }, 0)
               .to(q(".lv-about__title"), { opacity: 0, y: -40, scale: 0.96, duration: 0.3 }, 0.55)
@@ -513,21 +534,20 @@ export function Landing() {
               .from(q(".lv-about__list li"), { y: 30, opacity: 0, stagger: 0.12, duration: 0.35 }, 3.6);
             /* the asteroid act: fly in (stepped, storyboard) -> impact -> the
                funny sketch scatters as pencil strokes -> the real one draws */
-            tl.set(q(".lv-about__me"), { opacity: 1 }, 0)
-              .set(q(".lv-about__me2"), { opacity: 0 }, 0)
-              .fromTo(
+            tl.fromTo(
                 q(".lv-ast"),
-                { x: 0, y: 0, rotation: -18, opacity: 1 },
+                { x: 0, y: 0, rotation: 8, scaleX: 1, scaleY: 1, opacity: 1 },
                 {
-                  x: () => (q(".lv-about__sketch")[0] as HTMLElement).clientWidth * 0.28 + 240,
-                  y: () => (q(".lv-about__sketch")[0] as HTMLElement).clientHeight * 0.12,
-                  rotation: 200,
+                  x: () => (q(".lv-about__sketch")[0] as HTMLElement).clientWidth * 0.25 + 87,
+                  y: () => (q(".lv-about__sketch")[0] as HTMLElement).clientHeight * 0.1,
+                  rotation: 8,
                   ease: "steps(11)",
                   duration: 0.6
                 },
                 4.0
               )
-              .to(q(".lv-ast"), { opacity: 0, duration: 0.04 }, 4.6)
+              .to(q(".lv-ast"), { scaleX: 0.68, scaleY: 1.14, transformOrigin: "88% 50%", duration: 0.05, ease: "none" }, 4.56)
+              .to(q(".lv-ast"), { opacity: 0, duration: 0.04 }, 4.61)
               .fromTo(q(".lv-impact"), { scale: 0.2, opacity: 0 }, { scale: 1, opacity: 1, ease: "back.out(2)", duration: 0.12 }, 4.58)
               .to(q(".lv-impact"), { opacity: 0, scale: 1.3, duration: 0.25 }, 4.85)
               .to(q(".lv-about__sketch"), { x: 5, y: -4, duration: 0.03, repeat: 9, yoyo: true, ease: "none" }, 4.6)
@@ -558,12 +578,19 @@ export function Landing() {
                 },
                 4.66
               )
-              .fromTo(q(".lv-about__me2"), { opacity: 0 }, { opacity: 1, duration: 0.18 }, 4.8)
-              .fromTo(
-                q(".lv-about__me2 .sk2-draw"),
-                { strokeDashoffset: 1 },
-                { strokeDashoffset: 0, stagger: 0.0012, duration: 0.5, ease: "none" },
-                4.86
+              .to(
+                q(".lv-about__list"),
+                {
+                  x: () => {
+                    const sk = (q(".lv-about__sketch")[0] as HTMLElement).getBoundingClientRect();
+                    const li = (q(".lv-about__list")[0] as HTMLElement).getBoundingClientRect();
+                    return sk.left + sk.width / 2 - (li.left + li.width / 2);
+                  },
+                  scale: 1.06,
+                  duration: 0.45,
+                  ease: "power2.inOut"
+                },
+                5.0
               );
           } else {
             gsap.from(q(".lv-about__title"), {
@@ -578,11 +605,11 @@ export function Landing() {
             });
             const sk = q(".lv-about__sketch")[0];
             gsap.fromTo(
-              q(".lv-about__sketch .sk-draw, .lv-about__sketch .sk2-draw"),
+              q(".lv-about__sketch .sk-draw"),
               { strokeDashoffset: 1 },
               {
                 strokeDashoffset: 0,
-                stagger: 0.004,
+                stagger: 0.008,
                 ease: "none",
                 scrollTrigger: { trigger: sk, start: "top 80%", end: "top 20%", scrub: 0.8 }
               }
@@ -651,7 +678,7 @@ export function Landing() {
         <div className="lv-hero__foot">
           <div>
             <p className="lv-hero__statement">
-              I build software that has to be right<b>.</b>
+              I like building things<b>.</b>
             </p>
             <p className="lv-hero__sub">
               AI agents in production, a search platform for a factory, and a company that reads architects&apos; drawings.
@@ -796,6 +823,12 @@ export function Landing() {
               </div>
               <p className="lv-fig__label lv-mono">Organic clicks, six months — up from 204</p>
             </div>
+            <div className="lv-fig lv-fig--impr">
+              <div className="lv-fig__mid">
+                <span className="lv-fig__imprv">46,200</span> <b>impressions</b>
+              </div>
+              <p className="lv-fig__label lv-mono">Impressions, six months — up from 9,920</p>
+            </div>
             <div className="lv-fig lv-fig--position">
               <div className="lv-fig__mid">
                 17.8 <b>→</b> 8.4
@@ -854,9 +887,6 @@ export function Landing() {
           </div>
           <div className="lv-about__sketch">
             <div className="lv-about__stack">
-              <div className="lv-about__me2">
-                <SketchPortraitReal />
-              </div>
               <div className="lv-about__me">
                 <SketchPortrait />
               </div>
@@ -879,15 +909,15 @@ export function Landing() {
             <ul className="lv-about__list">
               <li>
                 <i>01</i>
-                <p>Founder &amp; CTO at ArchPHI.</p>
+                <p>I like building things.</p>
               </li>
               <li>
                 <i>02</i>
-                <p>I build agents that do my work.</p>
+                <p>I want to make a difference.</p>
               </li>
               <li>
                 <i>03</i>
-                <p>Space, obviously.</p>
+                <p>I don&apos;t have a third thing.</p>
               </li>
             </ul>
             <span className="lv-doodle lv-doodle--a" aria-hidden="true">

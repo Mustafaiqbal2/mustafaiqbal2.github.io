@@ -574,150 +574,6 @@ body:has(.lv) .site-footer {
   }
 }
 
-/* ---------- How I work × Gargantua ---------- */
-
-.lv-how {
-  position: relative;
-  overflow: clip;
-  background: radial-gradient(120% 90% at 50% 10%, #10121d 0%, #0b0c12 55%, #07080d 100%);
-  color: var(--lv-bone);
-}
-.lv-how__eyebrow {
-  position: relative;
-  z-index: 5;
-  max-width: 1320px;
-  margin: 0 auto;
-  width: 100%;
-}
-
-.lv-bh {
-  position: relative;
-  width: min(58vh, 540px);
-  aspect-ratio: 1;
-  margin: clamp(24px, 4vh, 48px) auto;
-  will-change: transform;
-}
-.lv-bh__glow {
-  position: absolute;
-  inset: -42%;
-  background: radial-gradient(closest-side, rgba(139, 92, 246, 0.22), rgba(59, 7, 100, 0.1) 45%, transparent 72%);
-}
-.lv-bh__disk {
-  position: absolute;
-  left: -52%;
-  right: -52%;
-  top: 43.5%;
-  bottom: 43.5%;
-  border-radius: 50%;
-  background: linear-gradient(
-    90deg,
-    transparent 2%,
-    rgba(255, 214, 165, 0.95) 16%,
-    #fff6e8 46%,
-    rgba(255, 219, 178, 0.7) 78%,
-    transparent 97%
-  );
-  filter: blur(6px);
-  will-change: transform;
-}
-.lv-bh__horizon {
-  position: absolute;
-  inset: 21%;
-  border-radius: 50%;
-  background: #000;
-  box-shadow: 0 0 42px 10px rgba(5, 4, 10, 0.9);
-}
-.lv-bh__ring {
-  position: absolute;
-  inset: 19.4%;
-  border-radius: 50%;
-  border: 2px solid #fff8f0;
-  box-shadow: 0 0 14px 2px rgba(255, 248, 240, 0.9), inset 0 0 14px 2px rgba(255, 248, 240, 0.5);
-}
-.lv-bh__arc {
-  position: absolute;
-  inset: 8% 12%;
-  border-radius: 50%;
-  border: 9px solid transparent;
-  border-top-color: rgba(255, 243, 224, 0.85);
-  filter: blur(3px);
-  transform: scaleY(0.92);
-}
-.lv-bh__arc--under {
-  transform: scaleY(-0.72);
-  opacity: 0.5;
-}
-.lv-bh__front {
-  position: absolute;
-  left: -46%;
-  right: -46%;
-  top: 52%;
-  height: 7.5%;
-  border-radius: 50%;
-  background: linear-gradient(
-    90deg,
-    transparent 4%,
-    rgba(255, 226, 189, 0.9) 22%,
-    #fffaf2 50%,
-    rgba(255, 226, 189, 0.65) 80%,
-    transparent 96%
-  );
-  filter: blur(4px);
-}
-
-.lv-how__stage {
-  position: relative;
-  z-index: 5;
-  max-width: 1000px;
-  margin: 0 auto;
-  width: 100%;
-}
-.lv-how__item {
-  display: grid;
-  grid-template-columns: 64px minmax(0, 1fr);
-  gap: 18px;
-  align-items: baseline;
-  padding: 18px 0;
-}
-.lv-how__index {
-  color: var(--lv-accent-bright);
-}
-.lv-how__line {
-  margin: 0;
-  font-size: clamp(28px, 4vw, 58px);
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.04;
-  text-wrap: balance;
-  text-shadow: 0 2px 28px rgba(4, 4, 8, 0.85);
-}
-
-/* animated mode: statements take the stage one at a time, over the hole */
-.lv-how--live .lv-bh {
-  margin: 0;
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  translate: -50% -50%;
-  z-index: 1;
-}
-.lv-how--live .lv-how__stage {
-  min-height: min(58vh, 540px);
-  display: grid;
-  align-content: center;
-  /* stage (not items — GSAP owns their transforms) sits below the
-     accretion band so lines never cross peak brightness */
-  translate: 0 96px;
-}
-.lv-how--live .lv-how__item {
-  grid-area: 1 / 1;
-  justify-self: center;
-  text-align: center;
-  grid-template-columns: none;
-  justify-items: center;
-  gap: 12px;
-}
-
 /* ---------- Contact — deep space ---------- */
 
 .lv-contact {
@@ -1016,35 +872,15 @@ body:has(.lv) .site-footer {
   justify-content: center;
 }
 .lv-about__me {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
   color: #1e1b16;
-  opacity: 0; /* funny sketch plays only in the live act; static shows the real one */
 }
 .lv-about__me svg {
   width: 100%;
-  max-width: 440px;
   height: auto;
   display: block;
-}
-.lv-about__me2 {
-  color: #1e1b16;
-}
-.lv-about__me2 svg {
-  /* explicit height: an inline SVG with auto dims has no intrinsic box and
-     collapses the whole portrait stack */
-  height: min(62vh, 560px);
-  width: auto;
-  max-width: 100%;
-  display: block;
-  margin: 0 auto;
-}
-.sk2-draw {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0; /* final state: fully drawn */
 }
 
 /* the asteroid act props: hidden until the live timeline flies them */
@@ -1065,8 +901,8 @@ body:has(.lv) .site-footer {
 }
 .lv-impact {
   position: absolute;
-  left: 14%;
-  top: 30%;
+  left: calc(25% - 120px);
+  top: calc(34% - 60px);
   width: 240px;
   color: #1e1b16;
   opacity: 0;
@@ -1080,8 +916,8 @@ body:has(.lv) .site-footer {
 }
 .lv-debris {
   position: absolute;
-  left: 22%;
-  top: 40%;
+  left: 25%;
+  top: 36%;
   z-index: 4;
   pointer-events: none;
 }
