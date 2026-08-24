@@ -1004,6 +1004,110 @@ html.lv-page .site-footer {
   height: auto;
   display: block;
 }
+
+/* the black hole finale: impact frames + hanabi fireworks (live-act props,
+   all hidden until the pinned timeline fires them; reduced-motion and
+   static renders never see this layer) */
+.lv-boom {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: clip;
+}
+.lv-boom > * {
+  position: absolute;
+  opacity: 0;
+}
+.lv-boom__flash {
+  inset: 0;
+  background: var(--lv-bone);
+}
+.lv-boom__frame {
+  inset: 0;
+  background: #07080d;
+  color: var(--lv-bone);
+}
+.lv-boom__frame svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.lv-boom__ring svg,
+.lv-boom__fw svg,
+.lv-boom__spark svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.lv-boom__ring--a {
+  left: calc(50% - 180px);
+  top: calc(50% - 180px);
+  width: 360px;
+  color: var(--lv-bone);
+}
+.lv-boom__ring--b {
+  left: calc(50% - 180px);
+  top: calc(50% - 180px);
+  width: 360px;
+  color: var(--lv-accent-bright);
+}
+.lv-boom__fw--a {
+  left: calc(50% - 200px);
+  top: calc(50% - 200px);
+  width: 400px;
+  color: var(--lv-bone);
+}
+.lv-boom__fw--b {
+  left: calc(50% - 380px);
+  top: calc(50% - 300px);
+  width: 240px;
+  color: var(--lv-pink);
+}
+.lv-boom__fw--c {
+  left: calc(50% + 130px);
+  top: calc(50% - 260px);
+  width: 280px;
+  color: var(--lv-accent-bright);
+}
+.lv-boom__fw--d {
+  left: calc(50% + 60px);
+  top: calc(50% + 90px);
+  width: 190px;
+  color: var(--lv-cyan);
+}
+.lv-boom__spark {
+  width: 90px;
+  color: var(--lv-bone);
+}
+.lv-boom__spark--a {
+  left: calc(50% + 210px);
+  top: calc(50% - 40px);
+}
+.lv-boom__spark--b {
+  left: calc(50% - 300px);
+  top: calc(50% + 60px);
+}
+.lv-boom__spark--c {
+  left: calc(50% + 150px);
+  top: calc(50% + 170px);
+  color: var(--lv-pink);
+}
+.lv-boom__spark--d {
+  left: calc(50% - 250px);
+  top: calc(50% - 190px);
+  color: var(--lv-cyan);
+}
+.lv-boom__spark--e {
+  left: calc(50% - 40px);
+  top: calc(50% - 290px);
+  width: 70px;
+}
+.lv-boom__draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+
 .sk-draw {
   stroke-dasharray: 1;
   stroke-dashoffset: 0; /* final state: fully drawn */

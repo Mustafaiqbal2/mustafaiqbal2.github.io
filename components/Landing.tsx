@@ -92,6 +92,79 @@ const SparkleDoodle = () => (
   </svg>
 );
 
+/* ---- the black hole finale: impact frames + japanese hanabi fireworks ----
+   All coordinates are hand-authored literals (no runtime trig) so server
+   and client render byte-identical markup. */
+
+const ImpactLines = () => (
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true">
+    {[
+      { d: "M1020 450 L1820 450", w: 6 },
+      { d: "M1108 611 L1736 871", w: 3 },
+      { d: "M960 690 L1498 1228", w: 4 },
+      { d: "M896 875 L1141 1466", w: 3 },
+      { d: "M720 760 L720 1550", w: 6 },
+      { d: "M555 847 L299 1466", w: 3 },
+      { d: "M465 705 L-58 1228", w: 4 },
+      { d: "M313 618 L-296 871", w: 3 },
+      { d: "M420 450 L-380 450", w: 6 },
+      { d: "M332 289 L-296 29", w: 3 },
+      { d: "M480 210 L-58 -328", w: 4 },
+      { d: "M544 25 L299 -566", w: 3 },
+      { d: "M720 140 L720 -650", w: 6 },
+      { d: "M885 53 L1141 -566", w: 3 },
+      { d: "M975 195 L1498 -328", w: 4 },
+      { d: "M1127 282 L1736 29", w: 3 }
+    ].map((l) => (
+      <path key={l.d} d={l.d} strokeWidth={l.w} />
+    ))}
+  </svg>
+);
+
+const HanabiBurst = () => (
+  <svg viewBox="0 0 140 140" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <circle className="lv-boom__draw" pathLength={1} cx="70" cy="70" r="8" />
+    {[
+      "M86 70 L126 70",
+      "M84 78 L118 98",
+      "M78 84 L92 108",
+      "M70 88 L70 122",
+      "M62 84 L48 108",
+      "M56 78 L22 98",
+      "M54 70 L14 70",
+      "M56 62 L26 45",
+      "M62 56 L45 27",
+      "M70 52 L70 18",
+      "M78 56 L97 23",
+      "M84 62 L114 45"
+    ].map((d) => (
+      <path key={d} className="lv-boom__draw" pathLength={1} d={d} />
+    ))}
+    {[
+      [131, 70],
+      [122, 101],
+      [70, 127],
+      [17, 101],
+      [9, 70],
+      [22, 41],
+      [70, 13],
+      [101, 20]
+    ].map(([x, y]) => (
+      <circle key={`${x}-${y}`} cx={x} cy={y} r="1.8" fill="currentColor" stroke="none" />
+    ))}
+    <path className="lv-boom__draw" pathLength={1} d="M96 90 L104 96 M44 92 L37 97 M92 44 L98 38" strokeWidth="1.4" />
+  </svg>
+);
+
+const SparkStreak = () => (
+  <svg viewBox="0 0 90 44" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path className="lv-boom__draw" pathLength={1} d="M2 24 L32 19 L46 26 L70 14" />
+    <path className="lv-boom__draw" pathLength={1} d="M46 26 L60 33" strokeWidth="1.4" />
+    <path className="lv-boom__draw" pathLength={1} d="M32 19 L38 8" strokeWidth="1.4" />
+    <circle cx="74" cy="12" r="1.6" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 
 const agents = [
   {
@@ -253,8 +326,9 @@ function FloorPlan() {
    a LOOP — orchestrator → chain-of-thought strategy → question generation →
    TTS → candidate → Whisper STT → back to the orchestrator — laid out as a
    ring. Structured CV/JD intake feeds in; the report engine exits on
-   conclusion. Shafts draw first, heads land after, labels last, and a pulse
-   orbits the loop once it is drawn. */
+   conclusion. Each arrow is ONE path (shaft + chevron head) so it draws as
+   a single unbroken pen stroke; labels last, and a pulse orbits the loop
+   once it is drawn. */
 function TalentFlowDiagram() {
   const box = { stroke: "#0B0C12", fill: "#F2F2EE", strokeWidth: 2 };
   const label = { fill: "#0B0C12", fontSize: "10.5", fontFamily: "var(--font-mono), monospace", letterSpacing: "1" };
@@ -282,29 +356,17 @@ function TalentFlowDiagram() {
     <svg className="lv-flow" viewBox="0 0 640 400" fill="none" aria-hidden="true">
       {/* orbiting pulse (under the nodes) */}
       <circle className="lv-flow__pulse" r="3.5" fill="#6D28D9" />
-      {/* edge shafts */}
+      {/* each arrow = shaft + head in a SINGLE path: the dash-draw flows
+          through the line straight into the chevron, one pen, no seam */}
       {edges.map((e) => (
         <path
           key={e.shaft}
           className="lv-draw lv-flow__edge"
           pathLength={1}
-          d={e.shaft}
+          d={`${e.shaft} ${e.head}`}
           stroke={e.violet ? "#6D28D9" : "#0B0C12"}
           strokeWidth={e.violet ? 1.8 : 1.6}
           fill="none"
-        />
-      ))}
-      {/* arrowheads — stroked chevrons, drawn right after their shafts */}
-      {edges.map((e) => (
-        <path
-          key={e.head}
-          className="lv-draw lv-flow__head"
-          pathLength={1}
-          d={e.head}
-          stroke={e.violet ? "#6D28D9" : "#0B0C12"}
-          strokeWidth={e.violet ? 1.8 : 1.6}
-          fill="none"
-          strokeLinecap="round"
           strokeLinejoin="round"
         />
       ))}
@@ -470,8 +532,8 @@ export function Landing() {
               0.15
             )
             .from(q(".lv-plan__text"), { opacity: 0, duration: 0.35 }, 1.35)
-            .fromTo(q(".lv-arch__arrow path"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.3, ease: "none" }, 1.45)
-            .from(q(".lv-bill__row"), { x: 40, opacity: 0, stagger: 0.1, duration: 0.4 }, 1.6)
+            .fromTo(q(".lv-arch__arrow path"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.45, ease: "none" }, 1.45)
+            .from(q(".lv-bill__row"), { x: 40, opacity: 0, stagger: 0.1, duration: 0.4 }, 1.7)
             .from(q(".lv-arch .lv-caption"), { opacity: 0, duration: 0.35 }, 2.1);
         }
 
@@ -569,21 +631,20 @@ export function Landing() {
           const section = q(".lv-talent")[0];
           const tl = gsap.timeline({
             scrollTrigger: desktop
-              ? { trigger: section, start: "top top", end: "+=320%", pin: true, scrub: 0.7, anticipatePin: 1, fastScrollEnd: true }
+              ? { trigger: section, start: "top top", end: "+=440%", pin: true, scrub: 0.7, anticipatePin: 1, fastScrollEnd: true }
               : { trigger: section, start: "top 72%", end: "bottom 55%", scrub: 0.8 }
           });
           tl.from(q(".lv-talent .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
             .from(q(".lv-talent__copy .lv-body"), { y: 32, opacity: 0, stagger: 0.08, duration: 0.4 }, 0.12)
             .from(q(".lv-flow__node"), { opacity: 0, scale: 0.92, transformOrigin: "center", stagger: 0.07, duration: 0.3 }, 0.25);
-          const shafts = q(".lv-flow__edge");
-          const heads = q(".lv-flow__head");
-          // one continuous pen: each shaft draws long, its head follows
-          // immediately, the next edge starts as the head lands
+          const arrows = q(".lv-flow__edge");
+          // one continuous pen: each arrow (shaft + head in a single path)
+          // crawls across ~350px of scroll, the tip visibly advancing the
+          // whole way; the next starts as the pen lifts
           let at = 1.0;
-          shafts.forEach((shaft, i) => {
-            tl.fromTo(shaft, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.34, ease: "none" }, at);
-            if (heads[i]) tl.fromTo(heads[i], { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.12, ease: "none" }, at + 0.32);
-            at += 0.42;
+          arrows.forEach((arrow) => {
+            tl.fromTo(arrow, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.5, ease: "none" }, at);
+            at += 0.52;
           });
           tl.from(q(".lv-flow__labels"), { opacity: 0, duration: 0.3 }, at)
             .fromTo(q(".lv-flow__pulse"), { opacity: 0 }, { opacity: 1, duration: 0.2 }, at + 0.2)
@@ -600,7 +661,7 @@ export function Landing() {
           if (desktop) {
             section.classList.add("lv-about--live");
             const tl = gsap.timeline({
-              scrollTrigger: { trigger: section, start: "top top", end: "+=540%", pin: true, scrub: 0.7, anticipatePin: 1, fastScrollEnd: true, invalidateOnRefresh: true }
+              scrollTrigger: { trigger: section, start: "top top", end: "+=640%", pin: true, scrub: 0.7, anticipatePin: 1, fastScrollEnd: true, invalidateOnRefresh: true }
             });
             tl.fromTo(q(".lv-about__title"), { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.4 }, 0)
               .to(q(".lv-about__title"), { opacity: 0, y: -40, scale: 0.96, duration: 0.3 }, 0.55)
@@ -609,19 +670,63 @@ export function Landing() {
               tl.fromTo(bhRoot, { attr: { "data-intensity": 0.2 } }, { attr: { "data-intensity": 1 }, duration: 1.7, ease: "none" }, 0.7);
             }
             tl.fromTo(q(".lv-about__love"), { opacity: 0 }, { opacity: 1, duration: 0.3 }, 1.2)
-              .to(bhWrap, { x: 3, y: -2, duration: 0.045, repeat: 9, yoyo: true, ease: "none" }, 1.95)
+              /* build-up: two shakes, the second harder — then the hole blows */
+              .to(bhWrap, { x: 3, y: -2, duration: 0.04, repeat: 5, yoyo: true, ease: "none" }, 1.95)
+              .to(bhWrap, { x: -6, y: 4, duration: 0.033, repeat: 6, yoyo: true, ease: "none" }, 2.19)
               .set(bhWrap, { x: 0, y: 0 }, 2.42)
-              .to(bhWrap, { opacity: 0, scale: 1.05, duration: 0.3 }, 2.5)
-              .to(q(".lv-about__love"), { opacity: 0, duration: 0.2 }, 2.5)
-              .fromTo(q(".lv-about__paper"), { opacity: 0 }, { opacity: 1, duration: 0.35 }, 2.55)
-              .fromTo(q(".lv-about__sketch"), { opacity: 0 }, { opacity: 1, duration: 0.25 }, 2.8)
+              .to(q(".lv-about__love"), { opacity: 0, duration: 0.06 }, 2.36)
+              /* impact frames: bone flash -> inverted speed-line frame -> flash */
+              .set(q(".lv-boom__flash"), { opacity: 1 }, 2.42)
+              .to(bhWrap, { opacity: 0, scale: 1.22, duration: 0.08, ease: "none" }, 2.44)
+              .set(q(".lv-boom__flash"), { opacity: 0 }, 2.48)
+              .set(q(".lv-boom__frame"), { opacity: 1 }, 2.48)
+              .set(q(".lv-boom__frame"), { opacity: 0 }, 2.58)
+              .set(q(".lv-boom__flash"), { opacity: 1 }, 2.58)
+              .set(q(".lv-boom__flash"), { opacity: 0 }, 2.62)
+              /* shockwave rings */
+              .fromTo(q(".lv-boom__ring--a"), { scale: 0.15, opacity: 1 }, { scale: 1.9, opacity: 0, duration: 0.5, ease: "power2.out" }, 2.5)
+              .fromTo(q(".lv-boom__ring--b"), { scale: 0.1, opacity: 0.8 }, { scale: 2.6, opacity: 0, duration: 0.7, ease: "power2.out" }, 2.56)
+              /* hanabi bursts: every ray draws stroke-by-stroke, then dies out */
+              .fromTo(q(".lv-boom__fw--a"), { opacity: 1, scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.5)
+              .fromTo(q(".lv-boom__fw--a .lv-boom__draw"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.42, stagger: 0.012, ease: "none" }, 2.5)
+              .fromTo(q(".lv-boom__fw--b"), { opacity: 1, scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.66)
+              .fromTo(q(".lv-boom__fw--b .lv-boom__draw"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 2.66)
+              .fromTo(q(".lv-boom__fw--c"), { opacity: 1, scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.76)
+              .fromTo(q(".lv-boom__fw--c .lv-boom__draw"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 2.76)
+              .fromTo(q(".lv-boom__fw--d"), { opacity: 1, scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.88)
+              .fromTo(q(".lv-boom__fw--d .lv-boom__draw"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 2.88)
+              /* stray sparks thrown from the blast */
+              .fromTo(
+                q(".lv-boom__spark"),
+                {
+                  opacity: 0,
+                  x: (i: number) => [-230, 280, -150, 230, 40][i],
+                  y: (i: number) => [40, -70, -170, 190, 270][i],
+                  rotation: (i: number) => [12, 196, 38, 214, 285][i]
+                },
+                {
+                  opacity: 1,
+                  x: 0,
+                  y: 0,
+                  rotation: (i: number) => [12, 196, 38, 214, 285][i],
+                  duration: 0.4,
+                  stagger: 0.05,
+                  ease: "power2.out"
+                },
+                2.52
+              )
+              .fromTo(q(".lv-boom__spark .lv-boom__draw"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.3, stagger: 0.02, ease: "none" }, 2.56)
+              /* the embers die and the sky clears onto sketchbook paper */
+              .to(q(".lv-boom__fw, .lv-boom__spark"), { opacity: 0, duration: 0.3, stagger: 0.04 }, 3.4)
+              .fromTo(q(".lv-about__paper"), { opacity: 0 }, { opacity: 1, duration: 0.4 }, 3.62)
+              .fromTo(q(".lv-about__sketch"), { opacity: 0 }, { opacity: 1, duration: 0.25 }, 3.85)
               .fromTo(
                 q(".lv-about__sketch .sk-draw"),
                 { strokeDashoffset: 1 },
                 { strokeDashoffset: 0, stagger: 0.011, duration: 0.9, ease: "none" },
-                2.85
+                3.9
               )
-              .from(q(".lv-about__list li"), { y: 30, opacity: 0, stagger: 0.12, duration: 0.35 }, 3.6);
+              .from(q(".lv-about__list li"), { y: 30, opacity: 0, stagger: 0.12, duration: 0.35 }, 4.65);
             /* the asteroid act: fly in (stepped, storyboard) -> impact -> the
                funny sketch scatters as pencil strokes -> the real one draws */
             tl.fromTo(
@@ -634,14 +739,14 @@ export function Landing() {
                   ease: "steps(11)",
                   duration: 0.6
                 },
-                4.0
+                5.05
               )
-              .to(q(".lv-ast"), { scaleX: 0.68, scaleY: 1.14, transformOrigin: "88% 50%", duration: 0.05, ease: "none" }, 4.56)
-              .to(q(".lv-ast"), { opacity: 0, duration: 0.04 }, 4.61)
-              .fromTo(q(".lv-impact"), { scale: 0.2, opacity: 0 }, { scale: 1, opacity: 1, ease: "back.out(2)", duration: 0.12 }, 4.58)
-              .to(q(".lv-impact"), { opacity: 0, scale: 1.3, duration: 0.25 }, 4.85)
-              .to(q(".lv-about__sketch"), { x: 5, y: -4, duration: 0.03, repeat: 9, yoyo: true, ease: "none" }, 4.6)
-              .set(q(".lv-about__sketch"), { x: 0, y: 0 }, 4.95)
+              .to(q(".lv-ast"), { scaleX: 0.68, scaleY: 1.14, transformOrigin: "88% 50%", duration: 0.05, ease: "none" }, 5.61)
+              .to(q(".lv-ast"), { opacity: 0, duration: 0.04 }, 5.66)
+              .fromTo(q(".lv-impact"), { scale: 0.2, opacity: 0 }, { scale: 1, opacity: 1, ease: "back.out(2)", duration: 0.12 }, 5.63)
+              .to(q(".lv-impact"), { opacity: 0, scale: 1.3, duration: 0.25 }, 5.9)
+              .to(q(".lv-about__sketch"), { x: 5, y: -4, duration: 0.03, repeat: 9, yoyo: true, ease: "none" }, 5.65)
+              .set(q(".lv-about__sketch"), { x: 0, y: 0 }, 6.0)
               .to(
                 q(".lv-about__me .sk-draw"),
                 {
@@ -653,9 +758,9 @@ export function Landing() {
                   stagger: 0.0015,
                   ease: "power2.out"
                 },
-                4.62
+                5.67
               )
-              .fromTo(q(".lv-debris span"), { x: 0, y: 0, opacity: 0, rotation: 0 }, { opacity: 1, duration: 0.04, stagger: 0.008 }, 4.6)
+              .fromTo(q(".lv-debris span"), { x: 0, y: 0, opacity: 0, rotation: 0 }, { opacity: 1, duration: 0.04, stagger: 0.008 }, 5.65)
               .to(
                 q(".lv-debris span"),
                 {
@@ -666,7 +771,7 @@ export function Landing() {
                   duration: 0.6,
                   ease: "power1.out"
                 },
-                4.66
+                5.71
               )
               .to(
                 q(".lv-about__list"),
@@ -680,7 +785,7 @@ export function Landing() {
                   duration: 0.45,
                   ease: "power2.inOut"
                 },
-                5.0
+                6.05
               );
           } else {
             gsap.from(q(".lv-about__title"), {
@@ -1063,6 +1168,33 @@ export function Landing() {
               <SparkleDoodle />
             </span>
           </div>
+        </div>
+        {/* the explosion layer: impact frames, shockwaves, hanabi — live-act
+            props, every one authored hidden until the timeline fires them */}
+        <div className="lv-boom" aria-hidden="true">
+          <span className="lv-boom__flash"></span>
+          <span className="lv-boom__frame">
+            <ImpactLines />
+          </span>
+          <span className="lv-boom__ring lv-boom__ring--a">
+            <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="3" aria-hidden="true">
+              <circle cx="100" cy="100" r="88" />
+            </svg>
+          </span>
+          <span className="lv-boom__ring lv-boom__ring--b">
+            <svg viewBox="0 0 200 200" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+              <circle cx="100" cy="100" r="88" />
+            </svg>
+          </span>
+          <span className="lv-boom__fw lv-boom__fw--a"><HanabiBurst /></span>
+          <span className="lv-boom__fw lv-boom__fw--b"><HanabiBurst /></span>
+          <span className="lv-boom__fw lv-boom__fw--c"><HanabiBurst /></span>
+          <span className="lv-boom__fw lv-boom__fw--d"><HanabiBurst /></span>
+          <span className="lv-boom__spark lv-boom__spark--a"><SparkStreak /></span>
+          <span className="lv-boom__spark lv-boom__spark--b"><SparkStreak /></span>
+          <span className="lv-boom__spark lv-boom__spark--c"><SparkStreak /></span>
+          <span className="lv-boom__spark lv-boom__spark--d"><SparkStreak /></span>
+          <span className="lv-boom__spark lv-boom__spark--e"><SparkStreak /></span>
         </div>
       </section>
 
