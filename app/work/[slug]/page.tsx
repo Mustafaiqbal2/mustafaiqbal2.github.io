@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowLeft, ArrowRight, Lock } from "lucide-react";
+import { ArrowRight, ArrowUpRight, Lock } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { Provenance, StatBlock } from "@/components/Evidence";
 import { featuredProjects, getProject, projectMedia, siteUrl } from "@/data/portfolio";
+import "@/app/landing.css";
+import "@/app/work.css";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -39,16 +41,20 @@ export default async function ProjectPage({ params }: Props) {
   const media = projectMedia(project.slug);
 
   return (
-    <main id="main">
-      <section className="case-hero">
+    <main id="main" className="wk">
+      <section className="case-hero lv-space">
+        <div className="wk-top wk-top--dark">
+          <div className="lv-topbar lv-mono">
+            <a className="lv-topbar__brand" href="/">
+              &gt;Mustafa<i aria-hidden="true" />
+            </a>
+            <a className="lv-topbar__link" href="/work/">
+              All work <ArrowUpRight />
+            </a>
+          </div>
+        </div>
         <div className="wrap">
-          <a className="textlink case-back" href="/work/" style={{ color: "var(--muted)" }}>
-            <ArrowLeft aria-hidden="true" />
-            All work
-          </a>
-          <p className="eyebrow" style={{ margin: 0 }}>
-            {project.category}
-          </p>
+          <p className="eyebrow">{project.category}</p>
           <h1>{project.title}</h1>
           <p className="case-hero__sub">{project.oneLiner}</p>
         </div>

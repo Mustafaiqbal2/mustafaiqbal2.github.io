@@ -5,13 +5,14 @@ import { navigation, profile } from "@/data/portfolio";
 export function SiteFooter() {
   return (
     <>
-      <section className="cta-band" aria-labelledby="cta-title">
+      <section className="cta-band lv-space" aria-labelledby="cta-title">
         <div className="wrap reveal" data-reveal="scale">
           <p className="eyebrow">Get in touch</p>
-          <h2 id="cta-title">Have a workflow worth <em>automating</em>?</h2>
-          <p>I build the AI systems that run it end to end — and I&apos;m looking for the roles where that ships.</p>
+          <h2 id="cta-title">
+            Talk to me<em>.</em>
+          </h2>
           <a className="btn btn--primary" href={`mailto:${profile.email}`}>
-            Get in touch
+            {profile.email}
             <ArrowRight aria-hidden="true" />
           </a>
         </div>

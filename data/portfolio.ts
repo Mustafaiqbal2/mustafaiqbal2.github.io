@@ -71,30 +71,30 @@ export const provenanceLabel: Record<ProvenanceTier, { glyph: string; label: str
 
 export const profile = {
   name: "Mustafa Iqbal",
-  title: "AI Automation Engineer",
-  shortTitle: "AI automation · full-stack",
+  title: "Software Engineer & Founder",
+  shortTitle: "Engineer · founder",
   email: "therealmustafaiqbal@gmail.com",
   location: "Islamabad, Pakistan",
-  availability: "Available for remote roles or relocation",
+  availability: "",
   github: "https://github.com/Mustafaiqbal2",
   linkedIn: "https://www.linkedin.com/in/mustafa-iqbal-ba42b424b/",
   resume: "/resume/",
   resumePdf: "/resume/Mustafa_Iqbal_CV.pdf",
   photo: "/images/me.jpeg",
   positioning:
-    "AI automation engineer who ships production LLM systems end to end — OAuth integrations, background-job pipelines, and cost-aware generation — with the operational discipline to run them unattended and keep every decision auditable.",
+    "I build things end to end — ArchPHI, production AI agents, and a factory site on page one.",
   bioShort:
-    "I build production AI automation and the full-stack systems that hold it up — the queues, retrieval, caching, OAuth lifecycles, and human-approval paths that keep automation fast, cheap, and correct once real data and real users arrive."
+    "Software engineer and founder. Building ArchPHI — the operating system for architectural drawings — with production agents and a ranking factory site behind it."
 };
 
 export const navigation = [{ label: "Work", href: "/work/" }];
 
 const iconForSlug: Record<string, LucideIcon> = {
+  archphi: Building2,
+  pilonecables: Globe2,
   "revvy-review-automation": Bot,
   "emmy-email-categorization": MailCheck,
   "recruitment-rag-platform": Network,
-  "adzee-ad-creative": Sparkles,
-  "cad-understanding": Building2,
   melodymind: Music2
 };
 
@@ -261,34 +261,27 @@ export type SecondaryProject = {
 
 export const secondaryProjects: SecondaryProject[] = [
   {
-    title: "Dominic",
-    signal: "AI domain-naming agent",
+    title: "Adzee",
+    signal: "Staged ad-creative pipeline",
     summary:
-      "Turns a company brief into brandable domain candidates, checks real availability over RDAP (Verisign, PIR), and ranks results with a hybrid heuristic-plus-model scorer.",
+      "Turns a brand profile and a one-line theme into a full ad set — brief, ranked headlines, copy, imagery — with a self-correcting image-quality loop that regenerates weak results.",
+    icon: Sparkles
+  },
+  {
+    title: "Dominic",
+    signal: "Domain-naming agent",
+    summary:
+      "Turns a company brief into brandable domain candidates, checks real availability over RDAP, and ranks the results with a hybrid heuristic-plus-model scorer.",
+    href: "https://simplabots.com/agents/dominic/",
     icon: Globe2
   },
   {
-    title: "Programmatic SEO engine",
-    signal: "Content systems · 1,000+ pages",
+    title: "ResearchAI",
+    signal: "Two-agent take-home",
     summary:
-      "A Node.js generation pipeline that scaled a retailer's site from ~65 to 1,000+ static pages from a city × product × guide matrix, each with JSON-LD structured data and automated schema validation.",
+      "A research assistant built under take-home pressure: two agents, four tools, and an explicit state machine on Mastra, with live web research and PDF export.",
+    href: "https://github.com/Mustafaiqbal2/CA-TASK",
     icon: Layers3
-  },
-  {
-    title: "CUDA Canny optimization",
-    signal: "~48× reported speedup",
-    summary:
-      "Optimized CUDA Canny edge detection with kernel fusion, shared memory, and minimized host–device transfers.",
-    href: "https://github.com/Mustafaiqbal2/Canny_optimization",
-    icon: Cpu
-  },
-  {
-    title: "Neural network acceleration",
-    signal: "GPU optimization study",
-    summary:
-      "Six MNIST classifiers taken from a CPU baseline through CUDA, Tensor Cores, OpenACC, and cuBLAS to compare acceleration paths.",
-    href: "https://github.com/Mustafaiqbal2/Neural-Network_Acceleration",
-    icon: Cpu
   },
   {
     title: "Offline document RAG",
@@ -299,20 +292,36 @@ export const secondaryProjects: SecondaryProject[] = [
     icon: Network
   },
   {
+    title: "Neural network acceleration",
+    signal: "34.79× at the top end",
+    summary:
+      "Six MNIST classifiers from a sequential C baseline through CUDA, Tensor Cores, OpenACC, and cuBLAS — with the negative results kept, including a naive CUDA port slower than the CPU.",
+    href: "https://github.com/Mustafaiqbal2/Neural-Network_Acceleration",
+    icon: Cpu
+  },
+  {
+    title: "CUDA Canny optimization",
+    signal: "~48× reported speedup",
+    summary:
+      "Optimized CUDA Canny edge detection with kernel fusion, shared memory, and minimized host–device transfers.",
+    href: "https://github.com/Mustafaiqbal2/Canny_optimization",
+    icon: Cpu
+  },
+  {
     title: "Custom compiler",
     signal: "Compiler internals",
     summary:
-      "A Java compiler front end covering lexical analysis, symbol tables, LL(1) parsing, AST construction, and error recovery.",
+      "A Java compiler front end — lexical analysis, symbol tables, LL(1) parsing, AST construction, and error recovery.",
     href: "https://github.com/Mustafaiqbal2/Custom-Compiler",
     icon: Cpu
   }
 ];
 
-/* Honest platform-contribution note, shown on About/Work — not a solo case study. */
+/* Platform-contribution note, shown on Work — team product, not a solo case study. */
 export const platformContribution = {
-  title: "Production multi-tenant agentic AI SaaS",
-  role: "Contributing full-stack / AI engineer on a ~20-person team",
+  title: "Simplabots — platform work",
+  role: "Outsourced agent builder, with contributions across the platform itself",
   summary:
-    "Contributed across a production multi-tenant AI SaaS platform hosting a fleet of purpose-built agents on a shared Next.js / Prisma / AWS backbone — multi-tenant billing and credit accounting, multi-model routing across OpenAI, Anthropic, and Google, an AWS async pipeline (S3 · SES · SQS), and Pinecone vector search. Several of my standalone agent prototypes map to agents on that platform.",
-  note: "Team product — described by capability and my role, without naming the private product or its owner."
+    "Simplabots sells AI agents to small businesses. I was brought in to build agents — Emmy and Revvy are mine end to end, Adzee and Dominic were built as standalone products — and I contributed features across the ~20-person team's production platform: billing credits, model routing, retrieval, background queues, and object storage on a shared Next.js / Prisma / AWS backbone.",
+  note: "The agents I own are on my GitHub; the platform is the team's — simplabots.com."
 };

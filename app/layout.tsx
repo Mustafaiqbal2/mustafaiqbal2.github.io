@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     template: "%s — Mustafa Iqbal"
   },
   description:
-    "Software engineer and founder in Islamabad. AI agents for Simplabots, a search platform for a cable manufacturer, and ArchPHI — a company that reads architects' drawings and writes bills of quantities.",
+    "Software engineer and founder in Islamabad. Building ArchPHI — the operating system for architectural drawings — with production AI agents and a factory site on page one behind it.",
   alternates: { canonical: "/" },
   keywords: [
     "Mustafa Iqbal",
@@ -44,14 +44,14 @@ export const metadata: Metadata = {
     url: siteUrl,
     title: "Mustafa Iqbal — Software Engineer & Founder",
     description:
-      "AI agents for Simplabots, a search platform for a cable manufacturer, and ArchPHI — a company that reads architects' drawings and writes bills of quantities.",
+      "Building ArchPHI — the operating system for architectural drawings — with production AI agents and a factory site on page one behind it.",
     siteName: "Mustafa Iqbal",
     images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Mustafa Iqbal — Software Engineer & Founder" }]
   },
   twitter: {
     card: "summary_large_image",
     title: "Mustafa Iqbal — Software Engineer & Founder",
-    description: "AI agents for Simplabots, a search platform for a cable manufacturer, and ArchPHI.",
+    description: "Building ArchPHI — the operating system for architectural drawings.",
     images: ["/og-image.png"]
   },
   icons: {
