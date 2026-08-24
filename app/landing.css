@@ -1009,13 +1009,90 @@ body:has(.lv) .site-footer {
   background-size: 26px 26px;
   padding: clamp(36px, 5vw, 64px);
 }
+.lv-about__stack {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 .lv-about__me {
-  width: 100%;
-  max-width: 440px;
-  margin: 0 auto;
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   color: #1e1b16;
+  opacity: 0; /* funny sketch plays only in the live act; static shows the real one */
 }
 .lv-about__me svg {
+  width: 100%;
+  max-width: 440px;
+  height: auto;
+  display: block;
+}
+.lv-about__me2 {
+  color: #1e1b16;
+}
+.lv-about__me2 svg {
+  /* explicit height: an inline SVG with auto dims has no intrinsic box and
+     collapses the whole portrait stack */
+  height: min(62vh, 560px);
+  width: auto;
+  max-width: 100%;
+  display: block;
+  margin: 0 auto;
+}
+.sk2-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0; /* final state: fully drawn */
+}
+
+/* the asteroid act props: hidden until the live timeline flies them */
+.lv-ast {
+  position: absolute;
+  left: -240px;
+  top: 24%;
+  width: 210px;
+  color: #1e1b16;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 3;
+}
+.lv-ast svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.lv-impact {
+  position: absolute;
+  left: 14%;
+  top: 30%;
+  width: 240px;
+  color: #1e1b16;
+  opacity: 0;
+  pointer-events: none;
+  z-index: 4;
+}
+.lv-impact svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.lv-debris {
+  position: absolute;
+  left: 22%;
+  top: 40%;
+  z-index: 4;
+  pointer-events: none;
+}
+.lv-debris span {
+  position: absolute;
+  width: 22px;
+  color: #1e1b16;
+  opacity: 0;
+  display: block;
+}
+.lv-debris span svg {
   width: 100%;
   height: auto;
   display: block;
@@ -1050,6 +1127,30 @@ body:has(.lv) .site-footer {
   top: 2%;
   rotate: -4deg;
   width: 110px;
+}
+.lv-doodle--d {
+  left: 40%;
+  top: 4%;
+  rotate: 8deg;
+  width: 44px;
+}
+.lv-doodle--e {
+  left: 3%;
+  bottom: 42%;
+  rotate: -10deg;
+  width: 34px;
+}
+.lv-doodle--f {
+  right: 3%;
+  top: 38%;
+  rotate: 14deg;
+  width: 64px;
+}
+.lv-doodle--g {
+  right: 30%;
+  bottom: 6%;
+  rotate: 5deg;
+  width: 38px;
 }
 
 .lv-about__list {

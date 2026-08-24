@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { BlackHole } from "@/components/BlackHole";
 import { GalaxyDoodleA, GalaxyDoodleB, ShootingStarDoodle, SketchPortrait } from "@/components/SketchPortrait";
+import { SketchPortraitReal } from "@/components/SketchPortraitReal";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -46,6 +47,50 @@ const OrbitMark = () => (
     <circle cx="60" cy="60" r="33" strokeWidth="1" opacity="0.35" />
   </svg>
 );
+
+/* ---- the asteroid act (storyboard-sketch style, ink on paper) ---- */
+
+const AsteroidDoodle = () => (
+  <svg viewBox="0 0 220 120" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {/* speed lines trailing left */}
+    <path d="M4 44 H74" strokeWidth="1.6" opacity="0.7" />
+    <path d="M14 62 H88" strokeWidth="1.6" opacity="0.5" />
+    <path d="M2 80 H64" strokeWidth="1.6" opacity="0.6" />
+    {/* the rock */}
+    <path d="M132 22 L162 18 L190 34 L202 58 L192 84 L166 98 L138 94 L120 74 L118 46 Z" />
+    {/* craters + hatching */}
+    <ellipse cx="152" cy="46" rx="9" ry="6" strokeWidth="1.4" />
+    <ellipse cx="176" cy="68" rx="7" ry="5" strokeWidth="1.4" />
+    <circle cx="140" cy="72" r="4" strokeWidth="1.4" />
+    <path d="M128 84 L138 74 M146 90 L158 78 M168 90 L178 80" strokeWidth="1.2" opacity="0.8" />
+    {/* motion nicks */}
+    <path d="M112 30 L100 26 M110 96 L98 102" strokeWidth="1.4" opacity="0.7" />
+  </svg>
+);
+
+const ImpactBurst = () => (
+  <svg viewBox="0 0 240 240" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <path d="M120 14 L128 66 M120 226 L114 176 M14 120 L64 116 M226 120 L178 124 M45 45 L84 82 M195 45 L158 80 M45 195 L82 160 M195 195 L156 158" />
+    <path d="M120 42 L134 90 L182 92 L146 122 L166 170 L120 144 L76 172 L92 122 L58 94 L106 92 Z" strokeWidth="2" />
+    <path d="M104 60 L110 76 M150 200 L144 182 M60 130 L78 128" strokeWidth="1.4" opacity="0.7" />
+  </svg>
+);
+
+const DebrisBit = ({ variant = 0 }: { variant?: number }) => (
+  <svg viewBox="0 0 30 30" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    {variant === 0 ? <path d="M6 12 L16 4 L26 12 L20 24 L8 22 Z" /> : null}
+    {variant === 1 ? <path d="M8 6 L24 10 L20 24 L6 18 Z" /> : null}
+    {variant === 2 ? <path d="M14 4 L26 14 L16 26 L4 16 Z M12 14 L18 16" /> : null}
+  </svg>
+);
+
+const SparkleDoodle = () => (
+  <svg viewBox="0 0 60 60" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <path d="M30 8 V24 M30 36 V52 M8 30 H24 M36 30 H52" />
+    <path d="M18 18 L23 23 M42 42 L37 37 M42 18 L37 23 M18 42 L23 37" strokeWidth="1.4" opacity="0.7" />
+  </svg>
+);
+
 
 const agents = [
   {
@@ -444,7 +489,7 @@ export function Landing() {
           if (desktop) {
             section.classList.add("lv-about--live");
             const tl = gsap.timeline({
-              scrollTrigger: { trigger: section, start: "top top", end: "+=380%", pin: true, scrub: 0.8, anticipatePin: 1 }
+              scrollTrigger: { trigger: section, start: "top top", end: "+=540%", pin: true, scrub: 0.8, anticipatePin: 1, invalidateOnRefresh: true }
             });
             tl.fromTo(q(".lv-about__title"), { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.4 }, 0)
               .to(q(".lv-about__title"), { opacity: 0, y: -40, scale: 0.96, duration: 0.3 }, 0.55)
@@ -466,6 +511,60 @@ export function Landing() {
                 2.85
               )
               .from(q(".lv-about__list li"), { y: 30, opacity: 0, stagger: 0.12, duration: 0.35 }, 3.6);
+            /* the asteroid act: fly in (stepped, storyboard) -> impact -> the
+               funny sketch scatters as pencil strokes -> the real one draws */
+            tl.set(q(".lv-about__me"), { opacity: 1 }, 0)
+              .set(q(".lv-about__me2"), { opacity: 0 }, 0)
+              .fromTo(
+                q(".lv-ast"),
+                { x: 0, y: 0, rotation: -18, opacity: 1 },
+                {
+                  x: () => (q(".lv-about__sketch")[0] as HTMLElement).clientWidth * 0.28 + 240,
+                  y: () => (q(".lv-about__sketch")[0] as HTMLElement).clientHeight * 0.12,
+                  rotation: 200,
+                  ease: "steps(11)",
+                  duration: 0.6
+                },
+                4.0
+              )
+              .to(q(".lv-ast"), { opacity: 0, duration: 0.04 }, 4.6)
+              .fromTo(q(".lv-impact"), { scale: 0.2, opacity: 0 }, { scale: 1, opacity: 1, ease: "back.out(2)", duration: 0.12 }, 4.58)
+              .to(q(".lv-impact"), { opacity: 0, scale: 1.3, duration: 0.25 }, 4.85)
+              .to(q(".lv-about__sketch"), { x: 5, y: -4, duration: 0.03, repeat: 9, yoyo: true, ease: "none" }, 4.6)
+              .set(q(".lv-about__sketch"), { x: 0, y: 0 }, 4.95)
+              .to(
+                q(".lv-about__me .sk-draw"),
+                {
+                  x: (i: number) => 300 * Math.cos(i * 2.399),
+                  y: (i: number) => -80 - 200 * Math.abs(Math.sin(i * 2.399)),
+                  rotation: (i: number) => (i % 2 ? 95 : -75),
+                  opacity: 0,
+                  duration: 0.5,
+                  stagger: 0.0015,
+                  ease: "power2.out"
+                },
+                4.62
+              )
+              .fromTo(q(".lv-debris span"), { x: 0, y: 0, opacity: 0, rotation: 0 }, { opacity: 1, duration: 0.04, stagger: 0.008 }, 4.6)
+              .to(
+                q(".lv-debris span"),
+                {
+                  x: (i: number) => 230 * Math.cos(i * 0.897 + 0.4),
+                  y: (i: number) => -170 * Math.abs(Math.sin(i * 0.897)) + 70,
+                  rotation: (i: number) => (i % 2 ? 170 : -150),
+                  opacity: 0,
+                  duration: 0.6,
+                  ease: "power1.out"
+                },
+                4.66
+              )
+              .fromTo(q(".lv-about__me2"), { opacity: 0 }, { opacity: 1, duration: 0.18 }, 4.8)
+              .fromTo(
+                q(".lv-about__me2 .sk2-draw"),
+                { strokeDashoffset: 1 },
+                { strokeDashoffset: 0, stagger: 0.0012, duration: 0.5, ease: "none" },
+                4.86
+              );
           } else {
             gsap.from(q(".lv-about__title"), {
               y: 40,
@@ -479,11 +578,11 @@ export function Landing() {
             });
             const sk = q(".lv-about__sketch")[0];
             gsap.fromTo(
-              q(".lv-about__sketch .sk-draw"),
+              q(".lv-about__sketch .sk-draw, .lv-about__sketch .sk2-draw"),
               { strokeDashoffset: 1 },
               {
                 strokeDashoffset: 0,
-                stagger: 0.008,
+                stagger: 0.004,
                 ease: "none",
                 scrollTrigger: { trigger: sk, start: "top 80%", end: "top 20%", scrub: 0.8 }
               }
@@ -754,8 +853,28 @@ export function Landing() {
             <p className="lv-about__love lv-mono">I love space</p>
           </div>
           <div className="lv-about__sketch">
-            <div className="lv-about__me">
-              <SketchPortrait />
+            <div className="lv-about__stack">
+              <div className="lv-about__me2">
+                <SketchPortraitReal />
+              </div>
+              <div className="lv-about__me">
+                <SketchPortrait />
+              </div>
+            </div>
+            <div className="lv-ast" aria-hidden="true">
+              <AsteroidDoodle />
+            </div>
+            <div className="lv-impact" aria-hidden="true">
+              <ImpactBurst />
+            </div>
+            <div className="lv-debris" aria-hidden="true">
+              <span><DebrisBit variant={0} /></span>
+              <span><DebrisBit variant={1} /></span>
+              <span><DebrisBit variant={2} /></span>
+              <span><DebrisBit variant={1} /></span>
+              <span><DebrisBit variant={0} /></span>
+              <span><DebrisBit variant={2} /></span>
+              <span><DebrisBit variant={1} /></span>
             </div>
             <ul className="lv-about__list">
               <li>
@@ -779,6 +898,18 @@ export function Landing() {
             </span>
             <span className="lv-doodle lv-doodle--c" aria-hidden="true">
               <ShootingStarDoodle />
+            </span>
+            <span className="lv-doodle lv-doodle--d" aria-hidden="true">
+              <SparkleDoodle />
+            </span>
+            <span className="lv-doodle lv-doodle--e" aria-hidden="true">
+              <SparkleDoodle />
+            </span>
+            <span className="lv-doodle lv-doodle--f" aria-hidden="true">
+              <GalaxyDoodleA />
+            </span>
+            <span className="lv-doodle lv-doodle--g" aria-hidden="true">
+              <SparkleDoodle />
             </span>
           </div>
         </div>
