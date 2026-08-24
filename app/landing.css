@@ -24,41 +24,18 @@
   overflow-x: clip;
 }
 
-/* ---------- site chrome on the landing route ---------- */
+/* ---------- site chrome on the landing route ----------
+   html.lv-page is added by the landing's pre-paint script (html-level,
+   hydration-safe). Deliberately NOT body:has(.lv): any :has() rule puts
+   the whole document under :has-invalidation, which taxes every one of
+   GSAP's per-frame inline-style writes. Without JS the class never
+   lands and the footer shows — a fine fallback. */
 
-body:has(.lv) {
+html.lv-page body {
   background: var(--lv-bone, #f2f2ee);
 }
-body:has(.lv) .site-header,
-body:has(.lv) .site-header[data-scrolled="true"] {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  background: transparent;
-  border-bottom: 0;
-  box-shadow: none;
-  backdrop-filter: none;
-}
-body:has(.lv) .site-header__progress,
-body:has(.lv) .theme-toggle,
-body:has(.lv) .brand__role {
-  display: none;
-}
-body:has(.lv) .brand__name,
-body:has(.lv) .nav-desktop a,
-body:has(.lv) .nav-toggle {
-  color: #0b0c12;
-}
-body:has(.lv) .nav-desktop a {
-  font-family: var(--font-mono), Consolas, monospace;
-  font-size: 12px;
-  font-weight: 500;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-body:has(.lv) .cta-band,
-body:has(.lv) .site-footer {
+html.lv-page .cta-band,
+html.lv-page .site-footer {
   display: none;
 }
 
@@ -70,6 +47,16 @@ body:has(.lv) .site-footer {
 .lv h2,
 .lv h3 {
   color: inherit;
+}
+
+/* Every section is the containing block for its own decorative marks.
+   Without this, orbs/streaks inside unpositioned sections resolve
+   against the viewport and pile into the hero until ScrollTrigger's
+   pin-spacers boot — the reload "ghost planet" flash. Descendant (not
+   child) combinator on purpose: pinned sections get reparented into
+   div.pin-spacer at runtime. */
+.lv section {
+  position: relative;
 }
 
 .lv-mono {
@@ -332,6 +319,10 @@ body:has(.lv) .site-footer {
   display: flex;
   width: max-content;
   animation: lv-marquee 28s linear infinite;
+  animation-play-state: paused; /* runs only on screen (.lv-live) */
+}
+.lv-ticker.lv-live .lv-ticker__track {
+  animation-play-state: running;
 }
 .lv-ticker__chunk {
   white-space: nowrap;
@@ -616,7 +607,11 @@ body:has(.lv) .site-footer {
 .lv-flow__pulse {
   offset-path: path("M250 195 L327.5 61 L482.5 61 L560 195 L482.5 329 L327.5 329 Z");
   animation: lv-orbit 9s linear infinite;
+  animation-play-state: paused; /* runs only on screen (.lv-live) */
   filter: drop-shadow(0 0 4px rgba(109, 40, 217, 0.8));
+}
+.lv-flow.lv-live .lv-flow__pulse {
+  animation-play-state: running;
 }
 @keyframes lv-orbit {
   from {
@@ -812,8 +807,8 @@ body:has(.lv) .site-footer {
   animation: lv-orbdash 5.5s linear infinite;
   animation-play-state: paused;
 }
-.lv-orb--live .lv-orb__dash,
-.lv-orb--live .lv-orb__dot {
+.lv-live .lv-orb__dash,
+.lv-live .lv-orb__dot {
   animation-play-state: running;
 }
 @keyframes lv-orbdash {
@@ -833,6 +828,10 @@ body:has(.lv) .site-footer {
   opacity: 0;
   transform: rotate(-24deg);
   animation: lv-shoot 4.5s linear infinite;
+  animation-play-state: paused; /* runs only on screen (.lv-live) */
+}
+.lv-shoot.lv-live {
+  animation-play-state: running;
 }
 /* on light ground, shooting stars are ink */
 .lv-shoot--ink {

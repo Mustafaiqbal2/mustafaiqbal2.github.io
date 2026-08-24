@@ -6,11 +6,12 @@ import "./landing.css";
 // releases the gate even if the animation runtime fails to boot.
 const introGate = `
 try {
+  document.documentElement.classList.add("lv-page");
   if ("scrollRestoration" in history) history.scrollRestoration = "manual";
   window.scrollTo(0, 0);
   if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     document.documentElement.classList.add("lv-intro");
-    window.setTimeout(function () { document.documentElement.classList.remove("lv-intro"); }, 2500);
+    window.setTimeout(function () { document.documentElement.classList.remove("lv-intro"); }, 1800);
   }
 } catch (e) {}
 `;

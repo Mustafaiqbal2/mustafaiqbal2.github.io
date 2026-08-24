@@ -106,7 +106,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         var pref = "system";
         try { pref = localStorage.getItem("theme-preference") || "system"; } catch (e) {}
         updateControls(pref);
-        [updateActiveNav, setupHeaderState, setupReveals, setupHero, setupMobileNav, setupLightbox, setupCopyButtons].forEach(function (fn) {
+        [updateActiveNav, setupReveals, setupHero, setupMobileNav, setupLightbox, setupCopyButtons].forEach(function (fn) {
           try { fn(); } catch (e) {}
         });
         var media = window.matchMedia("(prefers-color-scheme: dark)");
@@ -139,24 +139,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         });
       }
 
-      function setupHeaderState() {
-        // Hydration-safe: all mutations land on <html> (suppressed), never on
-        // React-rendered nodes.
-        var doc = document.documentElement;
-        var ticking = false;
-        function update() {
-          var y = window.scrollY;
-          doc.setAttribute("data-scrolled", y > 12 ? "true" : "false");
-          var max = Math.max(doc.scrollHeight - window.innerHeight, 1);
-          doc.style.setProperty("--scroll-p", Math.min(y / max, 1).toFixed(4));
-          ticking = false;
-        }
-        update();
-        window.addEventListener("scroll", function () {
-          if (!ticking) { ticking = true; window.requestAnimationFrame(update); }
-        }, { passive: true });
-        window.addEventListener("resize", update);
-      }
+      // setupHeaderState is gone with the header: it wrote --scroll-p onto
+      // <html> every scroll frame, forcing a full-document style recalc per
+      // frame for a progress bar that no longer exists.
 
       function prefersReduced() {
         return window.matchMedia("(prefers-reduced-motion: reduce)").matches;

@@ -330,8 +330,12 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     }
   }
 
+  // weak hardware renders at 1x: half the pixels through the whole
+  // stroke + bloom pipeline, invisible under the edge feather anyway
+  const dprLimit = (navigator.hardwareConcurrency || 8) <= 4 ? 1 : DPR_CAP;
+
   function resize(cssSize: number): void {
-    const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
+    const dpr = Math.min(window.devicePixelRatio || 1, dprLimit);
     const px = Math.min(MAX_RENDER_PX, Math.max(64, Math.round(cssSize * dpr)));
     if (px === W) return;
     W = px;
@@ -698,7 +702,10 @@ export function BlackHole({ className }: { className?: string }) {
       const w = entries[0]?.contentRect.width ?? root.clientWidth;
       if (w > 0) {
         engine.resize(w);
-        if (reduced) engine.drawFrame(0, 0.35);
+        // Pre-rasterize the full stroke+bloom pipeline once, off-screen,
+        // during boot — otherwise the first on-screen frame pays a
+        // ~200ms cold raster right in the middle of the About scroll.
+        engine.drawFrame(0, 0.35);
       }
     });
     ro.observe(root);

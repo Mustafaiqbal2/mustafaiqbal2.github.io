@@ -343,28 +343,57 @@ export function Landing() {
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 
     // Lenis smooths the discrete wheel notches into continuous motion — the
-    // single biggest "butter" lever. Skipped under reduced motion.
+    // single biggest "butter" lever on capable hardware. But it also makes
+    // scrolling itself depend on the main thread, which on a weak machine
+    // inverts into the worst possible feel: the page freezes mid-wheel.
+    // So it is skipped up front on low-end devices, and a watchdog sheds it
+    // at runtime if sustained frame times say this machine can't afford it —
+    // native scroll + numeric scrub keeps the whole story working either way.
     let lenis: Lenis | null = null;
     let lenisRaf: ((time: number) => void) | null = null;
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    const navi = navigator as Navigator & { deviceMemory?: number };
+    const weakMachine =
+      (navi.hardwareConcurrency || 8) <= 4 || (navi.deviceMemory !== undefined && navi.deviceMemory <= 4);
+    const dropLenis = () => {
+      if (!lenis) return;
+      if (lenisRaf) gsap.ticker.remove(lenisRaf);
+      lenis.destroy();
+      lenis = null;
+      gsap.ticker.lagSmoothing(500, 33); // back to GSAP's default
+    };
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches && !weakMachine) {
       lenis = new Lenis({ duration: 1.05, smoothWheel: true });
       lenis.on("scroll", ScrollTrigger.update);
+      let lastMs = 0;
+      let bad = 0;
       lenisRaf = (time: number) => {
-        if (lenis) lenis.raf(time * 1000);
+        if (!lenis) return;
+        lenis.raf(time * 1000);
+        // sustained-jank watchdog: isolated hitches (first-paint of a heavy
+        // scene) decay away; a machine that can't hold ~30fps for a couple
+        // of seconds straight sheds Lenis for native scroll.
+        const ms = time * 1000;
+        if (lastMs) {
+          bad = ms - lastMs > 34 ? bad + 1 : Math.max(0, bad - 2);
+          if (bad >= 45) dropLenis();
+        }
+        lastMs = ms;
       };
       gsap.ticker.add(lenisRaf);
       gsap.ticker.lagSmoothing(0);
     }
 
-    // The celestial marks' dash animations invalidate paint every frame;
-    // only run them while their mark is actually on screen.
-    const orbIO = new IntersectionObserver(
+    // Infinite decorative animations (orb dashes, shooting stars, the
+    // ticker marquee, the diagram pulse) cost paint/composite work every
+    // frame, page-wide — the kind of drain that only shows on battery or
+    // weak hardware. Run each only while it is actually on screen.
+    const liveIO = new IntersectionObserver(
       (entries) => {
-        entries.forEach((en) => (en.target as HTMLElement).classList.toggle("lv-orb--live", en.isIntersecting));
+        entries.forEach((en) => en.target.classList.toggle("lv-live", en.isIntersecting));
       },
       { rootMargin: "15% 0px" }
     );
-    el.querySelectorAll(".lv-orb").forEach((o) => orbIO.observe(o));
+    el.querySelectorAll(".lv-orb, .lv-shoot, .lv-ticker, .lv-flow").forEach((o) => liveIO.observe(o));
 
     const refreshState = { introDone: false, queued: false };
     const mm = gsap.matchMedia(el);
@@ -731,7 +760,7 @@ export function Landing() {
 
     return () => {
       window.removeEventListener("load", onLoad);
-      orbIO.disconnect();
+      liveIO.disconnect();
       if (lenisRaf) gsap.ticker.remove(lenisRaf);
       if (lenis) lenis.destroy();
       mm.revert();
