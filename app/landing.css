@@ -167,7 +167,7 @@ body:has(.lv) .site-footer {
 
 /* ---------- intro gate (only while JS+motion boot) ---------- */
 
-.lv-intro .lv-hero__status,
+.lv-intro .lv-hero__top,
 .lv-intro .lv-hero__name .lv-line > span,
 .lv-intro .lv-hero__foot {
   opacity: 0;
@@ -183,8 +183,67 @@ body:has(.lv) .site-footer {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: calc(72px + var(--lv-pad)) var(--lv-pad) var(--lv-pad);
+  padding: clamp(22px, 3.4vh, 40px) var(--lv-pad) var(--lv-pad);
   position: relative;
+}
+
+.lv-hero__top {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.lv-topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.lv-topbar__brand {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--lv-ink);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+}
+.lv-topbar__brand i {
+  display: inline-block;
+  width: 8px;
+  height: 14px;
+  background: var(--lv-accent);
+  animation: lv-blink 1.15s steps(1) infinite;
+  transform: translateY(1px);
+}
+@keyframes lv-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+.lv-topbar__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--lv-ink);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 2px;
+}
+.lv-topbar__link:hover {
+  border-color: var(--lv-accent);
+  color: var(--lv-accent);
+}
+.lv-topbar__link svg {
+  width: 12px;
+  height: 12px;
 }
 
 .lv-hero__status {
@@ -746,10 +805,16 @@ body:has(.lv) .site-footer {
 .lv-orb__dash {
   stroke-dasharray: 68 32;
   animation: lv-orbdash 7s linear infinite;
+  animation-play-state: paused; /* dash animation repaints; run only on screen */
 }
 .lv-orb__dot {
   stroke-dasharray: 4 96;
   animation: lv-orbdash 5.5s linear infinite;
+  animation-play-state: paused;
+}
+.lv-orb--live .lv-orb__dash,
+.lv-orb--live .lv-orb__dot {
+  animation-play-state: running;
 }
 @keyframes lv-orbdash {
   to {

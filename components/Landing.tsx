@@ -3,6 +3,7 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import Lenis from "lenis";
 import { BlackHole } from "@/components/BlackHole";
 import { GalaxyDoodleA, GalaxyDoodleB, ShootingStarDoodle, SketchPortrait } from "@/components/SketchPortrait";
 
@@ -340,6 +341,31 @@ export function Landing() {
     if (!el) return;
 
     if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+
+    // Lenis smooths the discrete wheel notches into continuous motion — the
+    // single biggest "butter" lever. Skipped under reduced motion.
+    let lenis: Lenis | null = null;
+    let lenisRaf: ((time: number) => void) | null = null;
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      lenis = new Lenis({ duration: 1.05, smoothWheel: true });
+      lenis.on("scroll", ScrollTrigger.update);
+      lenisRaf = (time: number) => {
+        if (lenis) lenis.raf(time * 1000);
+      };
+      gsap.ticker.add(lenisRaf);
+      gsap.ticker.lagSmoothing(0);
+    }
+
+    // The celestial marks' dash animations invalidate paint every frame;
+    // only run them while their mark is actually on screen.
+    const orbIO = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((en) => (en.target as HTMLElement).classList.toggle("lv-orb--live", en.isIntersecting));
+      },
+      { rootMargin: "15% 0px" }
+    );
+    el.querySelectorAll(".lv-orb").forEach((o) => orbIO.observe(o));
+
     const refreshState = { introDone: false, queued: false };
     const mm = gsap.matchMedia(el);
 
@@ -357,7 +383,7 @@ export function Landing() {
         intro
           .from(q(".lv-hero__name-1 > span"), { xPercent: -60, opacity: 0, duration: 1.1 }, 0.1)
           .from(q(".lv-hero__name-2 > span"), { xPercent: 60, opacity: 0, duration: 1.1 }, 0.18)
-          .from(q(".lv-hero__status, .lv-hero__foot"), { y: 28, opacity: 0, duration: 0.8, stagger: 0.1 }, 0.55);
+          .from(q(".lv-hero__top, .lv-hero__foot"), { y: 28, opacity: 0, duration: 0.8, stagger: 0.1 }, 0.55);
         // Hold the intro until fonts are ready (capped) so the giant name
         // rasterizes once, then release the pre-paint gate and play.
         const startIntro = () => {
@@ -402,7 +428,7 @@ export function Landing() {
           const section = q(".lv-arch")[0];
           const tl = gsap.timeline({
             scrollTrigger: desktop
-              ? { trigger: section, start: "top top", end: "+=200%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true }
+              ? { trigger: section, start: "top top", end: "+=240%", pin: true, scrub: 0.7, anticipatePin: 1, fastScrollEnd: true }
               : { trigger: section, start: "top 70%", end: "bottom 60%", scrub: 0.8 }
           });
           tl.from(q(".lv-arch .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
@@ -441,7 +467,7 @@ export function Landing() {
                 start: "top top",
                 end: "+=260%",
                 pin: true,
-                scrub: 1,
+                scrub: 0.7,
                 fastScrollEnd: true,
                 anticipatePin: 1,
                 invalidateOnRefresh: true
@@ -469,7 +495,7 @@ export function Landing() {
           const impr = { v: 46200 };
           const tl = gsap.timeline({
             scrollTrigger: desktop
-              ? { trigger: section, start: "top top", end: "+=200%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true }
+              ? { trigger: section, start: "top top", end: "+=200%", pin: true, scrub: 0.7, anticipatePin: 1, fastScrollEnd: true }
               : { trigger: section, start: "top 70%", end: "bottom 60%", scrub: 0.8 }
           });
           tl.from(q(".lv-pilone .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
@@ -514,7 +540,7 @@ export function Landing() {
           const section = q(".lv-talent")[0];
           const tl = gsap.timeline({
             scrollTrigger: desktop
-              ? { trigger: section, start: "top top", end: "+=220%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true }
+              ? { trigger: section, start: "top top", end: "+=320%", pin: true, scrub: 0.7, anticipatePin: 1, fastScrollEnd: true }
               : { trigger: section, start: "top 72%", end: "bottom 55%", scrub: 0.8 }
           });
           tl.from(q(".lv-talent .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
@@ -522,15 +548,17 @@ export function Landing() {
             .from(q(".lv-flow__node"), { opacity: 0, scale: 0.92, transformOrigin: "center", stagger: 0.07, duration: 0.3 }, 0.25);
           const shafts = q(".lv-flow__edge");
           const heads = q(".lv-flow__head");
-          let at = 0.85;
+          // one continuous pen: each shaft draws long, its head follows
+          // immediately, the next edge starts as the head lands
+          let at = 1.0;
           shafts.forEach((shaft, i) => {
-            tl.fromTo(shaft, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.16, ease: "none" }, at);
-            if (heads[i]) tl.fromTo(heads[i], { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.07, ease: "none" }, at + 0.14);
-            at += 0.2;
+            tl.fromTo(shaft, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.34, ease: "none" }, at);
+            if (heads[i]) tl.fromTo(heads[i], { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.12, ease: "none" }, at + 0.32);
+            at += 0.42;
           });
-          tl.from(q(".lv-flow__labels"), { opacity: 0, duration: 0.25 }, at)
-            .fromTo(q(".lv-flow__pulse"), { opacity: 0 }, { opacity: 1, duration: 0.15 }, at + 0.15)
-            .from(q(".lv-talent .lv-caption"), { opacity: 0, duration: 0.3 }, at + 0.15);
+          tl.from(q(".lv-flow__labels"), { opacity: 0, duration: 0.3 }, at)
+            .fromTo(q(".lv-flow__pulse"), { opacity: 0 }, { opacity: 1, duration: 0.2 }, at + 0.2)
+            .from(q(".lv-talent .lv-caption"), { opacity: 0, duration: 0.3 }, at + 0.2);
         }
 
         });
@@ -543,7 +571,7 @@ export function Landing() {
           if (desktop) {
             section.classList.add("lv-about--live");
             const tl = gsap.timeline({
-              scrollTrigger: { trigger: section, start: "top top", end: "+=540%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true, invalidateOnRefresh: true }
+              scrollTrigger: { trigger: section, start: "top top", end: "+=540%", pin: true, scrub: 0.7, anticipatePin: 1, fastScrollEnd: true, invalidateOnRefresh: true }
             });
             tl.fromTo(q(".lv-about__title"), { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.4 }, 0)
               .to(q(".lv-about__title"), { opacity: 0, y: -40, scale: 0.96, duration: 0.3 }, 0.55)
@@ -703,6 +731,9 @@ export function Landing() {
 
     return () => {
       window.removeEventListener("load", onLoad);
+      orbIO.disconnect();
+      if (lenisRaf) gsap.ticker.remove(lenisRaf);
+      if (lenis) lenis.destroy();
       mm.revert();
     };
   }, []);
@@ -713,9 +744,17 @@ export function Landing() {
       <section className="lv-hero" aria-label="Intro">
         <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ right: "8%", top: "30%" }} aria-hidden="true"><OrbitMark /></span>
         <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ right: "22%", top: "58%", opacity: 0.3 }} aria-hidden="true"><PlanetMark /></span>
-        <div className="lv-hero__status lv-mono">
-          <span>Software engineer &amp; founder</span>
-          <span>Pakistan</span>
+        <div className="lv-hero__top">
+          <div className="lv-topbar lv-mono">
+            <a className="lv-topbar__brand" href="/">&gt;Mustafa<i aria-hidden="true" /></a>
+            <a className="lv-topbar__link" href="/work/">
+              Work <ArrowUpRight />
+            </a>
+          </div>
+          <div className="lv-hero__status lv-mono">
+            <span>Software engineer &amp; founder</span>
+            <span>Pakistan</span>
+          </div>
         </div>
 
         <h1 className="lv-hero__name">
