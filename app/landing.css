@@ -1,0 +1,672 @@
+/* ============================================================
+   Landing v2 — poster / kinetic type
+   Scoped: everything lives under .lv, plus body:has(.lv) chrome
+   overrides. Authored in FINAL visible state; GSAP applies
+   from-states at runtime (so no-JS and reduced-motion get the
+   complete page).
+   ============================================================ */
+
+.lv {
+  --lv-bone: #f2f2ee;
+  --lv-ink: #0e0e0e;
+  --lv-orange: #ff4a1c;
+  --lv-grey: #6e6e68;
+  --lv-grey-light: #8c8c86;
+  --lv-pad: clamp(20px, 4vw, 56px);
+
+  background: var(--lv-bone);
+  color: var(--lv-ink);
+  font-family: var(--font-sans), "Helvetica Neue", Arial, sans-serif;
+  overflow-x: clip;
+}
+
+/* ---------- site chrome on the landing route ---------- */
+
+body:has(.lv) {
+  background: var(--lv-bone, #f2f2ee);
+}
+body:has(.lv) .site-header,
+body:has(.lv) .site-header[data-scrolled="true"] {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: transparent;
+  border-bottom: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+body:has(.lv) .site-header__progress,
+body:has(.lv) .theme-toggle,
+body:has(.lv) .brand__role {
+  display: none;
+}
+body:has(.lv) .brand__name,
+body:has(.lv) .nav-desktop a,
+body:has(.lv) .nav-toggle {
+  color: #0e0e0e;
+}
+body:has(.lv) .nav-desktop a {
+  font-family: var(--font-mono), Consolas, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+body:has(.lv) .cta-band,
+body:has(.lv) .site-footer {
+  display: none;
+}
+
+/* ---------- shared primitives ---------- */
+
+/* the legacy global stylesheet pins heading colors to the old theme's
+   ink; landing sections color by context (bone-on-ink etc.) */
+.lv h1,
+.lv h2,
+.lv h3 {
+  color: inherit;
+}
+
+.lv-mono {
+  font-family: var(--font-mono), Consolas, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.lv-eyebrow {
+  font-family: var(--font-mono), Consolas, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lv-orange);
+}
+
+.lv-display {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  text-wrap: balance;
+}
+
+.lv-line {
+  display: block;
+  overflow: hidden;
+}
+.lv-line > span {
+  display: block;
+  will-change: transform;
+}
+
+.lv-body {
+  font-size: clamp(16px, 1.4vw, 19px);
+  line-height: 1.55;
+  max-width: 56ch;
+}
+
+.lv-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--font-mono), Consolas, monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  border: 2px solid currentColor;
+  padding: 12px 18px;
+  color: inherit;
+  transition: background-color 0.25s ease, color 0.25s ease;
+}
+.lv-link svg {
+  width: 14px;
+  height: 14px;
+}
+.lv--on-ink .lv-link:hover,
+.lv-section--ink .lv-link:hover {
+  background: var(--lv-bone);
+  color: var(--lv-ink);
+}
+.lv-section--bone .lv-link:hover {
+  background: var(--lv-ink);
+  color: var(--lv-bone);
+}
+.lv-link:focus-visible {
+  outline: 3px solid var(--lv-orange);
+  outline-offset: 3px;
+}
+.lv a:focus-visible {
+  outline: 3px solid var(--lv-orange);
+  outline-offset: 3px;
+}
+
+.lv-section--ink {
+  background: var(--lv-ink);
+  color: var(--lv-bone);
+}
+.lv-section--bone {
+  background: var(--lv-bone);
+  color: var(--lv-ink);
+}
+
+/* ============================================================
+   Hero
+   ============================================================ */
+
+.lv-hero {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: calc(72px + var(--lv-pad)) var(--lv-pad) var(--lv-pad);
+  position: relative;
+}
+
+.lv-hero__status {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--lv-grey);
+  flex-wrap: wrap;
+}
+
+.lv-hero__name {
+  margin: 0;
+  font-size: clamp(64px, 15.5vw, 208px);
+  font-weight: 800;
+  letter-spacing: -0.045em;
+  line-height: 0.86;
+  text-transform: uppercase;
+}
+.lv-hero__name .lv-line > span {
+  will-change: transform, opacity;
+}
+.lv-hero__name-2 {
+  color: var(--lv-ink);
+  -webkit-text-stroke: 0;
+}
+
+.lv-hero__foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+
+.lv-hero__statement {
+  margin: 0;
+  font-size: clamp(22px, 2.6vw, 34px);
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  max-width: 18em;
+}
+.lv-hero__statement b {
+  color: var(--lv-orange);
+  font-weight: inherit;
+}
+
+.lv-hero__sub {
+  margin: 14px 0 0;
+  font-size: clamp(15px, 1.3vw, 18px);
+  line-height: 1.5;
+  color: var(--lv-grey);
+  max-width: 44ch;
+}
+
+.lv-hero__cue {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--lv-grey);
+}
+.lv-hero__cue svg {
+  width: 14px;
+  height: 18px;
+  animation: lv-bob 1.8s ease-in-out infinite;
+}
+@keyframes lv-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+
+/* ============================================================
+   Ticker
+   ============================================================ */
+
+.lv-ticker {
+  background: var(--lv-orange);
+  color: var(--lv-ink);
+  border-top: 2px solid var(--lv-ink);
+  border-bottom: 2px solid var(--lv-ink);
+  overflow: hidden;
+  padding: 16px 0;
+}
+.lv-ticker__track {
+  display: flex;
+  width: max-content;
+  animation: lv-marquee 28s linear infinite;
+}
+.lv-ticker__chunk {
+  white-space: nowrap;
+  padding-right: 28px;
+  font-size: 13px;
+}
+@keyframes lv-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+/* ============================================================
+   Section scaffold (arch / pilone / talent share this)
+   ============================================================ */
+
+.lv-section {
+  padding: clamp(96px, 14vh, 160px) var(--lv-pad);
+}
+
+.lv-section__head {
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.lv-h2 {
+  margin: 20px 0 0;
+  font-size: clamp(44px, 6.4vw, 96px);
+}
+
+/* ---------- ArchPHI ---------- */
+
+.lv-arch__grid {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: clamp(32px, 5vw, 80px);
+  align-items: center;
+  min-height: 70vh;
+}
+
+.lv-arch__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: flex-start;
+}
+.lv-arch__copy .lv-body {
+  color: #b9b9b2;
+}
+.lv-arch__copy .lv-body b {
+  color: var(--lv-bone);
+  font-weight: 500;
+}
+
+.lv-arch__visual {
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) 56px minmax(0, 5fr);
+  gap: 18px;
+  align-items: center;
+}
+.lv-plan {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.lv-plan .lv-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0; /* final state: fully drawn */
+}
+.lv-arch__arrow {
+  width: 56px;
+  height: 24px;
+  color: var(--lv-orange);
+}
+
+.lv-bill {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid #33332f;
+}
+.lv-bill__row {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #33332f;
+  font-family: var(--font-mono), Consolas, monospace;
+  font-size: 12.5px;
+  letter-spacing: 0.02em;
+}
+.lv-bill__row i {
+  font-style: normal;
+  color: var(--lv-orange);
+}
+.lv-bill__row u {
+  flex: 1;
+  text-decoration: none;
+  border-bottom: 1px dotted #4a4a44;
+  transform: translateY(-4px);
+}
+.lv-bill__row em {
+  font-style: normal;
+  color: var(--lv-grey-light);
+}
+
+.lv-caption {
+  color: var(--lv-grey-light);
+  margin-top: 18px;
+}
+
+/* ---------- Fleet ---------- */
+
+.lv-fleet {
+  padding: clamp(96px, 14vh, 160px) 0;
+}
+.lv-fleet__head {
+  padding: 0 var(--lv-pad);
+  max-width: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+}
+.lv-fleet__head .lv-body {
+  color: var(--lv-grey);
+}
+.lv-fleet__viewport {
+  overflow: hidden;
+  margin-top: clamp(40px, 6vh, 72px);
+}
+.lv-fleet__track {
+  display: flex;
+  gap: clamp(20px, 2.4vw, 32px);
+  padding: 0 var(--lv-pad);
+  width: max-content;
+  will-change: transform;
+}
+
+.lv-card {
+  width: clamp(300px, 30vw, 420px);
+  border: 2px solid var(--lv-ink);
+  background: var(--lv-bone);
+  padding: clamp(22px, 2.4vw, 34px);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-height: clamp(280px, 34vh, 360px);
+}
+.lv-card__role {
+  color: var(--lv-orange);
+}
+.lv-card__name {
+  margin: 0;
+  font-size: clamp(36px, 3.6vw, 56px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 0.95;
+  text-transform: uppercase;
+}
+.lv-card__desc {
+  font-size: 15px;
+  line-height: 1.5;
+  color: #3a3a36;
+  flex: 1;
+}
+.lv-card__link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono), Consolas, monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lv-ink);
+  text-decoration: none;
+  border-bottom: 2px solid var(--lv-ink);
+  padding-bottom: 3px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+.lv-card__link:hover {
+  color: var(--lv-orange);
+  border-color: var(--lv-orange);
+}
+.lv-card__link svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* ---------- Pilone ---------- */
+
+.lv-pilone__grid {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: clamp(32px, 5vw, 80px);
+  align-items: center;
+  min-height: 70vh;
+}
+.lv-pilone__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  align-items: flex-start;
+}
+.lv-pilone__copy .lv-body {
+  color: #b9b9b2;
+}
+
+.lv-pilone__figures {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(24px, 4vh, 40px);
+}
+.lv-fig {
+  border-top: 1px solid #33332f;
+  padding-top: 18px;
+}
+.lv-fig__big {
+  font-size: clamp(88px, 11vw, 176px);
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+.lv-fig__big small {
+  font-size: 0.38em;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--lv-grey-light);
+}
+.lv-fig__mid {
+  font-size: clamp(30px, 3.6vw, 56px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.lv-fig__mid b {
+  color: var(--lv-orange);
+  font-weight: inherit;
+}
+.lv-fig__label {
+  margin-top: 10px;
+  color: var(--lv-grey-light);
+}
+
+/* ---------- TalentFlow ---------- */
+
+.lv-talent__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+  gap: clamp(32px, 5vw, 80px);
+  align-items: end;
+}
+.lv-talent__inner .lv-body {
+  color: var(--lv-grey);
+}
+
+/* ---------- How I work ---------- */
+
+.lv-how {
+  padding: clamp(120px, 18vh, 200px) var(--lv-pad);
+}
+.lv-how__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(48px, 9vh, 96px);
+}
+.lv-how__item {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 20px;
+  align-items: baseline;
+}
+.lv-how__index {
+  color: var(--lv-orange);
+}
+.lv-how__line {
+  margin: 0;
+  font-size: clamp(30px, 4.6vw, 68px);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+/* ---------- Contact ---------- */
+
+.lv-contact {
+  background: var(--lv-orange);
+  color: var(--lv-ink);
+  border-top: 2px solid var(--lv-ink);
+  padding: clamp(96px, 16vh, 180px) var(--lv-pad) 40px;
+}
+.lv-contact__inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(32px, 6vh, 64px);
+}
+.lv-contact__title {
+  margin: 0;
+  font-size: clamp(56px, 10vw, 152px);
+}
+.lv-contact__email {
+  align-self: flex-start;
+  font-size: clamp(20px, 3.2vw, 44px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--lv-ink);
+  text-decoration: none;
+  border-bottom: 3px solid var(--lv-ink);
+  padding-bottom: 6px;
+  overflow-wrap: anywhere;
+}
+.lv-contact__email:hover {
+  color: var(--lv-bone);
+  border-color: var(--lv-bone);
+}
+.lv-contact__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 36px;
+}
+.lv-contact__row a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono), Consolas, monospace;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--lv-ink);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+  padding-bottom: 3px;
+}
+.lv-contact__row a:hover {
+  border-color: var(--lv-ink);
+}
+.lv-contact__row svg {
+  width: 13px;
+  height: 13px;
+}
+.lv-contact__bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-top: 1px solid rgba(14, 14, 14, 0.35);
+  padding-top: 20px;
+  color: rgba(14, 14, 14, 0.75);
+}
+
+/* ============================================================
+   Mobile
+   ============================================================ */
+
+@media (max-width: 767px) {
+  .lv-hero__name {
+    font-size: clamp(48px, 18vw, 88px);
+  }
+  .lv-arch__grid,
+  .lv-pilone__grid,
+  .lv-talent__inner {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    gap: 40px;
+  }
+  .lv-arch__visual {
+    grid-template-columns: 1fr;
+  }
+  .lv-arch__arrow {
+    transform: rotate(90deg);
+    margin: 0 auto;
+  }
+  .lv-fleet__track {
+    flex-direction: column;
+    width: auto;
+  }
+  .lv-card {
+    width: 100%;
+    min-height: 0;
+  }
+  .lv-how__item {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+}
+
+/* ============================================================
+   Reduced motion
+   ============================================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  .lv-ticker__track {
+    animation: none;
+  }
+  .lv-hero__cue svg {
+    animation: none;
+  }
+}

@@ -1,17 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { profile, siteUrl } from "@/data/portfolio";
 import "./globals.css";
 
-const geistSans = Geist({
+const displaySans = Bricolage_Grotesque({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap"
 });
 
-const geistMono = Geist_Mono({
+const monoFont = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
   display: "swap"
@@ -20,22 +20,22 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
   title: {
-    default: "Mustafa Iqbal — AI Automation Engineer",
+    default: "Mustafa Iqbal — Software Engineer & Founder",
     template: "%s — Mustafa Iqbal"
   },
   description:
-    "I build production AI automation — OAuth integrations, background-job pipelines, and cost-aware LLM generation — that turns manual operational work into systems that run unattended. Full-stack, end to end.",
+    "Software engineer and founder in Islamabad. AI agents for Simplabots, a search platform for a cable manufacturer, and ArchPHI — a company that reads architects' drawings and writes bills of quantities.",
   alternates: { canonical: "/" },
   keywords: [
     "Mustafa Iqbal",
-    "AI automation engineer",
-    "Full-stack software engineer",
+    "Software engineer",
+    "Founder",
+    "AI agents",
     "LLM engineer",
-    "RAG engineer",
-    "background jobs",
-    "OAuth integrations",
+    "Full-stack engineer",
+    "ArchPHI",
     "Next.js",
-    "FastAPI"
+    "SEO engineering"
   ],
   authors: [{ name: profile.name, url: siteUrl }],
   creator: profile.name,
@@ -43,16 +43,16 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     url: siteUrl,
-    title: "Mustafa Iqbal — AI Automation Engineer",
+    title: "Mustafa Iqbal — Software Engineer & Founder",
     description:
-      "Production AI automation and the full-stack systems that keep it fast, cheap, and correct once real data and real users arrive.",
+      "AI agents for Simplabots, a search platform for a cable manufacturer, and ArchPHI — a company that reads architects' drawings and writes bills of quantities.",
     siteName: "Mustafa Iqbal",
-    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Mustafa Iqbal — AI Automation Engineer" }]
+    images: [{ url: "/og-image.png", width: 1200, height: 630, alt: "Mustafa Iqbal — Software Engineer & Founder" }]
   },
   twitter: {
     card: "summary_large_image",
-    title: "Mustafa Iqbal — AI Automation Engineer",
-    description: "Production AI automation and the full-stack systems that keep it honest in production.",
+    title: "Mustafa Iqbal — Software Engineer & Founder",
+    description: "AI agents for Simplabots, a search platform for a cable manufacturer, and ArchPHI.",
     images: ["/og-image.png"]
   },
   icons: {
@@ -457,7 +457,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     "@context": "https://schema.org",
     "@type": "Person",
     name: profile.name,
-    jobTitle: "AI Automation Engineer",
+    jobTitle: "Software Engineer & Founder",
     email: `mailto:${profile.email}`,
     url: siteUrl,
     image: `${siteUrl}${profile.photo}`,
@@ -475,7 +475,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className={`${displaySans.variable} ${monoFont.variable}`}>
         <a className="skip-link" href="#main">Skip to content</a>
         <SiteHeader />
         {children}
