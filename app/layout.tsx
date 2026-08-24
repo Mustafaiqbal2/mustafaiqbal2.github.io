@@ -100,7 +100,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       }
       try { applyTheme(localStorage.getItem("theme-preference") || "system", false); } catch (e) {}
 
-      document.addEventListener("DOMContentLoaded", function () {
+      // Run AFTER hydration: these setups mutate server-rendered attributes
+      // (data-scrolled, progress transform, reveal delays); doing it at
+      // DOMContentLoaded races React and triggers hydration mismatches.
+      function initAfterHydration() {
         var pref = "system";
         try { pref = localStorage.getItem("theme-preference") || "system"; } catch (e) {}
         updateControls(pref);
@@ -113,7 +116,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           try { p = localStorage.getItem("theme-preference") || "system"; } catch (e) {}
           if (p === "system") { applyTheme("system", false); }
         });
-      });
+      }
+      if (document.readyState === "complete") {
+        window.setTimeout(initAfterHydration, 0);
+      } else {
+        window.addEventListener("load", function () { window.setTimeout(initAfterHydration, 0); });
+      }
 
       document.addEventListener("click", function (event) {
         var t = event.target;

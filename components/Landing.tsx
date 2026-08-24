@@ -67,7 +67,172 @@ const billRows = [
 ];
 
 const tickerText =
-  "Now — building ArchPHI  //  running pilonecables.com  //  agents for Simplabots  // ";
+  "Now — building ArchPHI  //  running pilonecables.com  //  agents for Simplabots  // ";
+
+/* Production-style ground-floor plan. Walls/windows/doors carry .lv-draw
+   (stroke-drawn on scroll); fixtures, labels, dimensions and grid bubbles
+   sit in the .lv-plan__text group and fade in once the walls are up. */
+function FloorPlan() {
+  const wall = { stroke: "#F2F2EE", fill: "none" };
+  const thin = { stroke: "#F2F2EE", fill: "none", strokeWidth: 1 };
+  const door = { stroke: "#F2F2EE", fill: "none", strokeWidth: 1.4 };
+  const swing = { stroke: "#B79CFF", fill: "none", strokeWidth: 1.1 };
+  const aux = { stroke: "#6B7080", fill: "none", strokeWidth: 1 };
+  return (
+    <svg className="lv-plan" viewBox="0 0 520 400" fill="none" aria-hidden="true">
+      {/* ---- outer wall, double line, with openings ---- */}
+      {["M40 48 H96", "M160 48 H320", "M384 48 H480", "M480 48 V120", "M480 176 V336", "M480 336 H276", "M236 336 H40", "M40 336 V48"].map((d) => (
+        <path key={d} className="lv-draw" pathLength={1} d={d} {...wall} strokeWidth={2.2} />
+      ))}
+      {["M48 56 H96", "M160 56 H320", "M384 56 H472", "M472 56 V120", "M472 176 V328", "M472 328 H276", "M236 328 H48", "M48 328 V56"].map((d) => (
+        <path key={d} className="lv-draw" pathLength={1} d={d} {...wall} strokeWidth={1.1} />
+      ))}
+      {/* windows: triple lines */}
+      {["M96 48 H160", "M96 52 H160", "M96 56 H160", "M320 48 H384", "M320 52 H384", "M320 56 H384", "M472 120 V176", "M476 120 V176", "M480 120 V176"].map((d) => (
+        <path key={d} className="lv-draw" pathLength={1} d={d} {...thin} />
+      ))}
+      {/* ---- interior walls with door gaps ---- */}
+      {["M200 56 V96", "M200 132 V232", "M200 268 V328", "M200 192 H348", "M384 192 H472", "M48 192 H104", "M140 192 H200", "M372 56 V132", "M372 164 V192"].map((d) => (
+        <path key={d} className="lv-draw" pathLength={1} d={d} {...wall} strokeWidth={2} />
+      ))}
+      {/* ---- doors: leaf + swing, hinged at the jamb ---- */}
+      <path className="lv-draw" pathLength={1} d="M236 328 L236 288" {...door} />
+      <path className="lv-draw" pathLength={1} d="M276 328 A40 40 0 0 0 236 288" {...swing} />
+      <path className="lv-draw" pathLength={1} d="M200 96 L164 96" {...door} />
+      <path className="lv-draw" pathLength={1} d="M200 132 A36 36 0 0 1 164 96" {...swing} />
+      <path className="lv-draw" pathLength={1} d="M200 268 L164 268" {...door} />
+      <path className="lv-draw" pathLength={1} d="M200 232 A36 36 0 0 0 164 268" {...swing} />
+      <path className="lv-draw" pathLength={1} d="M348 192 L348 228" {...door} />
+      <path className="lv-draw" pathLength={1} d="M384 192 A36 36 0 0 1 348 228" {...swing} />
+      <path className="lv-draw" pathLength={1} d="M372 164 L404 164" {...door} />
+      <path className="lv-draw" pathLength={1} d="M372 132 A32 32 0 0 1 404 164" {...swing} />
+      <path className="lv-draw" pathLength={1} d="M104 192 L104 228" {...door} />
+      <path className="lv-draw" pathLength={1} d="M140 192 A36 36 0 0 1 104 228" {...swing} />
+
+      {/* ---- fixtures, labels, dimensions, grid — fade group ---- */}
+      <g className="lv-plan__text">
+        {/* beds */}
+        <rect x="60" y="84" width="72" height="96" {...aux} />
+        <path d="M60 108 H132" {...aux} />
+        <rect x="60" y="222" width="72" height="96" {...aux} />
+        <path d="M60 246 H132" {...aux} />
+        {/* kitchen counter + sink + hob */}
+        <path d="M208 64 H332 V90 H208 Z" {...aux} />
+        <rect x="240" y="70" width="30" height="14" {...aux} />
+        <circle cx="304" cy="77" r="5" {...aux} />
+        <circle cx="318" cy="77" r="5" {...aux} />
+        {/* bath: basin, wc, shower */}
+        <circle cx="398" cy="78" r="9" {...aux} />
+        <rect x="444" y="94" width="18" height="12" {...aux} />
+        <ellipse cx="453" cy="120" rx="9" ry="12" {...aux} />
+        <rect x="380" y="148" width="42" height="34" {...aux} />
+        <path d="M380 148 L422 182" {...aux} />
+        {/* lounge: sofa + table */}
+        <rect x="256" y="270" width="112" height="28" {...aux} />
+        <path d="M256 278 H368" {...aux} />
+        <circle cx="312" cy="238" r="13" {...aux} />
+
+        {/* room labels */}
+        <text x="124" y="168" textAnchor="middle" fill="#9094A3" fontSize="10" fontFamily="var(--font-mono), monospace" letterSpacing="1">BED 01</text>
+        <text x="124" y="304" textAnchor="middle" fill="#9094A3" fontSize="10" fontFamily="var(--font-mono), monospace" letterSpacing="1">BED 02</text>
+        <text x="286" y="132" textAnchor="middle" fill="#9094A3" fontSize="10" fontFamily="var(--font-mono), monospace" letterSpacing="1">KITCHEN</text>
+        <text x="422" y="134" textAnchor="middle" fill="#9094A3" fontSize="10" fontFamily="var(--font-mono), monospace" letterSpacing="1">BATH</text>
+        <text x="336" y="316" textAnchor="middle" fill="#9094A3" fontSize="10" fontFamily="var(--font-mono), monospace" letterSpacing="1">LOUNGE</text>
+
+        {/* dimension chains — bottom */}
+        <path d="M40 336 V356 M200 336 V356 M480 336 V356" {...aux} strokeWidth={0.8} />
+        <path d="M40 352 H480" {...aux} strokeWidth={0.8} />
+        <path d="M36 356 L44 348 M196 356 L204 348 M476 356 L484 348" {...aux} strokeWidth={0.8} />
+        <text x="120" y="366" textAnchor="middle" fill="#9094A3" fontSize="9" fontFamily="var(--font-mono), monospace">4 000</text>
+        <text x="340" y="366" textAnchor="middle" fill="#9094A3" fontSize="9" fontFamily="var(--font-mono), monospace">7 000</text>
+        <path d="M40 362 V378 M480 362 V378" {...aux} strokeWidth={0.8} />
+        <path d="M40 374 H480" {...aux} strokeWidth={0.8} />
+        <path d="M36 378 L44 370 M476 378 L484 370" {...aux} strokeWidth={0.8} />
+        <text x="260" y="390" textAnchor="middle" fill="#9094A3" fontSize="9" fontFamily="var(--font-mono), monospace">11 000</text>
+        {/* dimension chain — right */}
+        <path d="M480 48 H500 M480 192 H500 M480 336 H500" {...aux} strokeWidth={0.8} />
+        <path d="M496 48 V336" {...aux} strokeWidth={0.8} />
+        <path d="M492 52 L500 44 M492 196 L500 188 M492 340 L500 332" {...aux} strokeWidth={0.8} />
+        <text x="504" y="124" fill="#9094A3" fontSize="9" fontFamily="var(--font-mono), monospace">3 600</text>
+        <text x="504" y="268" fill="#9094A3" fontSize="9" fontFamily="var(--font-mono), monospace">3 400</text>
+
+        {/* grid bubbles */}
+        {[
+          { x: 40, l: "A" },
+          { x: 200, l: "B" },
+          { x: 372, l: "C" },
+          { x: 480, l: "D" }
+        ].map((g) => (
+          <g key={g.l}>
+            <circle cx={g.x} cy="22" r="10" {...aux} />
+            <text x={g.x} y="26" textAnchor="middle" fill="#9094A3" fontSize="10" fontFamily="var(--font-mono), monospace">{g.l}</text>
+            <path d={`M${g.x} 32 V48`} {...aux} strokeWidth={0.8} strokeDasharray="3 4" />
+          </g>
+        ))}
+        {[
+          { y: 48, l: "1" },
+          { y: 192, l: "2" },
+          { y: 336, l: "3" }
+        ].map((g) => (
+          <g key={g.l}>
+            <circle cx="14" cy={g.y} r="10" {...aux} />
+            <text x="14" y={g.y + 4} textAnchor="middle" fill="#9094A3" fontSize="10" fontFamily="var(--font-mono), monospace">{g.l}</text>
+            <path d={`M24 ${g.y} H40`} {...aux} strokeWidth={0.8} strokeDasharray="3 4" />
+          </g>
+        ))}
+
+        {/* title strip */}
+        <text x="40" y="399" fill="#6B7080" fontSize="9" fontFamily="var(--font-mono), monospace" letterSpacing="1">GROUND FLOOR PLAN · 1:100</text>
+        <text x="480" y="399" textAnchor="end" fill="#6B7080" fontSize="9" fontFamily="var(--font-mono), monospace" letterSpacing="1">A-101</text>
+      </g>
+    </svg>
+  );
+}
+
+/* TalentFlow architecture: five sources feed one pipeline. Connectors carry
+   .lv-draw; boxes are .lv-flow__node (popped in on scroll). */
+function TalentFlowDiagram() {
+  const box = { stroke: "#0B0C12", fill: "#F2F2EE", strokeWidth: 2 };
+  const line = { stroke: "#0B0C12", fill: "none", strokeWidth: 1.6 };
+  const label = { fill: "#0B0C12", fontSize: "10", fontFamily: "var(--font-mono), monospace", letterSpacing: "1" };
+  const sources = [12, 78, 144, 210, 276];
+  return (
+    <svg className="lv-flow" viewBox="0 0 560 340" fill="none" aria-hidden="true">
+      {sources.map((y, i) => (
+        <g className="lv-flow__node" key={y}>
+          <rect x="8" y={y} width="104" height="36" {...box} />
+          <text x="60" y={y + 22} textAnchor="middle" {...label}>{`SOURCE 0${i + 1}`}</text>
+        </g>
+      ))}
+      {sources.map((y) => (
+        <path key={y} className="lv-draw" pathLength={1} d={`M112 ${y + 18} H150 V162 H190`} {...line} />
+      ))}
+      <g className="lv-flow__node">
+        <rect x="192" y="138" width="118" height="48" {...box} />
+        <text x="251" y="166" textAnchor="middle" {...label}>INGEST + CLEAN</text>
+      </g>
+      <path className="lv-draw" pathLength={1} d="M310 162 H350" {...line} />
+      <path className="lv-draw" pathLength={1} d="M344 156 L352 162 L344 168" {...line} />
+      <g className="lv-flow__node">
+        <rect x="354" y="138" width="150" height="48" {...box} />
+        <text x="429" y="158" textAnchor="middle" {...label}>SEMANTIC MATCH</text>
+        <text x="429" y="174" textAnchor="middle" fill="#6E6E68" fontSize="9" fontFamily="var(--font-mono), monospace" letterSpacing="1">EMBEDDINGS</text>
+      </g>
+      <path className="lv-draw" pathLength={1} d="M429 138 V88" {...line} />
+      <path className="lv-draw" pathLength={1} d="M423 94 L429 86 L435 94" {...line} />
+      <g className="lv-flow__node">
+        <rect x="354" y="32" width="150" height="48" {...box} />
+        <text x="429" y="60" textAnchor="middle" {...label}>RANKED SHORTLIST</text>
+      </g>
+      <path className="lv-draw" pathLength={1} d="M429 186 V240" {...line} />
+      <path className="lv-draw" pathLength={1} d="M423 234 L429 242 L435 234" {...line} />
+      <g className="lv-flow__node">
+        <rect x="354" y="244" width="150" height="48" {...box} />
+        <text x="429" y="272" textAnchor="middle" {...label}>INTERVIEW AGENT</text>
+      </g>
+    </svg>
+  );
+}
 
 export function Landing() {
   const root = useRef<HTMLElement>(null);
@@ -92,11 +257,9 @@ export function Landing() {
         intro
           .from(q(".lv-hero__name-1 > span"), { xPercent: -60, opacity: 0, duration: 1.1 }, 0.1)
           .from(q(".lv-hero__name-2 > span"), { xPercent: 60, opacity: 0, duration: 1.1 }, 0.18)
-          .from(
-            q(".lv-hero__status, .lv-hero__statement, .lv-hero__sub, .lv-hero__cue"),
-            { y: 28, opacity: 0, duration: 0.8, stagger: 0.08 },
-            0.55
-          );
+          .from(q(".lv-hero__status, .lv-hero__foot"), { y: 28, opacity: 0, duration: 0.8, stagger: 0.1 }, 0.55);
+        // from-states are applied; release the pre-paint gate
+        document.documentElement.classList.remove("lv-intro");
 
         /* ---------- hero parallax out ---------- */
         gsap.to(q(".lv-hero__name"), {
@@ -125,13 +288,13 @@ export function Landing() {
             .fromTo(
               q(".lv-plan .lv-draw"),
               { strokeDashoffset: 1 },
-              { strokeDashoffset: 0, stagger: 0.06, duration: 1.2, ease: "none" },
+              { strokeDashoffset: 0, stagger: 0.022, duration: 1.1, ease: "none" },
               0.15
             )
-            .from(q(".lv-plan__text"), { opacity: 0, duration: 0.3 }, 1.25)
-            .fromTo(q(".lv-arch__arrow path"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.3, ease: "none" }, 1.35)
-            .from(q(".lv-bill__row"), { x: 40, opacity: 0, stagger: 0.1, duration: 0.4 }, 1.5)
-            .from(q(".lv-arch .lv-caption"), { opacity: 0, duration: 0.35 }, 2.05);
+            .from(q(".lv-plan__text"), { opacity: 0, duration: 0.35 }, 1.35)
+            .fromTo(q(".lv-arch__arrow path"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.3, ease: "none" }, 1.45)
+            .from(q(".lv-bill__row"), { x: 40, opacity: 0, stagger: 0.1, duration: 0.4 }, 1.6)
+            .from(q(".lv-arch .lv-caption"), { opacity: 0, duration: 0.35 }, 2.1);
         }
 
         /* ---------- Fleet: pinned horizontal pan ---------- */
@@ -200,22 +363,62 @@ export function Landing() {
             .from(q(".lv-pilone .lv-caption"), { opacity: 0, duration: 0.4 }, 2.0);
         }
 
-        /* ---------- TalentFlow ---------- */
-        gsap.from(q(".lv-talent__inner > *"), {
-          y: 48,
-          opacity: 0,
-          stagger: 0.12,
-          scrollTrigger: { trigger: q(".lv-talent")[0], start: "top 78%", end: "top 45%", scrub: 0.8 }
-        });
-
-        /* ---------- How I work ---------- */
-        gsap.utils.toArray<HTMLElement>(q(".lv-how__item")).forEach((item) => {
-          gsap.from(item, {
-            yPercent: 30,
-            opacity: 0,
-            scrollTrigger: { trigger: item, start: "top 85%", end: "top 55%", scrub: 0.8 }
+        /* ---------- TalentFlow: pin + pipeline draw ---------- */
+        {
+          const section = q(".lv-talent")[0];
+          const tl = gsap.timeline({
+            scrollTrigger: desktop
+              ? { trigger: section, start: "top top", end: "+=200%", pin: true, scrub: 0.8, anticipatePin: 1 }
+              : { trigger: section, start: "top 72%", end: "bottom 60%", scrub: 0.8 }
           });
-        });
+          tl.from(q(".lv-talent .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
+            .from(q(".lv-talent__copy .lv-body"), { y: 32, opacity: 0, stagger: 0.08, duration: 0.4 }, 0.12)
+            .from(q(".lv-flow__node"), { opacity: 0, scale: 0.92, transformOrigin: "center", stagger: 0.09, duration: 0.35 }, 0.3)
+            .fromTo(
+              q(".lv-flow .lv-draw"),
+              { strokeDashoffset: 1 },
+              { strokeDashoffset: 0, stagger: 0.06, duration: 0.9, ease: "none" },
+              0.5
+            );
+        }
+
+        /* ---------- How I work: Gargantua ---------- */
+        {
+          const section = q(".lv-how")[0] as HTMLElement;
+          if (desktop) {
+            section.classList.add("lv-how--live");
+            const items = gsap.utils.toArray<HTMLElement>(q(".lv-how__item"));
+            const tl = gsap.timeline({
+              scrollTrigger: { trigger: section, start: "top top", end: "+=280%", pin: true, scrub: 0.8, anticipatePin: 1 }
+            });
+            tl.fromTo(q(".lv-bh"), { scale: 0.82 }, { scale: 1.06, duration: 3, ease: "none" }, 0)
+              .fromTo(q(".lv-bh__disk"), { rotate: -4 }, { rotate: 5, duration: 3, ease: "none" }, 0)
+              .fromTo(q(".lv-bh__glow"), { opacity: 0.55 }, { opacity: 1, duration: 3, ease: "none" }, 0);
+            const beats = [
+              { at: 0.15, out: 0.95 },
+              { at: 1.15, out: 1.95 },
+              { at: 2.15, out: -1 }
+            ];
+            items.forEach((item, i) => {
+              const b = beats[i];
+              tl.fromTo(item, { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.35 }, b.at);
+              if (b.out > 0) tl.to(item, { opacity: 0, y: -26, duration: 0.3 }, b.out);
+            });
+          } else {
+            gsap.from(q(".lv-bh"), {
+              scale: 0.86,
+              opacity: 0,
+              scrollTrigger: { trigger: section, start: "top 80%", end: "top 40%", scrub: 0.8 }
+            });
+            gsap.utils.toArray<HTMLElement>(q(".lv-how__item")).forEach((item) => {
+              gsap.from(item, {
+                y: 30,
+                opacity: 0,
+                scrollTrigger: { trigger: item, start: "top 88%", end: "top 62%", scrub: 0.8 }
+              });
+            });
+          }
+        }
 
         /* ---------- Contact ---------- */
         gsap.from(q(".lv-contact__inner > *"), {
@@ -227,6 +430,7 @@ export function Landing() {
 
         return () => {
           intro.kill();
+          (q(".lv-how")[0] as HTMLElement)?.classList.remove("lv-how--live");
         };
       }
     );
@@ -249,7 +453,7 @@ export function Landing() {
       <section className="lv-hero" aria-label="Intro">
         <div className="lv-hero__status lv-mono">
           <span>Software engineer &amp; founder</span>
-          <span>Islamabad · remote or relocation</span>
+          <span>Pakistan</span>
         </div>
 
         <h1 className="lv-hero__name">
@@ -286,7 +490,7 @@ export function Landing() {
       </div>
 
       {/* ================= ArchPHI ================= */}
-      <section className="lv-section lv-section--ink lv-arch" aria-label="ArchPHI">
+      <section className="lv-section--ink lv-arch lv-pin" aria-label="ArchPHI">
         <div className="lv-arch__grid">
           <div className="lv-arch__copy">
             <p className="lv-eyebrow">01 — ArchPHI · Founder &amp; CTO</p>
@@ -301,7 +505,7 @@ export function Landing() {
             <p className="lv-body">
               ArchPHI turns architectural CAD packages into bills of quantities. It reads what the drawings declare —
               geometry, layers, counts — and where a drawing carries no answer, it says so instead of guessing.
-              <b> First firms start in September.</b>
+              <b> Coming soon.</b>
             </p>
             <a className="lv-link" href="https://archphi.com" target="_blank" rel="noreferrer">
               archphi.com <ArrowUpRight />
@@ -310,32 +514,10 @@ export function Landing() {
 
           <div>
             <div className="lv-arch__visual">
-              <svg className="lv-plan" viewBox="0 0 440 360" fill="none" aria-hidden="true">
-                {/* outer walls */}
-                <path className="lv-draw" pathLength={1} d="M24 24 H416 V296 H24 Z" stroke="#F2F2EE" strokeWidth="2.5" />
-                <path className="lv-draw" pathLength={1} d="M36 36 H404 V284 H36 Z" stroke="#F2F2EE" strokeWidth="1.2" />
-                {/* interior walls */}
-                <path className="lv-draw" pathLength={1} d="M188 36 V150" stroke="#F2F2EE" strokeWidth="2" />
-                <path className="lv-draw" pathLength={1} d="M188 196 V284" stroke="#F2F2EE" strokeWidth="2" />
-                <path className="lv-draw" pathLength={1} d="M188 150 H296" stroke="#F2F2EE" strokeWidth="2" />
-                <path className="lv-draw" pathLength={1} d="M296 36 V150" stroke="#F2F2EE" strokeWidth="2" />
-                <path className="lv-draw" pathLength={1} d="M296 216 V284" stroke="#F2F2EE" strokeWidth="2" />
-                {/* door swings */}
-                <path className="lv-draw" pathLength={1} d="M188 150 A 46 46 0 0 1 234 196" stroke="#FF4A1C" strokeWidth="1.5" />
-                <path className="lv-draw" pathLength={1} d="M296 216 A 42 42 0 0 0 254 174" stroke="#FF4A1C" strokeWidth="1.5" />
-                {/* window ticks */}
-                <path className="lv-draw" pathLength={1} d="M90 24 V36 M132 24 V36 M330 284 V296 M372 284 V296" stroke="#F2F2EE" strokeWidth="1.2" />
-                {/* dimension line */}
-                <path className="lv-draw" pathLength={1} d="M24 330 H416 M24 322 V338 M416 322 V338" stroke="#8C8C86" strokeWidth="1" />
-                <text className="lv-plan__text" x="220" y="352" textAnchor="middle" fill="#8C8C86" fontSize="11" fontFamily="var(--font-mono), monospace">
-                  12 400
-                </text>
-              </svg>
-
+              <FloorPlan />
               <svg className="lv-arch__arrow" viewBox="0 0 56 24" fill="none" aria-hidden="true">
                 <path pathLength={1} style={{ strokeDasharray: 1 }} d="M2 12 H46 M38 4 L48 12 L38 20" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
-
               <div className="lv-bill" role="presentation">
                 {billRows.map((row) => (
                   <div className="lv-bill__row" key={row.n}>
@@ -347,7 +529,7 @@ export function Landing() {
                 ))}
               </div>
             </div>
-            <p className="lv-caption lv-mono">Tested against 2,668,953 drawing records · 8 project packages</p>
+            <p className="lv-caption lv-mono">Tested on real projects</p>
           </div>
         </div>
       </section>
@@ -389,7 +571,7 @@ export function Landing() {
       </section>
 
       {/* ================= Pilone ================= */}
-      <section className="lv-section lv-section--ink lv-pilone" aria-label="PiloneCables">
+      <section className="lv-section--ink lv-pilone lv-pin" aria-label="PiloneCables">
         <div className="lv-pilone__grid">
           <div className="lv-pilone__copy">
             <p className="lv-eyebrow">03 — pilonecables.com</p>
@@ -435,23 +617,43 @@ export function Landing() {
       </section>
 
       {/* ================= TalentFlow ================= */}
-      <section className="lv-section lv-section--bone lv-talent" aria-label="TalentFlow">
-        <div className="lv-talent__inner">
-          <div>
+      <section className="lv-section--bone lv-talent lv-pin" aria-label="TalentFlow">
+        <div className="lv-talent__grid">
+          <div className="lv-talent__copy">
             <p className="lv-eyebrow">04 — TalentFlow · Genesys Research Lab</p>
-            <h2 className="lv-h2 lv-display">Recruitment, end to end.</h2>
+            <h2 className="lv-h2 lv-display">
+              <span className="lv-line">
+                <span>Recruitment,</span>
+              </span>
+              <span className="lv-line">
+                <span>end to end.</span>
+              </span>
+            </h2>
+            <p className="lv-body">
+              An internal recruitment platform. Five candidate sources feed one pipeline: profiles are cleaned,
+              embedded, and matched to roles by meaning rather than keywords.
+            </p>
+            <p className="lv-body">
+              A conversational agent then runs the first-round interview. Built by a team of four engineers I led.
+            </p>
           </div>
-          <p className="lv-body">
-            An internal platform that pulls candidates from five sources, matches them to roles by meaning rather than
-            keywords, and runs a first-round interview agent. Built by a team of four engineers I led.
-          </p>
+          <TalentFlowDiagram />
         </div>
       </section>
 
-      {/* ================= How I work ================= */}
-      <section className="lv-section--ink lv-how" aria-label="How I work">
-        <div className="lv-how__inner">
-          <p className="lv-eyebrow">How I work</p>
+      {/* ================= How I work — Gargantua ================= */}
+      <section className="lv-section--ink lv-how lv-pin" aria-label="How I work">
+        <p className="lv-eyebrow lv-how__eyebrow">How I work</p>
+        <div className="lv-bh" aria-hidden="true">
+          <div className="lv-bh__glow"></div>
+          <div className="lv-bh__disk"></div>
+          <div className="lv-bh__horizon"></div>
+          <div className="lv-bh__ring"></div>
+          <div className="lv-bh__arc"></div>
+          <div className="lv-bh__arc lv-bh__arc--under"></div>
+          <div className="lv-bh__front"></div>
+        </div>
+        <div className="lv-how__stage">
           <div className="lv-how__item">
             <span className="lv-how__index lv-mono">01</span>
             <p className="lv-how__line lv-display">Only progress is progress.</p>
@@ -488,7 +690,7 @@ export function Landing() {
           </div>
           <div className="lv-contact__bottom lv-mono">
             <span>© 2026 · Mustafa Iqbal</span>
-            <span>Islamabad, Pakistan</span>
+            <span>Pakistan</span>
           </div>
         </div>
       </section>
