@@ -489,7 +489,8 @@ h2 em,
   border-bottom: 1px solid transparent;
 }
 
-.site-header[data-scrolled="true"] {
+/* scroll state lives on <html> (hydration-safe: React suppresses it there) */
+[data-scrolled="true"] .site-header {
   background: color-mix(in srgb, var(--bg) 95%, transparent);
   border-bottom-color: var(--line);
 }
@@ -2129,6 +2130,24 @@ main {
   .reveal { opacity: 1; transform: none; }
 }
 
+/* Stagger delays in CSS (hydration-safe: no JS inline styles) */
+[data-stagger] > .reveal:nth-child(2),
+[data-stagger] > :nth-child(2) .reveal:only-child {
+  --reveal-delay: 55ms;
+}
+[data-stagger] > .reveal:nth-child(3) {
+  --reveal-delay: 110ms;
+}
+[data-stagger] > .reveal:nth-child(4) {
+  --reveal-delay: 165ms;
+}
+[data-stagger] > .reveal:nth-child(5) {
+  --reveal-delay: 220ms;
+}
+[data-stagger] > .reveal:nth-child(6) {
+  --reveal-delay: 275ms;
+}
+
 /* Header scroll-progress + condense */
 .site-header__progress {
   position: absolute;
@@ -2137,14 +2156,14 @@ main {
   height: 2px;
   width: 100%;
   background: var(--accent);
-  transform: scaleX(0);
+  transform: scaleX(var(--scroll-p, 0));
   transform-origin: 0 50%;
   opacity: 0;
   transition: opacity 220ms ease;
   z-index: 1;
 }
 
-.site-header[data-scrolled="true"] .site-header__progress {
+[data-scrolled="true"] .site-header__progress {
   opacity: 1;
 }
 
@@ -2152,7 +2171,7 @@ main {
   transition: opacity 240ms ease;
 }
 
-.site-header[data-scrolled="true"] .brand__role {
+[data-scrolled="true"] .site-header .brand__role {
   opacity: 0.55;
 }
 

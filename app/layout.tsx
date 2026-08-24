@@ -141,17 +141,15 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       }
 
       function setupHeaderState() {
-        var header = document.querySelector("[data-header]");
-        if (!header) { return; }
-        var progress = header.querySelector("[data-header-progress]");
+        // Hydration-safe: all mutations land on <html> (suppressed), never on
+        // React-rendered nodes.
+        var doc = document.documentElement;
         var ticking = false;
         function update() {
           var y = window.scrollY;
-          header.setAttribute("data-scrolled", y > 12 ? "true" : "false");
-          if (progress) {
-            var max = Math.max(document.documentElement.scrollHeight - window.innerHeight, 1);
-            progress.style.transform = "scaleX(" + Math.min(y / max, 1).toFixed(4) + ")";
-          }
+          doc.setAttribute("data-scrolled", y > 12 ? "true" : "false");
+          var max = Math.max(doc.scrollHeight - window.innerHeight, 1);
+          doc.style.setProperty("--scroll-p", Math.min(y / max, 1).toFixed(4));
           ticking = false;
         }
         update();
@@ -185,13 +183,9 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             entry.target.classList.toggle("is-visible", entry.isIntersecting);
           });
         }, { rootMargin: "-9% 0px -9% 0px", threshold: 0 });
-        items.forEach(function (item, index) {
-          var group = item.closest("[data-stagger]");
-          if (!item.style.getPropertyValue("--reveal-delay")) {
-            item.style.setProperty("--reveal-delay", Math.min(index % 6, 5) * 55 + "ms");
-          }
+        items.forEach(function (item) {
+          // stagger delays come from CSS now (hydration-safe)
           observer.observe(item);
-          if (group) { void group; }
         });
       }
 

@@ -397,6 +397,9 @@ body:has(.lv) .site-footer {
 .lv-fleet__head .lv-body {
   color: var(--lv-grey);
 }
+.lv-fleet.lv-section--ink .lv-fleet__head .lv-body {
+  color: var(--lv-grey-light);
+}
 .lv-fleet__viewport {
   overflow: hidden;
   margin-top: clamp(40px, 6vh, 72px);
@@ -548,6 +551,26 @@ body:has(.lv) .site-footer {
 .lv-flow .lv-draw {
   stroke-dasharray: 1;
   stroke-dashoffset: 0;
+}
+/* a pulse orbits the interview loop (ring through the six node centers) */
+.lv-flow__pulse {
+  offset-path: path("M250 195 L327.5 61 L482.5 61 L560 195 L482.5 329 L327.5 329 Z");
+  animation: lv-orbit 9s linear infinite;
+  filter: drop-shadow(0 0 4px rgba(109, 40, 217, 0.8));
+}
+@keyframes lv-orbit {
+  from {
+    offset-distance: 0%;
+  }
+  to {
+    offset-distance: 100%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .lv-flow__pulse {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 /* ---------- How I work × Gargantua ---------- */
@@ -738,10 +761,7 @@ body:has(.lv) .site-footer {
   margin: 0;
   align-self: flex-start;
   font-size: clamp(56px, 10vw, 152px);
-  background: linear-gradient(95deg, #ede7ff 0%, var(--lv-accent-bright) 30%, var(--lv-pink) 58%, var(--lv-cyan) 92%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
+  color: var(--lv-bone);
 }
 .lv-contact__email {
   align-self: flex-start;
@@ -792,6 +812,285 @@ body:has(.lv) .site-footer {
   border-top: 1px solid rgba(242, 242, 238, 0.22);
   padding-top: 20px;
   color: rgba(242, 242, 238, 0.6);
+}
+
+/* ============================================================
+   Space system — real deep-field ground + living extras
+   ============================================================ */
+
+/* any section carrying .lv-space sits on actual Hubble/Webb imagery */
+.lv-space {
+  position: relative;
+  isolation: isolate;
+  background: #07080d;
+}
+.lv-space::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27900%27 height=%27700%27%3E%3Ccircle cx=%27575.5%27 cy=%2717.5%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.41%27/%3E%3Ccircle cx=%27662.8%27 cy=%27473.7%27 r=%271.1%27 fill=%27%23ffe9d2%27 opacity=%270.31%27/%3E%3Ccircle cx=%2728.6%27 cy=%2765.6%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.58%27/%3E%3Ccircle cx=%27505.1%27 cy=%27501.2%27 r=%271.1%27 fill=%27%23ffe9d2%27 opacity=%270.52%27/%3E%3Ccircle cx=%27530.3%27 cy=%27566.6%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.74%27/%3E%3Ccircle cx=%27628.3%27 cy=%27238.2%27 r=%270.6%27 fill=%27%23cfd8ff%27 opacity=%270.39%27/%3E%3Ccircle cx=%2792.0%27 cy=%27265.9%27 r=%270.8%27 fill=%27%23cfd8ff%27 opacity=%270.8%27/%3E%3Ccircle cx=%27726.4%27 cy=%27510.8%27 r=%271.1%27 fill=%27%23ffe9d2%27 opacity=%270.33%27/%3E%3Ccircle cx=%2770.9%27 cy=%27205.2%27 r=%271.3%27 fill=%27%23cfd8ff%27 opacity=%270.83%27/%3E%3Ccircle cx=%27519.6%27 cy=%27493.2%27 r=%270.5%27 fill=%27%23cfd8ff%27 opacity=%270.68%27/%3E%3Ccircle cx=%27886.7%27 cy=%27598.7%27 r=%270.5%27 fill=%27%23ffe9d2%27 opacity=%270.5%27/%3E%3Ccircle cx=%27572.1%27 cy=%27255.4%27 r=%270.8%27 fill=%27%23cfd8ff%27 opacity=%270.48%27/%3E%3Ccircle cx=%27631.6%27 cy=%27478.5%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.65%27/%3E%3Ccircle cx=%27480.7%27 cy=%27171.4%27 r=%271.0%27 fill=%27%23ffffff%27 opacity=%270.5%27/%3E%3Ccircle cx=%27616.2%27 cy=%27590.0%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.4%27/%3E%3Ccircle cx=%27724.5%27 cy=%27280.8%27 r=%270.5%27 fill=%27%23cfd8ff%27 opacity=%270.39%27/%3E%3Ccircle cx=%27191.4%27 cy=%27349.5%27 r=%271.0%27 fill=%27%23ffffff%27 opacity=%270.34%27/%3E%3Ccircle cx=%27222.0%27 cy=%27393.0%27 r=%270.7%27 fill=%27%23ffe9d2%27 opacity=%270.74%27/%3E%3Ccircle cx=%27808.0%27 cy=%27279.6%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.9%27/%3E%3Ccircle cx=%27458.6%27 cy=%2763.6%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.81%27/%3E%3Ccircle cx=%27564.7%27 cy=%27554.5%27 r=%270.9%27 fill=%27%23ffe9d2%27 opacity=%270.64%27/%3E%3Ccircle cx=%27343.5%27 cy=%27697.3%27 r=%271.1%27 fill=%27%23ffffff%27 opacity=%270.41%27/%3E%3Ccircle cx=%27612.3%27 cy=%2780.2%27 r=%271.1%27 fill=%27%23cfd8ff%27 opacity=%270.74%27/%3E%3Ccircle cx=%27100.4%27 cy=%27304.3%27 r=%271.0%27 fill=%27%23cfd8ff%27 opacity=%270.25%27/%3E%3Ccircle cx=%27874.7%27 cy=%27533.4%27 r=%271.1%27 fill=%27%23cfd8ff%27 opacity=%270.84%27/%3E%3Ccircle cx=%27757.5%27 cy=%27355.4%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.35%27/%3E%3Ccircle cx=%27485.4%27 cy=%27545.0%27 r=%271.1%27 fill=%27%23cfd8ff%27 opacity=%270.85%27/%3E%3Ccircle cx=%27439.7%27 cy=%2778.3%27 r=%270.8%27 fill=%27%23cfd8ff%27 opacity=%270.82%27/%3E%3Ccircle cx=%27215.5%27 cy=%27168.6%27 r=%271.3%27 fill=%27%23ffffff%27 opacity=%270.87%27/%3E%3Ccircle cx=%27658.7%27 cy=%27571.2%27 r=%271.1%27 fill=%27%23ffffff%27 opacity=%270.75%27/%3E%3Ccircle cx=%27593.8%27 cy=%27662.8%27 r=%270.6%27 fill=%27%23ffe9d2%27 opacity=%270.42%27/%3E%3Ccircle cx=%27867.9%27 cy=%27650.2%27 r=%270.7%27 fill=%27%23ffe9d2%27 opacity=%270.71%27/%3E%3Ccircle cx=%27895.6%27 cy=%27454.9%27 r=%271.0%27 fill=%27%23ffe9d2%27 opacity=%270.83%27/%3E%3Ccircle cx=%27108.9%27 cy=%27157.3%27 r=%270.8%27 fill=%27%23ffffff%27 opacity=%270.26%27/%3E%3Ccircle cx=%27529.6%27 cy=%275.0%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.4%27/%3E%3Ccircle cx=%27773.7%27 cy=%2749.6%27 r=%270.7%27 fill=%27%23ffe9d2%27 opacity=%270.43%27/%3E%3Ccircle cx=%27192.8%27 cy=%2792.6%27 r=%271.3%27 fill=%27%23ffffff%27 opacity=%270.62%27/%3E%3Ccircle cx=%27706.2%27 cy=%27565.2%27 r=%270.7%27 fill=%27%23ffe9d2%27 opacity=%270.31%27/%3E%3Ccircle cx=%27318.9%27 cy=%27287.8%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.69%27/%3E%3Ccircle cx=%2754.6%27 cy=%27509.7%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.41%27/%3E%3Ccircle cx=%27482.7%27 cy=%2798.1%27 r=%270.6%27 fill=%27%23ffffff%27 opacity=%270.43%27/%3E%3Ccircle cx=%27787.0%27 cy=%2752.8%27 r=%271.1%27 fill=%27%23ffffff%27 opacity=%270.31%27/%3E%3Ccircle cx=%27872.1%27 cy=%27648.5%27 r=%270.7%27 fill=%27%23ffe9d2%27 opacity=%270.36%27/%3E%3Ccircle cx=%27433.2%27 cy=%27605.3%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.36%27/%3E%3Ccircle cx=%27886.8%27 cy=%27185.6%27 r=%271.0%27 fill=%27%23ffe9d2%27 opacity=%270.44%27/%3E%3Ccircle cx=%27139.3%27 cy=%27207.7%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.63%27/%3E%3Ccircle cx=%27673.2%27 cy=%2740.0%27 r=%271.3%27 fill=%27%23ffffff%27 opacity=%270.56%27/%3E%3Ccircle cx=%2751.2%27 cy=%27355.5%27 r=%270.6%27 fill=%27%23ffffff%27 opacity=%270.29%27/%3E%3Ccircle cx=%27607.7%27 cy=%27164.6%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.86%27/%3E%3Ccircle cx=%27521.0%27 cy=%2727.8%27 r=%270.5%27 fill=%27%23cfd8ff%27 opacity=%270.52%27/%3E%3Ccircle cx=%27841.2%27 cy=%27143.0%27 r=%270.8%27 fill=%27%23ffe9d2%27 opacity=%270.41%27/%3E%3Ccircle cx=%27117.8%27 cy=%27451.9%27 r=%271.0%27 fill=%27%23ffffff%27 opacity=%270.46%27/%3E%3Ccircle cx=%278.4%27 cy=%27434.8%27 r=%271.3%27 fill=%27%23ffffff%27 opacity=%270.9%27/%3E%3Ccircle cx=%27483.9%27 cy=%27354.1%27 r=%270.6%27 fill=%27%23ffffff%27 opacity=%270.86%27/%3E%3Ccircle cx=%27791.3%27 cy=%27258.7%27 r=%270.6%27 fill=%27%23cfd8ff%27 opacity=%270.53%27/%3E%3Ccircle cx=%27550.5%27 cy=%27691.1%27 r=%271.1%27 fill=%27%23cfd8ff%27 opacity=%270.26%27/%3E%3Ccircle cx=%27838.6%27 cy=%2772.5%27 r=%270.6%27 fill=%27%23ffffff%27 opacity=%270.42%27/%3E%3Ccircle cx=%27668.2%27 cy=%27108.8%27 r=%270.7%27 fill=%27%23cfd8ff%27 opacity=%270.64%27/%3E%3Ccircle cx=%27183.2%27 cy=%27444.0%27 r=%270.7%27 fill=%27%23cfd8ff%27 opacity=%270.58%27/%3E%3Ccircle cx=%27814.8%27 cy=%27592.3%27 r=%270.5%27 fill=%27%23cfd8ff%27 opacity=%270.66%27/%3E%3Ccircle cx=%2739.7%27 cy=%27233.5%27 r=%270.6%27 fill=%27%23cfd8ff%27 opacity=%270.66%27/%3E%3Ccircle cx=%27145.4%27 cy=%27309.3%27 r=%270.9%27 fill=%27%23ffffff%27 opacity=%270.61%27/%3E%3Ccircle cx=%2767.7%27 cy=%27618.2%27 r=%270.6%27 fill=%27%23cfd8ff%27 opacity=%270.6%27/%3E%3Ccircle cx=%27524.3%27 cy=%27103.7%27 r=%270.6%27 fill=%27%23cfd8ff%27 opacity=%270.28%27/%3E%3Ccircle cx=%27809.1%27 cy=%27557.3%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.83%27/%3E%3Ccircle cx=%27613.9%27 cy=%27466.9%27 r=%270.8%27 fill=%27%23ffe9d2%27 opacity=%270.76%27/%3E%3Ccircle cx=%27876.5%27 cy=%27524.6%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.81%27/%3E%3Ccircle cx=%27793.3%27 cy=%2717.4%27 r=%270.8%27 fill=%27%23ffe9d2%27 opacity=%270.76%27/%3E%3Ccircle cx=%27722.0%27 cy=%27604.8%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.42%27/%3E%3Ccircle cx=%27344.3%27 cy=%2727.1%27 r=%271.0%27 fill=%27%23ffe9d2%27 opacity=%270.39%27/%3E%3Ccircle cx=%27314.7%27 cy=%27574.4%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.39%27/%3E%3Ccircle cx=%27358.6%27 cy=%27195.0%27 r=%270.5%27 fill=%27%23cfd8ff%27 opacity=%270.88%27/%3E%3Ccircle cx=%27316.0%27 cy=%27356.6%27 r=%271.1%27 fill=%27%23ffffff%27 opacity=%270.47%27/%3E%3Ccircle cx=%27103.8%27 cy=%27679.3%27 r=%270.6%27 fill=%27%23cfd8ff%27 opacity=%270.63%27/%3E%3Ccircle cx=%2734.4%27 cy=%27417.6%27 r=%270.8%27 fill=%27%23cfd8ff%27 opacity=%270.72%27/%3E%3Ccircle cx=%27392.8%27 cy=%27689.0%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.5%27/%3E%3Ccircle cx=%27229.3%27 cy=%27496.1%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.59%27/%3E%3Ccircle cx=%27327.8%27 cy=%2749.0%27 r=%270.8%27 fill=%27%23ffffff%27 opacity=%270.66%27/%3E%3Ccircle cx=%27647.8%27 cy=%27210.2%27 r=%270.7%27 fill=%27%23cfd8ff%27 opacity=%270.68%27/%3E%3Ccircle cx=%27362.2%27 cy=%27207.0%27 r=%270.6%27 fill=%27%23ffe9d2%27 opacity=%270.37%27/%3E%3Ccircle cx=%27609.6%27 cy=%27632.0%27 r=%271.3%27 fill=%27%23ffe9d2%27 opacity=%270.62%27/%3E%3Ccircle cx=%27493.1%27 cy=%270.3%27 r=%270.7%27 fill=%27%23cfd8ff%27 opacity=%270.39%27/%3E%3Ccircle cx=%27418.5%27 cy=%27309.5%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.58%27/%3E%3Ccircle cx=%27593.0%27 cy=%27198.7%27 r=%271.3%27 fill=%27%23ffffff%27 opacity=%270.47%27/%3E%3Ccircle cx=%27605.5%27 cy=%27157.2%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.35%27/%3E%3Ccircle cx=%27220.4%27 cy=%27332.6%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.55%27/%3E%3Ccircle cx=%27646.5%27 cy=%27268.8%27 r=%270.9%27 fill=%27%23ffffff%27 opacity=%270.41%27/%3E%3Ccircle cx=%27803.4%27 cy=%27602.3%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.76%27/%3E%3Ccircle cx=%27158.3%27 cy=%27670.6%27 r=%271.1%27 fill=%27%23ffffff%27 opacity=%270.55%27/%3E%3Ccircle cx=%27825.7%27 cy=%2785.0%27 r=%270.6%27 fill=%27%23cfd8ff%27 opacity=%270.77%27/%3E%3Ccircle cx=%27855.0%27 cy=%27624.0%27 r=%271.3%27 fill=%27%23ffe9d2%27 opacity=%270.78%27/%3E%3Ccircle cx=%27747.5%27 cy=%27383.5%27 r=%270.6%27 fill=%27%23ffe9d2%27 opacity=%270.73%27/%3E%3Ccircle cx=%27405.1%27 cy=%27526.2%27 r=%270.7%27 fill=%27%23ffe9d2%27 opacity=%270.75%27/%3E%3Ccircle cx=%27564.1%27 cy=%27192.2%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.71%27/%3E%3Ccircle cx=%27244.5%27 cy=%27223.8%27 r=%271.1%27 fill=%27%23ffffff%27 opacity=%270.3%27/%3E%3Ccircle cx=%27208.1%27 cy=%27485.8%27 r=%270.7%27 fill=%27%23ffe9d2%27 opacity=%270.29%27/%3E%3Ccircle cx=%27297.8%27 cy=%27326.1%27 r=%270.5%27 fill=%27%23ffe9d2%27 opacity=%270.38%27/%3E%3Ccircle cx=%27350.5%27 cy=%27538.9%27 r=%270.5%27 fill=%27%23ffe9d2%27 opacity=%270.81%27/%3E%3Ccircle cx=%27429.3%27 cy=%27659.9%27 r=%270.7%27 fill=%27%23ffe9d2%27 opacity=%270.74%27/%3E%3Ccircle cx=%27484.4%27 cy=%27514.2%27 r=%271.3%27 fill=%27%23ffe9d2%27 opacity=%270.83%27/%3E%3Ccircle cx=%27197.5%27 cy=%27305.1%27 r=%270.5%27 fill=%27%23ffe9d2%27 opacity=%270.5%27/%3E%3Ccircle cx=%27651.8%27 cy=%27588.4%27 r=%270.6%27 fill=%27%23ffffff%27 opacity=%270.89%27/%3E%3Ccircle cx=%27816.2%27 cy=%27414.3%27 r=%270.5%27 fill=%27%23ffe9d2%27 opacity=%270.3%27/%3E%3Ccircle cx=%27122.1%27 cy=%27323.2%27 r=%270.5%27 fill=%27%23cfd8ff%27 opacity=%270.42%27/%3E%3Ccircle cx=%27190.5%27 cy=%27228.8%27 r=%270.9%27 fill=%27%23ffe9d2%27 opacity=%270.43%27/%3E%3Ccircle cx=%27227.0%27 cy=%2757.3%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.74%27/%3E%3Ccircle cx=%27899.9%27 cy=%27245.0%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.76%27/%3E%3Ccircle cx=%27678.8%27 cy=%27664.7%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.8%27/%3E%3Ccircle cx=%27214.7%27 cy=%27331.5%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.62%27/%3E%3Ccircle cx=%27418.5%27 cy=%27179.4%27 r=%270.8%27 fill=%27%23ffffff%27 opacity=%270.36%27/%3E%3Ccircle cx=%27700.0%27 cy=%27114.6%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.32%27/%3E%3Ccircle cx=%27836.0%27 cy=%27403.1%27 r=%270.9%27 fill=%27%23ffffff%27 opacity=%270.51%27/%3E%3Ccircle cx=%2768.4%27 cy=%27483.4%27 r=%270.7%27 fill=%27%23cfd8ff%27 opacity=%270.32%27/%3E%3Ccircle cx=%27765.3%27 cy=%27420.3%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.77%27/%3E%3Ccircle cx=%27312.5%27 cy=%27299.9%27 r=%270.8%27 fill=%27%23cfd8ff%27 opacity=%270.29%27/%3E%3Ccircle cx=%2711.4%27 cy=%27294.0%27 r=%271.0%27 fill=%27%23cfd8ff%27 opacity=%270.32%27/%3E%3Ccircle cx=%27572.0%27 cy=%27580.1%27 r=%270.6%27 fill=%27%23cfd8ff%27 opacity=%270.53%27/%3E%3Ccircle cx=%27554.3%27 cy=%27643.7%27 r=%271.0%27 fill=%27%23cfd8ff%27 opacity=%270.55%27/%3E%3Ccircle cx=%27290.1%27 cy=%27171.8%27 r=%270.5%27 fill=%27%23ffe9d2%27 opacity=%270.43%27/%3E%3Ccircle cx=%27219.5%27 cy=%27325.3%27 r=%271.3%27 fill=%27%23cfd8ff%27 opacity=%270.68%27/%3E%3Ccircle cx=%2725.8%27 cy=%27595.7%27 r=%270.6%27 fill=%27%23cfd8ff%27 opacity=%270.57%27/%3E%3Ccircle cx=%27718.0%27 cy=%27238.2%27 r=%271.3%27 fill=%27%23cfd8ff%27 opacity=%270.71%27/%3E%3Ccircle cx=%27500.2%27 cy=%27361.6%27 r=%270.7%27 fill=%27%23ffe9d2%27 opacity=%270.31%27/%3E%3Ccircle cx=%27439.7%27 cy=%27530.7%27 r=%271.0%27 fill=%27%23ffe9d2%27 opacity=%270.67%27/%3E%3Ccircle cx=%27403.4%27 cy=%2712.1%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.39%27/%3E%3Ccircle cx=%27275.6%27 cy=%27407.1%27 r=%271.0%27 fill=%27%23cfd8ff%27 opacity=%270.61%27/%3E%3Ccircle cx=%27383.0%27 cy=%27522.2%27 r=%270.8%27 fill=%27%23ffe9d2%27 opacity=%270.48%27/%3E%3Ccircle cx=%27243.8%27 cy=%27176.0%27 r=%270.5%27 fill=%27%23cfd8ff%27 opacity=%270.72%27/%3E%3Ccircle cx=%27107.6%27 cy=%27375.1%27 r=%270.6%27 fill=%27%23ffe9d2%27 opacity=%270.37%27/%3E%3Ccircle cx=%27248.8%27 cy=%27412.7%27 r=%271.1%27 fill=%27%23ffffff%27 opacity=%270.64%27/%3E%3Ccircle cx=%27749.4%27 cy=%27207.4%27 r=%270.8%27 fill=%27%23ffffff%27 opacity=%270.37%27/%3E%3Ccircle cx=%27637.2%27 cy=%2788.6%27 r=%270.5%27 fill=%27%23cfd8ff%27 opacity=%270.88%27/%3E%3Ccircle cx=%27627.7%27 cy=%2788.4%27 r=%271.0%27 fill=%27%23ffffff%27 opacity=%270.32%27/%3E%3Ccircle cx=%27516.7%27 cy=%27328.6%27 r=%271.0%27 fill=%27%23ffffff%27 opacity=%270.47%27/%3E%3Ccircle cx=%27227.2%27 cy=%27603.2%27 r=%270.5%27 fill=%27%23ffe9d2%27 opacity=%270.78%27/%3E%3Ccircle cx=%27442.6%27 cy=%27403.9%27 r=%270.5%27 fill=%27%23cfd8ff%27 opacity=%270.35%27/%3E%3Ccircle cx=%2776.7%27 cy=%27173.7%27 r=%271.1%27 fill=%27%23ffffff%27 opacity=%270.75%27/%3E%3Ccircle cx=%27698.1%27 cy=%27266.3%27 r=%271.0%27 fill=%27%23ffe9d2%27 opacity=%270.44%27/%3E%3Ccircle cx=%27274.8%27 cy=%27434.7%27 r=%271.3%27 fill=%27%23ffffff%27 opacity=%270.87%27/%3E%3Ccircle cx=%27852.8%27 cy=%27145.5%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.42%27/%3E%3Ccircle cx=%27141.4%27 cy=%27121.7%27 r=%270.5%27 fill=%27%23ffe9d2%27 opacity=%270.35%27/%3E%3Ccircle cx=%27405.5%27 cy=%27415.7%27 r=%270.7%27 fill=%27%23cfd8ff%27 opacity=%270.27%27/%3E%3Ccircle cx=%27636.3%27 cy=%27492.1%27 r=%271.0%27 fill=%27%23ffffff%27 opacity=%270.3%27/%3E%3Ccircle cx=%27831.5%27 cy=%27551.5%27 r=%271.3%27 fill=%27%23ffffff%27 opacity=%270.68%27/%3E%3Ccircle cx=%27382.6%27 cy=%27381.2%27 r=%270.6%27 fill=%27%23ffffff%27 opacity=%270.84%27/%3E%3Ccircle cx=%2764.3%27 cy=%27116.1%27 r=%270.7%27 fill=%27%23cfd8ff%27 opacity=%270.64%27/%3E%3Ccircle cx=%27395.2%27 cy=%27328.1%27 r=%270.7%27 fill=%27%23cfd8ff%27 opacity=%270.7%27/%3E%3Ccircle cx=%27450.4%27 cy=%27345.7%27 r=%270.5%27 fill=%27%23ffe9d2%27 opacity=%270.64%27/%3E%3Ccircle cx=%27661.1%27 cy=%27422.6%27 r=%270.5%27 fill=%27%23ffffff%27 opacity=%270.31%27/%3E%3Ccircle cx=%27899.6%27 cy=%27470.6%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.62%27/%3E%3Ccircle cx=%27423.5%27 cy=%27456.1%27 r=%270.7%27 fill=%27%23ffe9d2%27 opacity=%270.37%27/%3E%3Ccircle cx=%27571.3%27 cy=%27344.2%27 r=%270.5%27 fill=%27%23ffe9d2%27 opacity=%270.56%27/%3E%3Ccircle cx=%27300.0%27 cy=%27469.1%27 r=%270.6%27 fill=%27%23ffe9d2%27 opacity=%270.46%27/%3E%3Ccircle cx=%27259.4%27 cy=%27661.6%27 r=%271.1%27 fill=%27%23ffffff%27 opacity=%270.27%27/%3E%3Ccircle cx=%27283.1%27 cy=%27226.3%27 r=%270.9%27 fill=%27%23ffffff%27 opacity=%270.81%27/%3E%3Ccircle cx=%27591.9%27 cy=%27379.8%27 r=%270.9%27 fill=%27%23cfd8ff%27 opacity=%270.29%27/%3E%3Ccircle cx=%27560.4%27 cy=%27348.9%27 r=%271.0%27 fill=%27%23ffffff%27 opacity=%270.74%27/%3E%3Ccircle cx=%27240.4%27 cy=%2791.7%27 r=%270.7%27 fill=%27%23ffe9d2%27 opacity=%270.53%27/%3E%3Ccircle cx=%27109.3%27 cy=%27681.2%27 r=%271.3%27 fill=%27%23ffffff%27 opacity=%270.77%27/%3E%3Ccircle cx=%27279.7%27 cy=%279.6%27 r=%270.9%27 fill=%27%23ffffff%27 opacity=%270.31%27/%3E%3Ccircle cx=%27415.3%27 cy=%2782.2%27 r=%270.6%27 fill=%27%23cfd8ff%27 opacity=%270.57%27/%3E%3Ccircle cx=%27458.0%27 cy=%27191.4%27 r=%271.0%27 fill=%27%23ffffff%27 opacity=%270.89%27/%3E%3Ccircle cx=%27411.1%27 cy=%27101.2%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.85%27/%3E%3Ccircle cx=%27777.6%27 cy=%27193.4%27 r=%270.9%27 fill=%27%23cfd8ff%27 opacity=%270.47%27/%3E%3Ccircle cx=%27738.5%27 cy=%27198.0%27 r=%270.7%27 fill=%27%23ffe9d2%27 opacity=%270.79%27/%3E%3Ccircle cx=%27778.7%27 cy=%27312.6%27 r=%271.0%27 fill=%27%23ffe9d2%27 opacity=%270.47%27/%3E%3Ccircle cx=%27409.8%27 cy=%27225.2%27 r=%270.7%27 fill=%27%23ffffff%27 opacity=%270.89%27/%3E%3Ccircle cx=%27514.6%27 cy=%27163.5%27 r=%270.9%27 fill=%27%23ffe9d2%27 opacity=%270.28%27/%3E%3Ccircle cx=%27634.7%27 cy=%27568.0%27 r=%270.9%27 fill=%27%23ffffff%27 opacity=%270.89%27/%3E%3Ccircle cx=%27445.8%27 cy=%2725.9%27 r=%271.1%27 fill=%27%23cfd8ff%27 opacity=%270.88%27/%3E%3Ccircle cx=%27782.7%27 cy=%27611.9%27 r=%271.7%27 fill=%27%23ffffff%27 opacity=%270.95%27/%3E%3Ccircle cx=%27396.3%27 cy=%27368.2%27 r=%271.7%27 fill=%27%23ffffff%27 opacity=%270.95%27/%3E%3Ccircle cx=%27411.2%27 cy=%27505.7%27 r=%271.7%27 fill=%27%23ffffff%27 opacity=%270.95%27/%3E%3Ccircle cx=%27369.0%27 cy=%27458.3%27 r=%271.7%27 fill=%27%23ffffff%27 opacity=%270.95%27/%3E%3Ccircle cx=%27138.9%27 cy=%27328.6%27 r=%271.7%27 fill=%27%23ffffff%27 opacity=%270.95%27/%3E%3Ccircle cx=%27872.3%27 cy=%27237.0%27 r=%271.7%27 fill=%27%23ffffff%27 opacity=%270.95%27/%3E%3C/svg%3E") repeat #07080d;
+  background-size: 900px 700px;
+  opacity: 0.85;
+}
+.lv-space::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  /* faint hand-made nebula washes + a readability vignette over the stars */
+  background: radial-gradient(46% 38% at 80% 16%, rgba(109, 40, 217, 0.16), transparent 70%),
+    radial-gradient(38% 34% at 10% 80%, rgba(139, 216, 255, 0.09), transparent 70%),
+    radial-gradient(34% 30% at 60% 90%, rgba(255, 154, 213, 0.07), transparent 70%),
+    radial-gradient(120% 100% at 30% 50%, rgba(7, 8, 13, 0.82) 0%, rgba(7, 8, 13, 0.45) 55%, rgba(7, 8, 13, 0.15) 100%);
+}
+/* contact keeps its nebula glows on top of the starfield + vignette */
+.lv-contact.lv-space::after {
+  background: radial-gradient(60% 50% at 82% 8%, rgba(109, 40, 217, 0.3), transparent 70%),
+    radial-gradient(50% 40% at 8% 92%, rgba(255, 154, 213, 0.16), transparent 70%),
+    radial-gradient(40% 36% at 90% 82%, rgba(139, 216, 255, 0.13), transparent 70%),
+    radial-gradient(120% 100% at 30% 50%, rgba(7, 8, 13, 0.85) 0%, rgba(7, 8, 13, 0.5) 55%, rgba(7, 8, 13, 0.22) 100%);
+}
+
+/* sleek animated galaxy sprite (spiral: conic arms + warm core) */
+.lv-galaxy {
+  position: absolute;
+  width: 140px;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  pointer-events: none;
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(183, 156, 255, 0.55) 40deg,
+    transparent 105deg,
+    rgba(139, 216, 255, 0.4) 165deg,
+    transparent 230deg,
+    rgba(255, 154, 213, 0.35) 290deg,
+    transparent 355deg
+  );
+  filter: blur(5px);
+  opacity: 0.55;
+  animation: lv-spin 70s linear infinite;
+}
+.lv-galaxy::after {
+  content: "";
+  position: absolute;
+  inset: 38%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 244, 224, 0.95) 0%, rgba(255, 220, 180, 0.35) 45%, transparent 75%);
+  filter: blur(1px);
+}
+.lv-galaxy--tilt {
+  transform: scaleY(0.45) rotate(24deg);
+  animation: lv-spin-tilt 90s linear infinite;
+}
+.lv-galaxy--small {
+  width: 84px;
+  opacity: 0.4;
+}
+@keyframes lv-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes lv-spin-tilt {
+  from {
+    transform: scaleY(0.45) rotate(24deg);
+  }
+  to {
+    transform: scaleY(0.45) rotate(384deg);
+  }
+}
+
+/* shooting stars: thin streaks crossing occasionally */
+.lv-shoot {
+  position: absolute;
+  width: 120px;
+  height: 1.5px;
+  pointer-events: none;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0) 0%, rgba(255, 255, 255, 0.9) 55%, rgba(139, 216, 255, 0) 100%);
+  border-radius: 999px;
+  opacity: 0;
+  transform: rotate(-24deg);
+  animation: lv-shoot 7s linear infinite;
+}
+@keyframes lv-shoot {
+  0%,
+  86% {
+    opacity: 0;
+    translate: 0 0;
+  }
+  88% {
+    opacity: 0.9;
+  }
+  94% {
+    opacity: 0;
+    translate: -340px 150px;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ============================================================
+   About me — title beat, Gargantua beat, sketchbook beat
+   ============================================================ */
+
+.lv-about {
+  position: relative;
+  overflow: clip;
+  color: var(--lv-bone);
+}
+.lv-about__paper {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0; /* live mode fades it in for the sketch beat */
+  background: #f4efe4;
+  background-image: radial-gradient(rgba(30, 27, 22, 0.05) 1px, transparent 1.4px);
+  background-size: 26px 26px;
+}
+.lv-about__inner {
+  position: relative;
+  z-index: 1;
+  max-width: 1320px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+.lv-about__title {
+  margin: 0 0 clamp(32px, 6vh, 64px);
+  font-size: clamp(52px, 8vw, 120px);
+}
+.lv-about__title b {
+  color: var(--lv-accent-bright);
+  font-weight: inherit;
+}
+
+.lv-about__bh {
+  position: relative;
+  width: min(56vh, 520px);
+  margin: 0 auto clamp(48px, 8vh, 88px);
+}
+.lv-bh2 {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+}
+.lv-about__love {
+  position: absolute;
+  right: -20%;
+  top: 50%;
+  color: var(--lv-grey-light);
+  white-space: nowrap;
+}
+.lv-about__love::before {
+  content: "";
+  position: absolute;
+  left: -44px;
+  top: 50%;
+  width: 36px;
+  height: 1px;
+  background: var(--lv-grey-light);
+}
+
+.lv-about__sketch {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: clamp(32px, 4vw, 72px);
+  align-items: center;
+  color: #1e1b16;
+  padding: clamp(48px, 8vh, 96px) 0;
+}
+.lv-about__me {
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
+  color: #1e1b16;
+}
+.lv-about__me svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.sk-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0; /* final state: fully drawn */
+}
+.lv-doodle {
+  position: absolute;
+  width: 90px;
+  color: rgba(30, 27, 22, 0.55);
+  pointer-events: none;
+}
+.lv-doodle svg {
+  width: 100%;
+  height: auto;
+}
+.lv-doodle--a {
+  left: 2%;
+  top: 6%;
+  rotate: -12deg;
+}
+.lv-doodle--b {
+  right: 4%;
+  bottom: 10%;
+  rotate: 9deg;
+  width: 70px;
+}
+.lv-doodle--c {
+  right: 12%;
+  top: 2%;
+  rotate: -4deg;
+  width: 110px;
+}
+
+.lv-about__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(18px, 3vh, 30px);
+}
+.lv-about__list li {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 16px;
+  align-items: baseline;
+}
+.lv-about__list i {
+  font-style: normal;
+  font-family: var(--font-mono), Consolas, monospace;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  color: var(--lv-accent);
+}
+.lv-about__list p {
+  margin: 0;
+  font-size: clamp(22px, 2.6vw, 38px);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+
+/* live (pinned) mode: beats stack on one stage and are sequenced */
+.lv-about--live .lv-about__inner {
+  display: grid;
+  min-height: calc(100svh - clamp(120px, 16vh, 184px));
+}
+.lv-about--live .lv-about__title,
+.lv-about--live .lv-about__bh,
+.lv-about--live .lv-about__sketch {
+  grid-area: 1 / 1;
+  align-self: center;
+  margin: 0;
+}
+.lv-about--live .lv-about__title {
+  justify-self: center;
+  text-align: center;
 }
 
 /* ============================================================
@@ -875,5 +1174,13 @@ body:has(.lv) .site-footer {
   }
   .lv-hero__cue svg {
     animation: none;
+  }
+  .lv-galaxy,
+  .lv-galaxy--tilt {
+    animation: none;
+  }
+  .lv-shoot {
+    animation: none;
+    opacity: 0;
   }
 }
