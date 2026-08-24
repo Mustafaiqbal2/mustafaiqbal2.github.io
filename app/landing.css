@@ -379,10 +379,10 @@ html.lv-page .site-footer {
   height: auto;
   display: block;
 }
-.lv-plan .lv-draw {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0; /* final state: fully drawn */
-}
+/* drawn strokes carry NO dash in CSS: the no-JS/reduced-motion page is
+   solid (authored final state), and the live draw sets true
+   getTotalLength() dashes inline — the old pathLength=1 normalization
+   snapped 0->100 on GPU-rasterized Chrome */
 
 .lv-arch__visual {
   display: grid;
@@ -598,10 +598,6 @@ html.lv-page .site-footer {
   width: 100%;
   height: auto;
   display: block;
-}
-.lv-flow .lv-draw {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
 }
 /* a pulse orbits the interview loop (ring through the six node centers) */
 .lv-flow__pulse {
@@ -1102,15 +1098,6 @@ html.lv-page .site-footer {
   left: calc(50% - 40px);
   top: calc(50% - 290px);
   width: 70px;
-}
-.lv-boom__draw {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0;
-}
-
-.sk-draw {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 0; /* final state: fully drawn */
 }
 .lv-doodle {
   position: absolute;

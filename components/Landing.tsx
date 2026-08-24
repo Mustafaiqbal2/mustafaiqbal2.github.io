@@ -362,8 +362,7 @@ function TalentFlowDiagram() {
         <path
           key={e.shaft}
           className="lv-draw lv-flow__edge"
-          pathLength={1}
-          d={`${e.shaft} ${e.head}`}
+                   d={`${e.shaft} ${e.head}`}
           stroke={e.violet ? "#6D28D9" : "#0B0C12"}
           strokeWidth={e.violet ? 1.8 : 1.6}
           fill="none"
@@ -469,6 +468,17 @@ export function Landing() {
         const desktop = Boolean(ctx.conditions?.desktop);
         const q = gsap.utils.selector(el);
 
+        // Every drawn stroke dashes in TRUE user units (getTotalLength),
+        // never the pathLength="1" normalization trick: normalized dash
+        // intervals get scaled by ~1/length and land exactly where
+        // GPU-rasterized Chrome loses float precision — the stroke then
+        // snaps 0 -> 100 instead of interpolating (software-raster
+        // headless hides it, which is why screenshots looked fine).
+        const drawFrom = () => ({
+          strokeDasharray: (_i: number, t: Element) => (t as SVGGeometryElement).getTotalLength(),
+          strokeDashoffset: (_i: number, t: Element) => (t as SVGGeometryElement).getTotalLength()
+        });
+
         /* ---------- intro (time-based, plays once) ---------- */
         const intro = gsap.timeline({ paused: true, defaults: { ease: "power4.out", force3D: true } });
         intro
@@ -519,7 +529,7 @@ export function Landing() {
           const section = q(".lv-arch")[0];
           const tl = gsap.timeline({
             scrollTrigger: desktop
-              ? { trigger: section, start: "top top", end: "+=240%", pin: true, scrub: 0.7, anticipatePin: 1, fastScrollEnd: true }
+              ? { trigger: section, start: "top top", end: "+=240%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true }
               : { trigger: section, start: "top 70%", end: "bottom 60%", scrub: 0.8 }
           });
           tl.from(q(".lv-arch .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
@@ -527,12 +537,12 @@ export function Landing() {
             .from(q(".lv-bill"), { opacity: 0, duration: 0.2 }, 1.45)
             .fromTo(
               q(".lv-plan .lv-draw"),
-              { strokeDashoffset: 1 },
+              drawFrom(),
               { strokeDashoffset: 0, stagger: 0.022, duration: 1.1, ease: "none" },
               0.15
             )
             .from(q(".lv-plan__text"), { opacity: 0, duration: 0.35 }, 1.35)
-            .fromTo(q(".lv-arch__arrow path"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.45, ease: "none" }, 1.45)
+            .fromTo(q(".lv-arch__arrow path"), drawFrom(), { strokeDashoffset: 0, duration: 0.45, ease: "none" }, 1.45)
             .from(q(".lv-bill__row"), { x: 40, opacity: 0, stagger: 0.1, duration: 0.4 }, 1.7)
             .from(q(".lv-arch .lv-caption"), { opacity: 0, duration: 0.35 }, 2.1);
         }
@@ -631,7 +641,7 @@ export function Landing() {
           const section = q(".lv-talent")[0];
           const tl = gsap.timeline({
             scrollTrigger: desktop
-              ? { trigger: section, start: "top top", end: "+=440%", pin: true, scrub: 0.7, anticipatePin: 1, fastScrollEnd: true }
+              ? { trigger: section, start: "top top", end: "+=560%", pin: true, scrub: 1.2, anticipatePin: 1, fastScrollEnd: true }
               : { trigger: section, start: "top 72%", end: "bottom 55%", scrub: 0.8 }
           });
           tl.from(q(".lv-talent .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
@@ -639,11 +649,12 @@ export function Landing() {
             .from(q(".lv-flow__node"), { opacity: 0, scale: 0.92, transformOrigin: "center", stagger: 0.07, duration: 0.3 }, 0.25);
           const arrows = q(".lv-flow__edge");
           // one continuous pen: each arrow (shaft + head in a single path)
-          // crawls across ~350px of scroll, the tip visibly advancing the
-          // whole way; the next starts as the pen lifts
+          // crawls across ~450px of scroll, and scrub 1.2 stretches every
+          // wheel notch into >1s of visible tip movement; the next arrow
+          // starts as the pen lifts
           let at = 1.0;
           arrows.forEach((arrow) => {
-            tl.fromTo(arrow, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.5, ease: "none" }, at);
+            tl.fromTo(arrow, drawFrom(), { strokeDashoffset: 0, duration: 0.5, ease: "none" }, at);
             at += 0.52;
           });
           tl.from(q(".lv-flow__labels"), { opacity: 0, duration: 0.3 }, at)
@@ -661,7 +672,7 @@ export function Landing() {
           if (desktop) {
             section.classList.add("lv-about--live");
             const tl = gsap.timeline({
-              scrollTrigger: { trigger: section, start: "top top", end: "+=640%", pin: true, scrub: 0.7, anticipatePin: 1, fastScrollEnd: true, invalidateOnRefresh: true }
+              scrollTrigger: { trigger: section, start: "top top", end: "+=640%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true, invalidateOnRefresh: true }
             });
             tl.fromTo(q(".lv-about__title"), { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.4 }, 0)
               .to(q(".lv-about__title"), { opacity: 0, y: -40, scale: 0.96, duration: 0.3 }, 0.55)
@@ -683,18 +694,28 @@ export function Landing() {
               .set(q(".lv-boom__frame"), { opacity: 0 }, 2.58)
               .set(q(".lv-boom__flash"), { opacity: 1 }, 2.58)
               .set(q(".lv-boom__flash"), { opacity: 0 }, 2.62)
-              /* shockwave rings */
-              .fromTo(q(".lv-boom__ring--a"), { scale: 0.15, opacity: 1 }, { scale: 1.9, opacity: 0, duration: 0.5, ease: "power2.out" }, 2.5)
-              .fromTo(q(".lv-boom__ring--b"), { scale: 0.1, opacity: 0.8 }, { scale: 2.6, opacity: 0, duration: 0.7, ease: "power2.out" }, 2.56)
+              /* shockwave rings — opacity flips on via set() AT detonation:
+                 a from-state of opacity 1 would immediateRender at build
+                 time and preload the prop over the title beat */
+              .set(q(".lv-boom__ring--a"), { opacity: 1 }, 2.5)
+              .fromTo(q(".lv-boom__ring--a"), { scale: 0.15 }, { scale: 1.9, duration: 0.5, ease: "power2.out" }, 2.5)
+              .to(q(".lv-boom__ring--a"), { opacity: 0, duration: 0.25 }, 2.72)
+              .set(q(".lv-boom__ring--b"), { opacity: 0.8 }, 2.56)
+              .fromTo(q(".lv-boom__ring--b"), { scale: 0.1 }, { scale: 2.6, duration: 0.7, ease: "power2.out" }, 2.56)
+              .to(q(".lv-boom__ring--b"), { opacity: 0, duration: 0.3 }, 2.9)
               /* hanabi bursts: every ray draws stroke-by-stroke, then dies out */
-              .fromTo(q(".lv-boom__fw--a"), { opacity: 1, scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.5)
-              .fromTo(q(".lv-boom__fw--a .lv-boom__draw"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.42, stagger: 0.012, ease: "none" }, 2.5)
-              .fromTo(q(".lv-boom__fw--b"), { opacity: 1, scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.66)
-              .fromTo(q(".lv-boom__fw--b .lv-boom__draw"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 2.66)
-              .fromTo(q(".lv-boom__fw--c"), { opacity: 1, scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.76)
-              .fromTo(q(".lv-boom__fw--c .lv-boom__draw"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 2.76)
-              .fromTo(q(".lv-boom__fw--d"), { opacity: 1, scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.88)
-              .fromTo(q(".lv-boom__fw--d .lv-boom__draw"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 2.88)
+              .set(q(".lv-boom__fw--a"), { opacity: 1 }, 2.5)
+              .fromTo(q(".lv-boom__fw--a"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.5)
+              .fromTo(q(".lv-boom__fw--a .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.42, stagger: 0.012, ease: "none" }, 2.5)
+              .set(q(".lv-boom__fw--b"), { opacity: 1 }, 2.66)
+              .fromTo(q(".lv-boom__fw--b"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.66)
+              .fromTo(q(".lv-boom__fw--b .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 2.66)
+              .set(q(".lv-boom__fw--c"), { opacity: 1 }, 2.76)
+              .fromTo(q(".lv-boom__fw--c"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.76)
+              .fromTo(q(".lv-boom__fw--c .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 2.76)
+              .set(q(".lv-boom__fw--d"), { opacity: 1 }, 2.88)
+              .fromTo(q(".lv-boom__fw--d"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.88)
+              .fromTo(q(".lv-boom__fw--d .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 2.88)
               /* stray sparks thrown from the blast */
               .fromTo(
                 q(".lv-boom__spark"),
@@ -715,14 +736,14 @@ export function Landing() {
                 },
                 2.52
               )
-              .fromTo(q(".lv-boom__spark .lv-boom__draw"), { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.3, stagger: 0.02, ease: "none" }, 2.56)
+              .fromTo(q(".lv-boom__spark .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, stagger: 0.02, ease: "none" }, 2.56)
               /* the embers die and the sky clears onto sketchbook paper */
               .to(q(".lv-boom__fw, .lv-boom__spark"), { opacity: 0, duration: 0.3, stagger: 0.04 }, 3.4)
               .fromTo(q(".lv-about__paper"), { opacity: 0 }, { opacity: 1, duration: 0.4 }, 3.62)
               .fromTo(q(".lv-about__sketch"), { opacity: 0 }, { opacity: 1, duration: 0.25 }, 3.85)
               .fromTo(
                 q(".lv-about__sketch .sk-draw"),
-                { strokeDashoffset: 1 },
+                drawFrom(),
                 { strokeDashoffset: 0, stagger: 0.011, duration: 0.9, ease: "none" },
                 3.9
               )
@@ -801,7 +822,7 @@ export function Landing() {
             const sk = q(".lv-about__sketch")[0];
             gsap.fromTo(
               q(".lv-about__sketch .sk-draw"),
-              { strokeDashoffset: 1 },
+              drawFrom(),
               {
                 strokeDashoffset: 0,
                 stagger: 0.008,
@@ -956,7 +977,7 @@ export function Landing() {
             <div className="lv-arch__visual">
               <FloorPlan />
               <svg className="lv-arch__arrow" viewBox="0 0 56 24" fill="none" aria-hidden="true">
-                <path pathLength={1} style={{ strokeDasharray: 1 }} d="M2 12 H46 M38 4 L48 12 L38 20" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+                <path d="M2 12 H46 M38 4 L48 12 L38 20" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
               <div className="lv-bill" role="presentation">
                 {billRows.map((row) => (
