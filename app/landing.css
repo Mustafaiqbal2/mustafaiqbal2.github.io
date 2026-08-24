@@ -601,7 +601,7 @@ html.lv-page .site-footer {
 }
 /* a pulse orbits the interview loop (ring through the six node centers) */
 .lv-flow__pulse {
-  offset-path: path("M250 195 L327.5 61 L482.5 61 L560 195 L482.5 329 L327.5 329 Z");
+  offset-path: path("M250 195 L317.5 61 L492.5 61 L560 195 L482.5 329 L327.5 329 Z");
   animation: lv-orbit 9s linear infinite;
   animation-play-state: paused; /* runs only on screen (.lv-live) */
   filter: drop-shadow(0 0 4px rgba(109, 40, 217, 0.8));

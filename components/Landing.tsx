@@ -123,7 +123,7 @@ const ImpactLines = () => (
 
 const HanabiBurst = () => (
   <svg viewBox="0 0 140 140" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-    <circle className="lv-boom__draw" pathLength={1} cx="70" cy="70" r="8" />
+    <circle className="lv-boom__draw" cx="70" cy="70" r="8" />
     {[
       "M86 70 L126 70",
       "M84 78 L118 98",
@@ -138,7 +138,7 @@ const HanabiBurst = () => (
       "M78 56 L97 23",
       "M84 62 L114 45"
     ].map((d) => (
-      <path key={d} className="lv-boom__draw" pathLength={1} d={d} />
+      <path key={d} className="lv-boom__draw" d={d} />
     ))}
     {[
       [131, 70],
@@ -152,15 +152,15 @@ const HanabiBurst = () => (
     ].map(([x, y]) => (
       <circle key={`${x}-${y}`} cx={x} cy={y} r="1.8" fill="currentColor" stroke="none" />
     ))}
-    <path className="lv-boom__draw" pathLength={1} d="M96 90 L104 96 M44 92 L37 97 M92 44 L98 38" strokeWidth="1.4" />
+    <path className="lv-boom__draw" d="M96 90 L104 96 M44 92 L37 97 M92 44 L98 38" strokeWidth="1.4" />
   </svg>
 );
 
 const SparkStreak = () => (
   <svg viewBox="0 0 90 44" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path className="lv-boom__draw" pathLength={1} d="M2 24 L32 19 L46 26 L70 14" />
-    <path className="lv-boom__draw" pathLength={1} d="M46 26 L60 33" strokeWidth="1.4" />
-    <path className="lv-boom__draw" pathLength={1} d="M32 19 L38 8" strokeWidth="1.4" />
+    <path className="lv-boom__draw" d="M2 24 L32 19 L46 26 L70 14" />
+    <path className="lv-boom__draw" d="M46 26 L60 33" strokeWidth="1.4" />
+    <path className="lv-boom__draw" d="M32 19 L38 8" strokeWidth="1.4" />
     <circle cx="74" cy="12" r="1.6" fill="currentColor" stroke="none" />
   </svg>
 );
@@ -228,30 +228,30 @@ function FloorPlan() {
     <svg className="lv-plan" viewBox="0 0 575 400" fill="none" aria-hidden="true">
       {/* ---- outer wall, double line; gaps only at the window + entrance ---- */}
       {["M40 40 H100", "M170 40 H520", "M520 40 V340", "M520 340 H400", "M330 340 H296", "M250 340 H40", "M40 340 V40"].map((d) => (
-        <path key={d} className="lv-draw" pathLength={1} d={d} {...wall} strokeWidth={2.2} />
+        <path key={d} className="lv-draw" d={d} {...wall} strokeWidth={2.2} />
       ))}
       {["M48 48 H100", "M170 48 H512", "M512 48 V332", "M512 332 H400", "M330 332 H296", "M250 332 H48", "M48 332 V48"].map((d) => (
-        <path key={d} className="lv-draw" pathLength={1} d={d} {...wall} strokeWidth={1.1} />
+        <path key={d} className="lv-draw" d={d} {...wall} strokeWidth={1.1} />
       ))}
       {/* windows (triple lines + jambs) */}
       {["M100 40 H170", "M100 44 H170", "M100 48 H170", "M100 40 V48", "M170 40 V48", "M330 332 H400", "M330 336 H400", "M330 340 H400", "M330 332 V340", "M400 332 V340"].map((d) => (
-        <path key={d} className="lv-draw" pathLength={1} d={d} {...thin} />
+        <path key={d} className="lv-draw" d={d} {...thin} />
       ))}
       {/* entrance jambs */}
       {["M250 332 V340", "M296 332 V340"].map((d) => (
-        <path key={d} className="lv-draw" pathLength={1} d={d} {...thin} />
+        <path key={d} className="lv-draw" d={d} {...thin} />
       ))}
       {/* interior walls: one vertical (bedroom), one L for the bath */}
       {["M230 48 V170", "M230 210 V332", "M380 48 V150", "M380 150 H430", "M470 150 H512"].map((d) => (
-        <path key={d} className="lv-draw" pathLength={1} d={d} {...wall} strokeWidth={2} />
+        <path key={d} className="lv-draw" d={d} {...wall} strokeWidth={2} />
       ))}
       {/* doors: leaf + quarter swing, hinged at the jamb */}
-      <path className="lv-draw" pathLength={1} d="M250 332 V286" {...door} />
-      <path className="lv-draw" pathLength={1} d="M296 332 A46 46 0 0 0 250 286" {...swing} />
-      <path className="lv-draw" pathLength={1} d="M230 170 H190" {...door} />
-      <path className="lv-draw" pathLength={1} d="M230 210 A40 40 0 0 1 190 170" {...swing} />
-      <path className="lv-draw" pathLength={1} d="M430 150 V110" {...door} />
-      <path className="lv-draw" pathLength={1} d="M470 150 A40 40 0 0 0 430 110" {...swing} />
+      <path className="lv-draw" d="M250 332 V286" {...door} />
+      <path className="lv-draw" d="M296 332 A46 46 0 0 0 250 286" {...swing} />
+      <path className="lv-draw" d="M230 170 H190" {...door} />
+      <path className="lv-draw" d="M230 210 A40 40 0 0 1 190 170" {...swing} />
+      <path className="lv-draw" d="M430 150 V110" {...door} />
+      <path className="lv-draw" d="M470 150 A40 40 0 0 0 430 110" {...swing} />
 
       {/* ---- fixtures, labels, dimensions, grid — fade group ---- */}
       <g className="lv-plan__text">
@@ -336,8 +336,8 @@ function TalentFlowDiagram() {
   const nodes: Array<{ cx: number; cy: number; w: number; h: number; l: string; s?: string }> = [
     { cx: 75, cy: 195, w: 130, h: 44, l: "CV/JD INTAKE", s: "STRUCTURED JSON" },
     { cx: 250, cy: 195, w: 140, h: 56, l: "ORCHESTRATOR", s: "MEMORY · GAP CHECKS" },
-    { cx: 327.5, cy: 61, w: 130, h: 48, l: "PICKS NEXT TOPIC", s: "STEP-BY-STEP" },
-    { cx: 482.5, cy: 61, w: 130, h: 48, l: "QUESTION GEN", s: "ANTI-TEMPLATE" },
+    { cx: 317.5, cy: 61, w: 130, h: 48, l: "PICKS NEXT TOPIC", s: "STEP-BY-STEP" },
+    { cx: 492.5, cy: 61, w: 130, h: 48, l: "QUESTION GEN", s: "ANTI-TEMPLATE" },
     { cx: 560, cy: 195, w: 110, h: 44, l: "TTS VOICE" },
     { cx: 327.5, cy: 329, w: 130, h: 44, l: "WHISPER STT" },
     { cx: 105, cy: 329, w: 140, h: 48, l: "REPORT ENGINE", s: "AUDIO + SCORING" }
@@ -345,7 +345,7 @@ function TalentFlowDiagram() {
   const edges: Array<{ shaft: string; head: string; violet?: boolean }> = [
     { shaft: "M140 195 H168", head: "M170 191 L180 195 L170 199" },
     { shaft: "M266.2 167 L308.6 93.7", head: "M312.1 95.7 L313.6 85 L305.1 91.7", violet: true },
-    { shaft: "M392.5 61 H407.5", head: "M407.5 57 L417.5 61 L407.5 65", violet: true },
+    { shaft: "M382.5 61 H417.5", head: "M417.5 57 L427.5 61 L417.5 65", violet: true },
     { shaft: "M496.4 85 L542.3 164.3", head: "M545.8 162.3 L547.3 173 L538.8 166.3", violet: true },
     { shaft: "M547.3 217 L502.5 294.3", head: "M506 296.3 L497.5 303 L499 292.3", violet: true },
     { shaft: "M458 329 H402.5", head: "M402.5 333 L392.5 329 L402.5 325", violet: true },
@@ -356,16 +356,26 @@ function TalentFlowDiagram() {
     <svg className="lv-flow" viewBox="0 0 640 400" fill="none" aria-hidden="true">
       {/* orbiting pulse (under the nodes) */}
       <circle className="lv-flow__pulse" r="3.5" fill="#6D28D9" />
-      {/* each arrow = shaft + head in a SINGLE path: the dash-draw flows
-          through the line straight into the chevron, one pen, no seam */}
+      {/* shafts crawl in first; each head flicks on AFTER its shaft lands */}
       {edges.map((e) => (
         <path
           key={e.shaft}
-          className="lv-draw lv-flow__edge"
-                   d={`${e.shaft} ${e.head}`}
+          className="lv-flow__edge"
+          d={e.shaft}
           stroke={e.violet ? "#6D28D9" : "#0B0C12"}
           strokeWidth={e.violet ? 1.8 : 1.6}
           fill="none"
+        />
+      ))}
+      {edges.map((e) => (
+        <path
+          key={e.head}
+          className="lv-flow__head"
+          d={e.head}
+          stroke={e.violet ? "#6D28D9" : "#0B0C12"}
+          strokeWidth={e.violet ? 1.8 : 1.6}
+          fill="none"
+          strokeLinecap="round"
           strokeLinejoin="round"
         />
       ))}
@@ -474,9 +484,15 @@ export function Landing() {
         // GPU-rasterized Chrome loses float precision — the stroke then
         // snaps 0 -> 100 instead of interpolating (software-raster
         // headless hides it, which is why screenshots looked fine).
+        // Gap runs 2 units longer than the dash and the offset starts 1 unit
+        // past the length: float slivers at the dash boundary would otherwise
+        // poke a round-cap DOT out of every hidden stroke.
         const drawFrom = () => ({
-          strokeDasharray: (_i: number, t: Element) => (t as SVGGeometryElement).getTotalLength(),
-          strokeDashoffset: (_i: number, t: Element) => (t as SVGGeometryElement).getTotalLength()
+          strokeDasharray: (_i: number, t: Element) => {
+            const len = (t as SVGGeometryElement).getTotalLength();
+            return `${len} ${len + 2}`;
+          },
+          strokeDashoffset: (_i: number, t: Element) => (t as SVGGeometryElement).getTotalLength() + 1
         });
 
         /* ---------- intro (time-based, plays once) ---------- */
@@ -648,14 +664,15 @@ export function Landing() {
             .from(q(".lv-talent__copy .lv-body"), { y: 32, opacity: 0, stagger: 0.08, duration: 0.4 }, 0.12)
             .from(q(".lv-flow__node"), { opacity: 0, scale: 0.92, transformOrigin: "center", stagger: 0.07, duration: 0.3 }, 0.25);
           const arrows = q(".lv-flow__edge");
-          // one continuous pen: each arrow (shaft + head in a single path)
-          // crawls across ~450px of scroll, and scrub 1.2 stretches every
-          // wheel notch into >1s of visible tip movement; the next arrow
-          // starts as the pen lifts
+          const heads = q(".lv-flow__head");
+          // one pen: each shaft crawls across ~380px of scroll (scrub 1.2
+          // stretches every wheel notch into >1s of visible tip movement),
+          // and the HEAD flicks on only after its shaft fully lands
           let at = 1.0;
-          arrows.forEach((arrow) => {
-            tl.fromTo(arrow, drawFrom(), { strokeDashoffset: 0, duration: 0.5, ease: "none" }, at);
-            at += 0.52;
+          arrows.forEach((arrow, i) => {
+            tl.fromTo(arrow, drawFrom(), { strokeDashoffset: 0, duration: 0.46, ease: "none" }, at);
+            if (heads[i]) tl.fromTo(heads[i], drawFrom(), { strokeDashoffset: 0, duration: 0.08, ease: "none" }, at + 0.46);
+            at += 0.56;
           });
           tl.from(q(".lv-flow__labels"), { opacity: 0, duration: 0.3 }, at)
             .fromTo(q(".lv-flow__pulse"), { opacity: 0 }, { opacity: 1, duration: 0.2 }, at + 0.2)
@@ -964,8 +981,9 @@ export function Landing() {
               </span>
             </h2>
             <p className="lv-body">
-              ArchPHI turns architectural CAD packages into bills of quantities. It reads what the drawings declare —
-              geometry, layers, counts — and where a drawing carries no answer, it says so instead of guessing.
+              ArchPHI is building the operating system for architectural drawings. The first piece reads what a
+              drawing declares — geometry, layers, counts — and writes the bill of quantities. Where a drawing
+              carries no answer, it says so instead of guessing.
               <b> Coming soon.</b>
             </p>
             <a className="lv-link" href="https://archphi.com" target="_blank" rel="noreferrer">
@@ -1006,7 +1024,7 @@ export function Landing() {
         <div className="lv-fleet__head">
           <div>
             <p className="lv-eyebrow">02 — Simplabots</p>
-            <h2 className="lv-h2 lv-display">Five working agents.</h2>
+            <h2 className="lv-h2 lv-display">Agents in production.</h2>
           </div>
           <p className="lv-body">
             Simplabots sells AI agents to small businesses.
@@ -1055,8 +1073,8 @@ export function Landing() {
               </span>
             </h2>
             <p className="lv-body">
-              Pilone manufactures electrical cable in Pakistan. I build and run their site — product pages, guides, and
-              sizing calculators generated from factory data, with build checks that fail on broken links or bad schema.
+              Pilone manufactures electrical cable in Pakistan. I build and run their site — product pages, guides,
+              and sizing calculators generated from factory data.
             </p>
             <a className="lv-link" href="https://www.pilonecables.com" target="_blank" rel="noreferrer">
               pilonecables.com <ArrowUpRight />
