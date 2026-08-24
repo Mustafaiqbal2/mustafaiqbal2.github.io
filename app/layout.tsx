@@ -68,10 +68,7 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F5F6F8" },
-    { media: "(prefers-color-scheme: dark)", color: "#101216" }
-  ]
+  themeColor: "#f2f2ee"
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
@@ -79,8 +76,10 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
     (function () {
       document.documentElement.classList.remove("no-js");
       function resolveTheme(pref) {
-        var systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-        return pref === "system" ? (systemDark ? "dark" : "light") : pref;
+        // The site is a single-look design (bone/ink poster + space) —
+        // the old dark theme's variable overrides fight the new pages,
+        // so every preference resolves to the designed look.
+        return "light";
       }
       function updateControls(pref) {
         var buttons = document.querySelectorAll("[data-theme-choice]");
