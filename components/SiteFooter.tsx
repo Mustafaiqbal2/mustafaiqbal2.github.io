@@ -6,7 +6,7 @@ export function SiteFooter() {
   return (
     <>
       <section className="cta-band lv-space" aria-labelledby="cta-title">
-        <div className="wrap reveal" data-reveal="scale">
+        <div className="wrap reveal" data-reveal="scale" suppressHydrationWarning>
           <p className="eyebrow">Get in touch</p>
           <h2 id="cta-title">
             Talk to me<em>.</em>
@@ -21,11 +21,11 @@ export function SiteFooter() {
       <footer className="site-footer">
         <div className="wrap">
           <div className="footer-grid" data-stagger>
-            <div className="footer-brand reveal">
+            <div className="footer-brand reveal" suppressHydrationWarning>
               <strong>{profile.name}</strong>
               <p>{profile.bioShort}</p>
             </div>
-            <nav className="footer-col reveal" aria-label="Sitemap">
+            <nav className="footer-col reveal" aria-label="Sitemap" suppressHydrationWarning>
               <h3>Sitemap</h3>
               <a href="/">Home</a>
               {navigation.map((item) => (
@@ -34,7 +34,7 @@ export function SiteFooter() {
                 </a>
               ))}
             </nav>
-            <nav className="footer-col reveal" aria-label="Elsewhere">
+            <nav className="footer-col reveal" aria-label="Elsewhere" suppressHydrationWarning>
               <h3>Elsewhere</h3>
               <a href={`mailto:${profile.email}`}>Email</a>
               <a href={profile.github} target="_blank" rel="noreferrer">

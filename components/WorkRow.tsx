@@ -9,6 +9,7 @@ export function WorkRow({ project, index }: { project: CaseStudy; index: number 
       className="work-row reveal"
       data-reveal="left"
       style={{ "--reveal-delay": `${index * 60}ms` } as CSSProperties}
+      suppressHydrationWarning
     >
       <a href={`/work/${project.slug}/`}>
         <span className="work-row__index">{String(index + 1).padStart(2, "0")}</span>
