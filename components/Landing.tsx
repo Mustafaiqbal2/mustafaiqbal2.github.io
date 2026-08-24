@@ -216,10 +216,9 @@ function TalentFlowDiagram() {
   const nodes: Array<{ cx: number; cy: number; w: number; h: number; l: string; s?: string }> = [
     { cx: 75, cy: 195, w: 130, h: 44, l: "CV/JD INTAKE", s: "STRUCTURED JSON" },
     { cx: 250, cy: 195, w: 140, h: 56, l: "ORCHESTRATOR", s: "MEMORY · GAP CHECKS" },
-    { cx: 327.5, cy: 61, w: 130, h: 48, l: "STRATEGY COT" },
+    { cx: 327.5, cy: 61, w: 130, h: 48, l: "PICKS NEXT TOPIC", s: "STEP-BY-STEP" },
     { cx: 482.5, cy: 61, w: 130, h: 48, l: "QUESTION GEN", s: "ANTI-TEMPLATE" },
     { cx: 560, cy: 195, w: 110, h: 44, l: "TTS VOICE" },
-    { cx: 482.5, cy: 329, w: 120, h: 44, l: "CANDIDATE" },
     { cx: 327.5, cy: 329, w: 130, h: 44, l: "WHISPER STT" },
     { cx: 105, cy: 329, w: 140, h: 48, l: "REPORT ENGINE", s: "AUDIO + SCORING" }
   ];
@@ -228,8 +227,8 @@ function TalentFlowDiagram() {
     { shaft: "M266.2 167 L308.6 93.7", head: "M313.6 85 L312.1 95.7 L305.1 91.7 Z", violet: true },
     { shaft: "M392.5 61 H407.5", head: "M417.5 61 L407.5 57 L407.5 65 Z", violet: true },
     { shaft: "M496.4 85 L542.3 164.3", head: "M547.3 173 L545.8 162.3 L538.8 166.3 Z", violet: true },
-    { shaft: "M547.3 217 L500.2 298.3", head: "M495.2 307 L503.7 300.3 L496.7 296.3 Z", violet: true },
-    { shaft: "M422.5 329 H402.5", head: "M392.5 329 L402.5 333 L402.5 325 Z", violet: true },
+    { shaft: "M547.3 217 L502.5 294.3", head: "M497.5 303 L506 296.3 L499 292.3 Z", violet: true },
+    { shaft: "M458 329 H402.5", head: "M392.5 329 L402.5 333 L402.5 325 Z", violet: true },
     { shaft: "M314.8 307 L271.2 231.7", head: "M266.2 223 L274.7 229.7 L267.7 233.7 Z", violet: true },
     { shaft: "M250 223 V321 Q250 329 242 329 H185", head: "M175 329 L185 325 L185 333 Z" }
   ];
@@ -256,7 +255,7 @@ function TalentFlowDiagram() {
       {/* edge labels (after everything) */}
       <g className="lv-flow__labels">
         <text x="302" y="272" {...sub}>TRANSCRIPT</text>
-        <text x="258" y="278" textAnchor="end" {...sub}>ON CONCLUDE</text>
+        <text x="242" y="270" textAnchor="end" {...sub}>ON CONCLUDE</text>
       </g>
       {/* nodes */}
       {nodes.map((n) => (
@@ -268,6 +267,12 @@ function TalentFlowDiagram() {
           ) : null}
         </g>
       ))}
+      {/* the candidate is a person, not a box */}
+      <g className="lv-flow__node">
+        <circle cx="482.5" cy="305" r="8" stroke="#0B0C12" strokeWidth="2" fill="#F2F2EE" />
+        <path d="M482.5 313 V335 M482.5 318 L468 328 M482.5 318 L497 328 M482.5 335 L470 351 M482.5 335 L495 351" stroke="#0B0C12" strokeWidth="2" strokeLinecap="round" fill="none" />
+        <text x="482.5" y="368" textAnchor="middle" {...label}>CANDIDATE</text>
+      </g>
     </svg>
   );
 }
@@ -279,6 +284,8 @@ export function Landing() {
     const el = root.current;
     if (!el) return;
 
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
+    const refreshState = { introDone: false, queued: false };
     const mm = gsap.matchMedia(el);
 
     mm.add(
@@ -298,6 +305,10 @@ export function Landing() {
           .from(q(".lv-hero__status, .lv-hero__foot"), { y: 28, opacity: 0, duration: 0.8, stagger: 0.1 }, 0.55);
         // from-states are applied; release the pre-paint gate
         document.documentElement.classList.remove("lv-intro");
+        intro.eventCallback("onComplete", () => {
+          refreshState.introDone = true;
+          if (refreshState.queued) ScrollTrigger.refresh();
+        });
 
         /* ---------- hero parallax out ---------- */
         gsap.to(q(".lv-hero__name"), {
@@ -322,7 +333,7 @@ export function Landing() {
           });
           tl.from(q(".lv-arch .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
             .from(q(".lv-arch__copy .lv-body, .lv-arch__copy .lv-link"), { y: 32, opacity: 0, stagger: 0.08, duration: 0.4 }, 0.12)
-            .from(q(".lv-bill"), { opacity: 0, duration: 0.25 }, 0.1)
+            .from(q(".lv-bill"), { opacity: 0, duration: 0.2 }, 1.45)
             .fromTo(
               q(".lv-plan .lv-draw"),
               { strokeDashoffset: 1 },
@@ -501,10 +512,15 @@ export function Landing() {
       }
     );
 
-    const onLoad = () => ScrollTrigger.refresh();
+    // never refresh mid-intro: that recalcs every pin and reads as a jitter
+    const safeRefresh = () => {
+      if (refreshState.introDone) ScrollTrigger.refresh();
+      else refreshState.queued = true;
+    };
+    const onLoad = () => safeRefresh();
     window.addEventListener("load", onLoad);
     if (document.fonts?.ready) {
-      document.fonts.ready.then(() => ScrollTrigger.refresh()).catch(() => {});
+      document.fonts.ready.then(safeRefresh).catch(() => {});
     }
 
     return () => {
@@ -518,7 +534,7 @@ export function Landing() {
       {/* ================= Hero ================= */}
       <section className="lv-hero" aria-label="Intro">
         <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ right: "8%", top: "30%" }} aria-hidden="true"><OrbitMark /></span>
-        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ left: "38%", bottom: "24%", opacity: 0.3 }} aria-hidden="true"><PlanetMark /></span>
+        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ right: "22%", top: "58%", opacity: 0.3 }} aria-hidden="true"><PlanetMark /></span>
         <div className="lv-hero__status lv-mono">
           <span>Software engineer &amp; founder</span>
           <span>Pakistan</span>
@@ -560,7 +576,9 @@ export function Landing() {
       {/* ================= ArchPHI ================= */}
       <section className="lv-section--ink lv-arch lv-pin lv-space" aria-label="ArchPHI">
         <span className="lv-orb lv-orb--bone lv-orb--sm" style={{ right: "6%", top: "12%" }} aria-hidden="true"><GalaxyMark /></span>
-        <span className="lv-orb lv-orb--violet lv-orb--sm" style={{ left: "4%", bottom: "10%" }} aria-hidden="true"><OrbitMark /></span>
+        <span className="lv-orb lv-orb--violet lv-orb--sm" style={{ left: "42%", bottom: "5%" }} aria-hidden="true"><OrbitMark /></span>
+        <span className="lv-shoot" style={{ right: "18%", top: "8%", animationDelay: "0.6s" }} aria-hidden="true" />
+        <span className="lv-shoot" style={{ left: "30%", bottom: "20%", animationDelay: "3.1s" }} aria-hidden="true" />
         <div className="lv-arch__grid">
           <div className="lv-arch__copy">
             <p className="lv-eyebrow">01 — ArchPHI · Founder &amp; CTO</p>
@@ -606,11 +624,12 @@ export function Landing() {
 
       {/* ================= Simplabots fleet ================= */}
       <section className="lv-section--bone lv-fleet" aria-label="Simplabots agents">
-        <span className="lv-orb lv-orb--ink lv-orb--lg" style={{ left: "3%", top: "4%" }} aria-hidden="true"><GalaxyMark /></span>
-        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ right: "10%", top: "16%" }} aria-hidden="true"><PlanetMark /></span>
-        <span className="lv-orb lv-orb--ink" style={{ left: "44%", bottom: "8%" }} aria-hidden="true"><OrbitMark /></span>
-        <span className="lv-shoot lv-shoot--ink" style={{ right: "22%", top: "10%", animationDelay: "1.2s" }} aria-hidden="true" />
-        <span className="lv-shoot lv-shoot--ink" style={{ left: "30%", top: "24%", animationDelay: "4.6s" }} aria-hidden="true" />
+        <span className="lv-orb lv-orb--ink lv-orb--lg" style={{ left: "4%", bottom: "12%" }} aria-hidden="true"><GalaxyMark /></span>
+        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ right: "6%", bottom: "16%" }} aria-hidden="true"><PlanetMark /></span>
+        <span className="lv-orb lv-orb--ink" style={{ left: "48%", bottom: "6%" }} aria-hidden="true"><OrbitMark /></span>
+        <span className="lv-shoot lv-shoot--ink" style={{ right: "8%", top: "58%", animationDelay: "1.2s" }} aria-hidden="true" />
+        <span className="lv-shoot lv-shoot--ink" style={{ left: "56%", top: "66%", animationDelay: "4.6s" }} aria-hidden="true" />
+        <span className="lv-shoot lv-shoot--ink" style={{ left: "30%", top: "76%", animationDelay: "2.8s" }} aria-hidden="true" />
         <div className="lv-fleet__head">
           <div>
             <p className="lv-eyebrow">02 — Simplabots</p>
@@ -647,8 +666,10 @@ export function Landing() {
 
       {/* ================= Pilone ================= */}
       <section className="lv-section--ink lv-pilone lv-pin lv-space" aria-label="PiloneCables">
-        <span className="lv-orb lv-orb--bone lv-orb--sm" style={{ right: "5%", bottom: "14%" }} aria-hidden="true"><PlanetMark /></span>
-        <span className="lv-orb lv-orb--violet lv-orb--sm" style={{ left: "42%", top: "8%" }} aria-hidden="true"><GalaxyMark /></span>
+        <span className="lv-orb lv-orb--bone lv-orb--sm" style={{ left: "44%", bottom: "6%" }} aria-hidden="true"><PlanetMark /></span>
+        <span className="lv-shoot" style={{ right: "30%", top: "10%", animationDelay: "1.4s" }} aria-hidden="true" />
+        <span className="lv-shoot" style={{ left: "20%", top: "26%", animationDelay: "4.2s" }} aria-hidden="true" />
+        <span className="lv-orb lv-orb--violet lv-orb--sm" style={{ right: "4%", top: "6%" }} aria-hidden="true"><GalaxyMark /></span>
         <div className="lv-pilone__grid">
           <div className="lv-pilone__copy">
             <p className="lv-eyebrow">03 — pilonecables.com</p>
@@ -695,8 +716,8 @@ export function Landing() {
 
       {/* ================= TalentFlow ================= */}
       <section className="lv-section--bone lv-talent lv-pin" aria-label="TalentFlow">
-        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ right: "6%", top: "10%" }} aria-hidden="true"><OrbitMark /></span>
-        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ left: "5%", bottom: "10%", opacity: 0.3 }} aria-hidden="true"><GalaxyMark /></span>
+        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ right: "5%", bottom: "6%" }} aria-hidden="true"><OrbitMark /></span>
+        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ left: "5%", bottom: "6%", opacity: 0.3 }} aria-hidden="true"><GalaxyMark /></span>
         <div className="lv-talent__grid">
           <div className="lv-talent__copy">
             <p className="lv-eyebrow">04 — TalentFlow · Genesys Research Lab</p>
@@ -766,11 +787,12 @@ export function Landing() {
       {/* ================= Contact ================= */}
       <section className="lv-contact lv-space" aria-label="Contact">
         <span className="lv-orb lv-orb--bone lv-orb--lg" style={{ right: "7%", top: "14%" }} aria-hidden="true"><GalaxyMark /></span>
-        <span className="lv-orb lv-orb--violet" style={{ left: "16%", bottom: "24%" }} aria-hidden="true"><OrbitMark /></span>
-        <span className="lv-orb lv-orb--bone lv-orb--sm" style={{ right: "28%", bottom: "12%" }} aria-hidden="true"><PlanetMark /></span>
+        <span className="lv-orb lv-orb--violet" style={{ right: "30%", top: "42%" }} aria-hidden="true"><OrbitMark /></span>
+        <span className="lv-orb lv-orb--bone lv-orb--sm" style={{ right: "12%", top: "64%" }} aria-hidden="true"><PlanetMark /></span>
         <span className="lv-shoot" style={{ right: "24%", top: "8%", animationDelay: "0.8s" }} aria-hidden="true" />
         <span className="lv-shoot" style={{ left: "48%", top: "16%", animationDelay: "3.4s" }} aria-hidden="true" />
-        <span className="lv-shoot" style={{ right: "8%", bottom: "36%", animationDelay: "6.1s" }} aria-hidden="true" />
+        <span className="lv-shoot" style={{ right: "4%", top: "26%", animationDelay: "6.1s" }} aria-hidden="true" />
+        <span className="lv-shoot" style={{ right: "36%", top: "30%", animationDelay: "2.2s" }} aria-hidden="true" />
         <div className="lv-contact__inner">
           <h2 className="lv-contact__title lv-display">Talk to me.</h2>
           <a className="lv-contact__email" href="mailto:therealmustafaiqbal@gmail.com">
