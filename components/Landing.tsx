@@ -343,17 +343,29 @@ export function Landing() {
         const q = gsap.utils.selector(el);
 
         /* ---------- intro (time-based, plays once) ---------- */
-        const intro = gsap.timeline({ defaults: { ease: "power4.out" } });
+        const intro = gsap.timeline({ paused: true, defaults: { ease: "power4.out", force3D: true } });
         intro
           .from(q(".lv-hero__name-1 > span"), { xPercent: -60, opacity: 0, duration: 1.1 }, 0.1)
           .from(q(".lv-hero__name-2 > span"), { xPercent: 60, opacity: 0, duration: 1.1 }, 0.18)
           .from(q(".lv-hero__status, .lv-hero__foot"), { y: 28, opacity: 0, duration: 0.8, stagger: 0.1 }, 0.55);
-        // from-states are applied; release the pre-paint gate
-        document.documentElement.classList.remove("lv-intro");
-        intro.eventCallback("onComplete", () => {
-          refreshState.introDone = true;
-          if (refreshState.queued) ScrollTrigger.refresh();
-        });
+        // Hold the intro until fonts are ready (capped) so the giant name
+        // rasterizes once, then release the pre-paint gate and play.
+        const startIntro = () => {
+          document.documentElement.classList.remove("lv-intro");
+          intro.play();
+        };
+        const fontsReady =
+          typeof document !== "undefined" && document.fonts && document.fonts.ready
+            ? document.fonts.ready.catch(() => undefined)
+            : Promise.resolve(undefined);
+        Promise.race([fontsReady, new Promise((r) => window.setTimeout(r, 650))]).then(() => startIntro());
+
+        // Scene construction is chunked one section per frame after the
+        // intro: six small slices instead of one long freeze. Built
+        // top-to-bottom so each pin's measurements already include the
+        // spacers above it — no full refresh needed afterwards.
+        const sceneBuilders: Array<() => void> = [];
+        sceneBuilders.push(() => {
 
         /* ---------- hero parallax out ---------- */
         gsap.to(q(".lv-hero__name"), {
@@ -373,6 +385,8 @@ export function Landing() {
           }
         );
 
+        });
+        sceneBuilders.push(() => {
         /* ---------- ArchPHI: pin + draw the plan into a bill ---------- */
         {
           const section = q(".lv-arch")[0];
@@ -396,6 +410,8 @@ export function Landing() {
             .from(q(".lv-arch .lv-caption"), { opacity: 0, duration: 0.35 }, 2.1);
         }
 
+        });
+        sceneBuilders.push(() => {
         /* ---------- Fleet: pinned horizontal pan ---------- */
         {
           const section = q(".lv-fleet")[0];
@@ -431,6 +447,8 @@ export function Landing() {
           }
         }
 
+        });
+        sceneBuilders.push(() => {
         /* ---------- Pilone: pin + counters ---------- */
         {
           const section = q(".lv-pilone")[0];
@@ -478,6 +496,8 @@ export function Landing() {
             .from(q(".lv-pilone .lv-caption"), { opacity: 0, duration: 0.4 }, 2.0);
         }
 
+        });
+        sceneBuilders.push(() => {
         /* ---------- TalentFlow: pin + the interview loop ---------- */
         {
           const section = q(".lv-talent")[0];
@@ -502,6 +522,8 @@ export function Landing() {
             .from(q(".lv-talent .lv-caption"), { opacity: 0, duration: 0.3 }, at + 0.15);
         }
 
+        });
+        sceneBuilders.push(() => {
         /* ---------- About me: title → Gargantua → sketchbook ---------- */
         {
           const section = q(".lv-about")[0] as HTMLElement;
@@ -623,12 +645,31 @@ export function Landing() {
           }
         }
 
+        });
+        sceneBuilders.push(() => {
         /* ---------- Contact ---------- */
         gsap.from(q(".lv-contact__inner > *"), {
           y: 44,
           opacity: 0,
           stagger: 0.1,
           scrollTrigger: { trigger: q(".lv-contact")[0], start: "top 80%", end: "top 45%", scrub: 0.8 }
+        });
+
+        });
+
+        const runBuilders = () => {
+          const next = sceneBuilders.shift();
+          if (!next) {
+            refreshState.introDone = true;
+            refreshState.queued = false; // built post-fonts; measurements are fresh
+            return;
+          }
+          ctx.add(next);
+          // breathing room between slices so input and paint stay responsive
+          window.setTimeout(runBuilders, 60);
+        };
+        intro.eventCallback("onComplete", () => {
+          window.requestAnimationFrame(runBuilders);
         });
 
         return () => {
