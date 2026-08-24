@@ -661,6 +661,13 @@ body:has(.lv) .site-footer {
   width: 13px;
   height: 13px;
 }
+.lv-contact .lv-link {
+  align-self: flex-start;
+}
+.lv-contact .lv-link:hover {
+  background: var(--lv-bone);
+  color: var(--lv-ink);
+}
 .lv-contact__bottom {
   display: flex;
   justify-content: space-between;

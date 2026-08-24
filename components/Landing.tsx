@@ -139,7 +139,7 @@ const billRows = [
 ];
 
 const tickerText =
-  "Now — building ArchPHI  //  running pilonecables.com  //  agents for Simplabots  // ";
+  "Now — building ArchPHI  //  running pilonecables.com  // ";
 
 /* Production-style ground-floor plan. Walls/windows/doors carry .lv-draw
    (stroke-drawn on scroll); fixtures, labels, dimensions and grid bubbles
@@ -268,14 +268,14 @@ function TalentFlowDiagram() {
     { cx: 105, cy: 329, w: 140, h: 48, l: "REPORT ENGINE", s: "AUDIO + SCORING" }
   ];
   const edges: Array<{ shaft: string; head: string; violet?: boolean }> = [
-    { shaft: "M140 195 H168", head: "M180 195 L170 191 L170 199 Z" },
-    { shaft: "M266.2 167 L308.6 93.7", head: "M313.6 85 L312.1 95.7 L305.1 91.7 Z", violet: true },
-    { shaft: "M392.5 61 H407.5", head: "M417.5 61 L407.5 57 L407.5 65 Z", violet: true },
-    { shaft: "M496.4 85 L542.3 164.3", head: "M547.3 173 L545.8 162.3 L538.8 166.3 Z", violet: true },
-    { shaft: "M547.3 217 L502.5 294.3", head: "M497.5 303 L506 296.3 L499 292.3 Z", violet: true },
-    { shaft: "M458 329 H402.5", head: "M392.5 329 L402.5 333 L402.5 325 Z", violet: true },
-    { shaft: "M314.8 307 L271.2 231.7", head: "M266.2 223 L274.7 229.7 L267.7 233.7 Z", violet: true },
-    { shaft: "M250 223 V321 Q250 329 242 329 H185", head: "M175 329 L185 325 L185 333 Z" }
+    { shaft: "M140 195 H168", head: "M170 191 L180 195 L170 199" },
+    { shaft: "M266.2 167 L308.6 93.7", head: "M312.1 95.7 L313.6 85 L305.1 91.7", violet: true },
+    { shaft: "M392.5 61 H407.5", head: "M407.5 57 L417.5 61 L407.5 65", violet: true },
+    { shaft: "M496.4 85 L542.3 164.3", head: "M545.8 162.3 L547.3 173 L538.8 166.3", violet: true },
+    { shaft: "M547.3 217 L502.5 294.3", head: "M506 296.3 L497.5 303 L499 292.3", violet: true },
+    { shaft: "M458 329 H402.5", head: "M402.5 333 L392.5 329 L402.5 325", violet: true },
+    { shaft: "M314.8 307 L271.2 231.7", head: "M274.7 229.7 L266.2 223 L267.7 233.7", violet: true },
+    { shaft: "M250 223 V321 Q250 329 242 329 H185", head: "M185 325 L175 329 L185 333" }
   ];
   return (
     <svg className="lv-flow" viewBox="0 0 640 400" fill="none" aria-hidden="true">
@@ -293,9 +293,19 @@ function TalentFlowDiagram() {
           fill="none"
         />
       ))}
-      {/* arrowheads (filled, land after their shafts) */}
+      {/* arrowheads — stroked chevrons, drawn right after their shafts */}
       {edges.map((e) => (
-        <path key={e.head} className="lv-flow__head" d={e.head} fill={e.violet ? "#6D28D9" : "#0B0C12"} />
+        <path
+          key={e.head}
+          className="lv-draw lv-flow__head"
+          pathLength={1}
+          d={e.head}
+          stroke={e.violet ? "#6D28D9" : "#0B0C12"}
+          strokeWidth={e.violet ? 1.8 : 1.6}
+          fill="none"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       ))}
       {/* edge labels (after everything) */}
       <g className="lv-flow__labels">
@@ -392,7 +402,7 @@ export function Landing() {
           const section = q(".lv-arch")[0];
           const tl = gsap.timeline({
             scrollTrigger: desktop
-              ? { trigger: section, start: "top top", end: "+=200%", pin: true, scrub: 1, anticipatePin: 1 }
+              ? { trigger: section, start: "top top", end: "+=200%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true }
               : { trigger: section, start: "top 70%", end: "bottom 60%", scrub: 0.8 }
           });
           tl.from(q(".lv-arch .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
@@ -432,6 +442,7 @@ export function Landing() {
                 end: "+=260%",
                 pin: true,
                 scrub: 1,
+                fastScrollEnd: true,
                 anticipatePin: 1,
                 invalidateOnRefresh: true
               }
@@ -458,7 +469,7 @@ export function Landing() {
           const impr = { v: 46200 };
           const tl = gsap.timeline({
             scrollTrigger: desktop
-              ? { trigger: section, start: "top top", end: "+=200%", pin: true, scrub: 1, anticipatePin: 1 }
+              ? { trigger: section, start: "top top", end: "+=200%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true }
               : { trigger: section, start: "top 70%", end: "bottom 60%", scrub: 0.8 }
           });
           tl.from(q(".lv-pilone .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
@@ -503,7 +514,7 @@ export function Landing() {
           const section = q(".lv-talent")[0];
           const tl = gsap.timeline({
             scrollTrigger: desktop
-              ? { trigger: section, start: "top top", end: "+=220%", pin: true, scrub: 1, anticipatePin: 1 }
+              ? { trigger: section, start: "top top", end: "+=220%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true }
               : { trigger: section, start: "top 72%", end: "bottom 55%", scrub: 0.8 }
           });
           tl.from(q(".lv-talent .lv-h2 .lv-line > span"), { yPercent: 110, stagger: 0.08, duration: 0.5 }, 0)
@@ -514,7 +525,7 @@ export function Landing() {
           let at = 0.85;
           shafts.forEach((shaft, i) => {
             tl.fromTo(shaft, { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.16, ease: "none" }, at);
-            if (heads[i]) tl.fromTo(heads[i], { opacity: 0 }, { opacity: 1, duration: 0.06 }, at + 0.14);
+            if (heads[i]) tl.fromTo(heads[i], { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.07, ease: "none" }, at + 0.14);
             at += 0.2;
           });
           tl.from(q(".lv-flow__labels"), { opacity: 0, duration: 0.25 }, at)
@@ -532,7 +543,7 @@ export function Landing() {
           if (desktop) {
             section.classList.add("lv-about--live");
             const tl = gsap.timeline({
-              scrollTrigger: { trigger: section, start: "top top", end: "+=540%", pin: true, scrub: 1, anticipatePin: 1, invalidateOnRefresh: true }
+              scrollTrigger: { trigger: section, start: "top top", end: "+=540%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true, invalidateOnRefresh: true }
             });
             tl.fromTo(q(".lv-about__title"), { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.4 }, 0)
               .to(q(".lv-about__title"), { opacity: 0, y: -40, scale: 0.96, duration: 0.3 }, 0.55)
@@ -722,7 +733,8 @@ export function Landing() {
               I like building things<b>.</b>
             </p>
             <p className="lv-hero__sub">
-              AI agents in production, a search platform for a factory, and a company that reads architects&apos; drawings.
+              I enjoy solving business problems. I overthink every little detail and dive into every gap to find
+              anywhere I can add value.
             </p>
           </div>
           <div className="lv-hero__cue lv-mono">
@@ -1007,11 +1019,11 @@ export function Landing() {
             <a href="https://www.linkedin.com/in/mustafa-iqbal-ba42b424b/" target="_blank" rel="noreferrer">
               LinkedIn <ArrowUpRight />
             </a>
-            <a href="/resume/Mustafa_Iqbal_Resume.pdf" download>
-              Résumé
-            </a>
             <a href="/work/">All work</a>
           </div>
+          <a className="lv-link" href="/resume/Mustafa_Iqbal_CV.pdf" download>
+            Download CV <ArrowDown />
+          </a>
           <div className="lv-contact__bottom lv-mono">
             <span>© 2026 · Mustafa Iqbal</span>
             <span>Pakistan</span>

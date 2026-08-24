@@ -79,7 +79,7 @@ export const profile = {
   github: "https://github.com/Mustafaiqbal2",
   linkedIn: "https://www.linkedin.com/in/mustafa-iqbal-ba42b424b/",
   resume: "/resume/",
-  resumePdf: "/resume/Mustafa_Iqbal_Resume.pdf",
+  resumePdf: "/resume/Mustafa_Iqbal_CV.pdf",
   photo: "/images/me.jpeg",
   positioning:
     "AI automation engineer who ships production LLM systems end to end — OAuth integrations, background-job pipelines, and cost-aware generation — with the operational discipline to run them unattended and keep every decision auditable.",
@@ -87,12 +87,7 @@ export const profile = {
     "I build production AI automation and the full-stack systems that hold it up — the queues, retrieval, caching, OAuth lifecycles, and human-approval paths that keep automation fast, cheap, and correct once real data and real users arrive."
 };
 
-export const navigation = [
-  { label: "Work", href: "/work/" },
-  { label: "About", href: "/about/" },
-  { label: "Résumé", href: "/resume/" },
-  { label: "Contact", href: "/contact/" }
-];
+export const navigation = [{ label: "Work", href: "/work/" }];
 
 const iconForSlug: Record<string, LucideIcon> = {
   "revvy-review-automation": Bot,
@@ -151,9 +146,6 @@ export function projectMedia(slug: string): MediaItem[] {
 export const pageRoutes = [
   "/",
   "/work/",
-  "/about/",
-  "/resume/",
-  "/contact/",
   ...featuredProjects.map((project) => `/work/${project.slug}/`)
 ];
 

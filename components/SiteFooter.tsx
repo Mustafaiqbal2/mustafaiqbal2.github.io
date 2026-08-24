@@ -10,7 +10,7 @@ export function SiteFooter() {
           <p className="eyebrow">Get in touch</p>
           <h2 id="cta-title">Have a workflow worth <em>automating</em>?</h2>
           <p>I build the AI systems that run it end to end — and I&apos;m looking for the roles where that ships.</p>
-          <a className="btn btn--primary" href="/contact/">
+          <a className="btn btn--primary" href={`mailto:${profile.email}`}>
             Get in touch
             <ArrowRight aria-hidden="true" />
           </a>
@@ -44,7 +44,7 @@ export function SiteFooter() {
                 <FaLinkedinIn aria-hidden="true" style={{ display: "inline", marginRight: 8, verticalAlign: "-2px" }} />
                 LinkedIn
               </a>
-              <a href={profile.resume}>Résumé</a>
+              <a href={profile.resumePdf} download>Résumé</a>
             </nav>
           </div>
           <div className="footer-bottom">

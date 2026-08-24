@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import { SiteFooter } from "@/components/SiteFooter";
-import { SiteHeader } from "@/components/SiteHeader";
 import { profile, siteUrl } from "@/data/portfolio";
 import "./globals.css";
 
@@ -479,7 +478,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body className={`${displaySans.variable} ${monoFont.variable}`}>
         <a className="skip-link" href="#main">Skip to content</a>
-        <SiteHeader />
         {children}
         <SiteFooter />
         <div className="lightbox" data-lightbox hidden>
