@@ -3,6 +3,8 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { BlackHole } from "@/components/BlackHole";
+import { GalaxyDoodleA, GalaxyDoodleB, ShootingStarDoodle, SketchPortrait } from "@/components/SketchPortrait";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -17,6 +19,31 @@ const ArrowDown = () => (
   <svg viewBox="0 0 14 18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
     <path d="M7 1v14" />
     <path d="M1.5 9.5L7 15l5.5-5.5" />
+  </svg>
+);
+
+/* ---- sleek celestial marks (logo-style line art; strokes travel their paths) ---- */
+
+const GalaxyMark = () => (
+  <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+    <circle cx="60" cy="60" r="3.5" fill="currentColor" stroke="none" />
+    <path className="lv-orb__dash" pathLength={100} d="M60 52 a12 12 0 0 1 12 12 a28 28 0 0 1 -28 28" />
+    <path className="lv-orb__dash" pathLength={100} d="M60 68 a12 12 0 0 1 -12 -12 a28 28 0 0 1 28 -28" />
+  </svg>
+);
+
+const PlanetMark = () => (
+  <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+    <circle cx="60" cy="60" r="17" />
+    <ellipse className="lv-orb__dash" pathLength={100} cx="60" cy="60" rx="33" ry="9" transform="rotate(-18 60 60)" />
+  </svg>
+);
+
+const OrbitMark = () => (
+  <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+    <circle cx="60" cy="60" r="9" />
+    <circle className="lv-orb__dot" pathLength={100} cx="60" cy="60" r="33" strokeWidth="4" />
+    <circle cx="60" cy="60" r="33" strokeWidth="1" opacity="0.35" />
   </svg>
 );
 
@@ -398,40 +425,63 @@ export function Landing() {
             .from(q(".lv-talent .lv-caption"), { opacity: 0, duration: 0.3 }, at + 0.15);
         }
 
-        /* ---------- How I work: Gargantua ---------- */
+        /* ---------- About me: title → Gargantua → sketchbook ---------- */
         {
-          const section = q(".lv-how")[0] as HTMLElement;
+          const section = q(".lv-about")[0] as HTMLElement;
+          const bhWrap = q(".lv-about__bh")[0] as HTMLElement;
+          const bhRoot = q("[data-bh-root]")[0] as HTMLElement;
           if (desktop) {
-            section.classList.add("lv-how--live");
-            const items = gsap.utils.toArray<HTMLElement>(q(".lv-how__item"));
+            section.classList.add("lv-about--live");
             const tl = gsap.timeline({
-              scrollTrigger: { trigger: section, start: "top top", end: "+=280%", pin: true, scrub: 0.8, anticipatePin: 1 }
+              scrollTrigger: { trigger: section, start: "top top", end: "+=380%", pin: true, scrub: 0.8, anticipatePin: 1 }
             });
-            tl.fromTo(q(".lv-bh"), { scale: 0.82 }, { scale: 1.06, duration: 3, ease: "none" }, 0)
-              .fromTo(q(".lv-bh__disk"), { rotate: -4 }, { rotate: 5, duration: 3, ease: "none" }, 0)
-              .fromTo(q(".lv-bh__glow"), { opacity: 0.55 }, { opacity: 1, duration: 3, ease: "none" }, 0);
-            const beats = [
-              { at: 0.15, out: 0.95 },
-              { at: 1.15, out: 1.95 },
-              { at: 2.15, out: -1 }
-            ];
-            items.forEach((item, i) => {
-              const b = beats[i];
-              tl.fromTo(item, { opacity: 0, y: 34 }, { opacity: 1, y: 0, duration: 0.35 }, b.at);
-              if (b.out > 0) tl.to(item, { opacity: 0, y: -26, duration: 0.3 }, b.out);
-            });
+            tl.fromTo(q(".lv-about__title"), { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.4 }, 0)
+              .to(q(".lv-about__title"), { opacity: 0, y: -40, scale: 0.96, duration: 0.3 }, 0.55)
+              .fromTo(bhWrap, { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.45 }, 0.7);
+            if (bhRoot) {
+              tl.fromTo(bhRoot, { attr: { "data-intensity": 0.2 } }, { attr: { "data-intensity": 1 }, duration: 1.7, ease: "none" }, 0.7);
+            }
+            tl.fromTo(q(".lv-about__love"), { opacity: 0 }, { opacity: 1, duration: 0.3 }, 1.2)
+              .to(bhWrap, { x: 3, y: -2, duration: 0.045, repeat: 9, yoyo: true, ease: "none" }, 1.95)
+              .set(bhWrap, { x: 0, y: 0 }, 2.42)
+              .to(bhWrap, { opacity: 0, scale: 1.05, duration: 0.3 }, 2.5)
+              .to(q(".lv-about__love"), { opacity: 0, duration: 0.2 }, 2.5)
+              .fromTo(q(".lv-about__paper"), { opacity: 0 }, { opacity: 1, duration: 0.35 }, 2.55)
+              .fromTo(q(".lv-about__sketch"), { opacity: 0 }, { opacity: 1, duration: 0.25 }, 2.8)
+              .fromTo(
+                q(".lv-about__sketch .sk-draw"),
+                { strokeDashoffset: 1 },
+                { strokeDashoffset: 0, stagger: 0.011, duration: 0.9, ease: "none" },
+                2.85
+              )
+              .from(q(".lv-about__list li"), { y: 30, opacity: 0, stagger: 0.12, duration: 0.35 }, 3.6);
           } else {
-            gsap.from(q(".lv-bh"), {
+            gsap.from(q(".lv-about__title"), {
+              y: 40,
+              opacity: 0,
+              scrollTrigger: { trigger: section, start: "top 80%", end: "top 55%", scrub: 0.8 }
+            });
+            gsap.from(bhWrap, {
               scale: 0.86,
               opacity: 0,
-              scrollTrigger: { trigger: section, start: "top 80%", end: "top 40%", scrub: 0.8 }
+              scrollTrigger: { trigger: bhWrap, start: "top 85%", end: "top 45%", scrub: 0.8 }
             });
-            gsap.utils.toArray<HTMLElement>(q(".lv-how__item")).forEach((item) => {
-              gsap.from(item, {
-                y: 30,
-                opacity: 0,
-                scrollTrigger: { trigger: item, start: "top 88%", end: "top 62%", scrub: 0.8 }
-              });
+            const sk = q(".lv-about__sketch")[0];
+            gsap.fromTo(
+              q(".lv-about__sketch .sk-draw"),
+              { strokeDashoffset: 1 },
+              {
+                strokeDashoffset: 0,
+                stagger: 0.008,
+                ease: "none",
+                scrollTrigger: { trigger: sk, start: "top 80%", end: "top 20%", scrub: 0.8 }
+              }
+            );
+            gsap.from(q(".lv-about__list li"), {
+              y: 24,
+              opacity: 0,
+              stagger: 0.08,
+              scrollTrigger: { trigger: q(".lv-about__list")[0], start: "top 88%", end: "top 60%", scrub: 0.8 }
             });
           }
         }
@@ -446,7 +496,7 @@ export function Landing() {
 
         return () => {
           intro.kill();
-          (q(".lv-how")[0] as HTMLElement)?.classList.remove("lv-how--live");
+          (q(".lv-about")[0] as HTMLElement)?.classList.remove("lv-about--live");
         };
       }
     );
@@ -467,6 +517,8 @@ export function Landing() {
     <main id="main" className="lv" ref={root}>
       {/* ================= Hero ================= */}
       <section className="lv-hero" aria-label="Intro">
+        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ right: "8%", top: "30%" }} aria-hidden="true"><OrbitMark /></span>
+        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ left: "38%", bottom: "24%", opacity: 0.3 }} aria-hidden="true"><PlanetMark /></span>
         <div className="lv-hero__status lv-mono">
           <span>Software engineer &amp; founder</span>
           <span>Pakistan</span>
@@ -507,6 +559,8 @@ export function Landing() {
 
       {/* ================= ArchPHI ================= */}
       <section className="lv-section--ink lv-arch lv-pin lv-space" aria-label="ArchPHI">
+        <span className="lv-orb lv-orb--bone lv-orb--sm" style={{ right: "6%", top: "12%" }} aria-hidden="true"><GalaxyMark /></span>
+        <span className="lv-orb lv-orb--violet lv-orb--sm" style={{ left: "4%", bottom: "10%" }} aria-hidden="true"><OrbitMark /></span>
         <div className="lv-arch__grid">
           <div className="lv-arch__copy">
             <p className="lv-eyebrow">01 — ArchPHI · Founder &amp; CTO</p>
@@ -551,12 +605,12 @@ export function Landing() {
       </section>
 
       {/* ================= Simplabots fleet ================= */}
-      <section className="lv-section--ink lv-fleet lv-space" aria-label="Simplabots agents">
-        <span className="lv-galaxy" style={{ left: "8%", top: "12%" }} aria-hidden="true" />
-        <span className="lv-galaxy lv-galaxy--tilt lv-galaxy--small" style={{ right: "14%", top: "18%" }} aria-hidden="true" />
-        <span className="lv-galaxy lv-galaxy--small" style={{ left: "40%", bottom: "8%" }} aria-hidden="true" />
-        <span className="lv-shoot" style={{ right: "12%", top: "22%", animationDelay: "1.2s" }} aria-hidden="true" />
-        <span className="lv-shoot" style={{ left: "30%", top: "10%", animationDelay: "4.6s" }} aria-hidden="true" />
+      <section className="lv-section--bone lv-fleet" aria-label="Simplabots agents">
+        <span className="lv-orb lv-orb--ink lv-orb--lg" style={{ left: "3%", top: "4%" }} aria-hidden="true"><GalaxyMark /></span>
+        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ right: "10%", top: "16%" }} aria-hidden="true"><PlanetMark /></span>
+        <span className="lv-orb lv-orb--ink" style={{ left: "44%", bottom: "8%" }} aria-hidden="true"><OrbitMark /></span>
+        <span className="lv-shoot lv-shoot--ink" style={{ right: "22%", top: "10%", animationDelay: "1.2s" }} aria-hidden="true" />
+        <span className="lv-shoot lv-shoot--ink" style={{ left: "30%", top: "24%", animationDelay: "4.6s" }} aria-hidden="true" />
         <div className="lv-fleet__head">
           <div>
             <p className="lv-eyebrow">02 — Simplabots</p>
@@ -593,6 +647,8 @@ export function Landing() {
 
       {/* ================= Pilone ================= */}
       <section className="lv-section--ink lv-pilone lv-pin lv-space" aria-label="PiloneCables">
+        <span className="lv-orb lv-orb--bone lv-orb--sm" style={{ right: "5%", bottom: "14%" }} aria-hidden="true"><PlanetMark /></span>
+        <span className="lv-orb lv-orb--violet lv-orb--sm" style={{ left: "42%", top: "8%" }} aria-hidden="true"><GalaxyMark /></span>
         <div className="lv-pilone__grid">
           <div className="lv-pilone__copy">
             <p className="lv-eyebrow">03 — pilonecables.com</p>
@@ -639,6 +695,8 @@ export function Landing() {
 
       {/* ================= TalentFlow ================= */}
       <section className="lv-section--bone lv-talent lv-pin" aria-label="TalentFlow">
+        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ right: "6%", top: "10%" }} aria-hidden="true"><OrbitMark /></span>
+        <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ left: "5%", bottom: "10%", opacity: 0.3 }} aria-hidden="true"><GalaxyMark /></span>
         <div className="lv-talent__grid">
           <div className="lv-talent__copy">
             <p className="lv-eyebrow">04 — TalentFlow · Genesys Research Lab</p>
@@ -665,38 +723,51 @@ export function Landing() {
         </div>
       </section>
 
-      {/* ================= How I work — Gargantua ================= */}
-      <section className="lv-section--ink lv-how lv-pin" aria-label="How I work">
-        <p className="lv-eyebrow lv-how__eyebrow">How I work</p>
-        <div className="lv-bh" aria-hidden="true">
-          <div className="lv-bh__glow"></div>
-          <div className="lv-bh__disk"></div>
-          <div className="lv-bh__horizon"></div>
-          <div className="lv-bh__ring"></div>
-          <div className="lv-bh__arc"></div>
-          <div className="lv-bh__arc lv-bh__arc--under"></div>
-          <div className="lv-bh__front"></div>
-        </div>
-        <div className="lv-how__stage">
-          <div className="lv-how__item">
-            <span className="lv-how__index lv-mono">01</span>
-            <p className="lv-how__line lv-display">Only progress is progress.</p>
+      {/* ================= About me — Gargantua + sketchbook ================= */}
+      <section className="lv-section--ink lv-about lv-pin lv-space" aria-label="About me">
+        <div className="lv-about__paper" aria-hidden="true"></div>
+        <div className="lv-about__inner">
+          <h2 className="lv-about__title lv-display">About me<b>.</b></h2>
+          <div className="lv-about__bh" data-about-bh>
+            <BlackHole className="lv-bh2" />
+            <p className="lv-about__love lv-mono">I love space</p>
           </div>
-          <div className="lv-how__item">
-            <span className="lv-how__index lv-mono">02</span>
-            <p className="lv-how__line lv-display">A named assumption is a legitimate answer. A silent one is not.</p>
-          </div>
-          <div className="lv-how__item">
-            <span className="lv-how__index lv-mono">03</span>
-            <p className="lv-how__line lv-display">Break it before you believe it.</p>
+          <div className="lv-about__sketch">
+            <div className="lv-about__me">
+              <SketchPortrait />
+            </div>
+            <ul className="lv-about__list">
+              <li>
+                <i>01</i>
+                <p>Founder &amp; CTO at ArchPHI.</p>
+              </li>
+              <li>
+                <i>02</i>
+                <p>I build agents that do my work.</p>
+              </li>
+              <li>
+                <i>03</i>
+                <p>Space, obviously.</p>
+              </li>
+            </ul>
+            <span className="lv-doodle lv-doodle--a" aria-hidden="true">
+              <GalaxyDoodleA />
+            </span>
+            <span className="lv-doodle lv-doodle--b" aria-hidden="true">
+              <GalaxyDoodleB />
+            </span>
+            <span className="lv-doodle lv-doodle--c" aria-hidden="true">
+              <ShootingStarDoodle />
+            </span>
           </div>
         </div>
       </section>
 
       {/* ================= Contact ================= */}
       <section className="lv-contact lv-space" aria-label="Contact">
-        <span className="lv-galaxy lv-galaxy--tilt" style={{ right: "6%", top: "14%" }} aria-hidden="true" />
-        <span className="lv-galaxy lv-galaxy--small" style={{ left: "18%", bottom: "22%" }} aria-hidden="true" />
+        <span className="lv-orb lv-orb--bone lv-orb--lg" style={{ right: "7%", top: "14%" }} aria-hidden="true"><GalaxyMark /></span>
+        <span className="lv-orb lv-orb--violet" style={{ left: "16%", bottom: "24%" }} aria-hidden="true"><OrbitMark /></span>
+        <span className="lv-orb lv-orb--bone lv-orb--sm" style={{ right: "28%", bottom: "12%" }} aria-hidden="true"><PlanetMark /></span>
         <span className="lv-shoot" style={{ right: "24%", top: "8%", animationDelay: "0.8s" }} aria-hidden="true" />
         <span className="lv-shoot" style={{ left: "48%", top: "16%", animationDelay: "3.4s" }} aria-hidden="true" />
         <span className="lv-shoot" style={{ right: "8%", bottom: "36%", animationDelay: "6.1s" }} aria-hidden="true" />

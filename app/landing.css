@@ -416,6 +416,7 @@ body:has(.lv) .site-footer {
   width: clamp(300px, 30vw, 420px);
   border: 2px solid var(--lv-ink);
   background: var(--lv-bone);
+  color: var(--lv-ink); /* self-contained: never inherit a dark section's text color */
   padding: clamp(22px, 2.4vw, 34px);
   display: flex;
   flex-direction: column;
@@ -852,54 +853,44 @@ body:has(.lv) .site-footer {
     radial-gradient(120% 100% at 30% 50%, rgba(7, 8, 13, 0.85) 0%, rgba(7, 8, 13, 0.5) 55%, rgba(7, 8, 13, 0.22) 100%);
 }
 
-/* sleek animated galaxy sprite (spiral: conic arms + warm core) */
-.lv-galaxy {
+/* sleek celestial marks — logo-style line art; strokes travel their paths */
+.lv-orb {
   position: absolute;
-  width: 140px;
-  aspect-ratio: 1;
-  border-radius: 50%;
+  width: 110px;
   pointer-events: none;
-  background: conic-gradient(
-    from 0deg,
-    transparent 0deg,
-    rgba(183, 156, 255, 0.55) 40deg,
-    transparent 105deg,
-    rgba(139, 216, 255, 0.4) 165deg,
-    transparent 230deg,
-    rgba(255, 154, 213, 0.35) 290deg,
-    transparent 355deg
-  );
-  filter: blur(5px);
-  opacity: 0.55;
-  animation: lv-spin 70s linear infinite;
+  opacity: 0.5;
 }
-.lv-galaxy::after {
-  content: "";
-  position: absolute;
-  inset: 38%;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(255, 244, 224, 0.95) 0%, rgba(255, 220, 180, 0.35) 45%, transparent 75%);
-  filter: blur(1px);
+.lv-orb svg {
+  width: 100%;
+  height: auto;
+  display: block;
 }
-.lv-galaxy--tilt {
-  transform: scaleY(0.45) rotate(24deg);
-  animation: lv-spin-tilt 90s linear infinite;
+.lv-orb--sm {
+  width: 72px;
 }
-.lv-galaxy--small {
-  width: 84px;
-  opacity: 0.4;
+.lv-orb--lg {
+  width: 150px;
 }
-@keyframes lv-spin {
+.lv-orb--ink {
+  color: rgba(11, 12, 18, 0.5);
+}
+.lv-orb--bone {
+  color: rgba(242, 242, 238, 0.45);
+}
+.lv-orb--violet {
+  color: rgba(183, 156, 255, 0.55);
+}
+.lv-orb__dash {
+  stroke-dasharray: 68 32;
+  animation: lv-orbdash 7s linear infinite;
+}
+.lv-orb__dot {
+  stroke-dasharray: 4 96;
+  animation: lv-orbdash 5.5s linear infinite;
+}
+@keyframes lv-orbdash {
   to {
-    transform: rotate(360deg);
-  }
-}
-@keyframes lv-spin-tilt {
-  from {
-    transform: scaleY(0.45) rotate(24deg);
-  }
-  to {
-    transform: scaleY(0.45) rotate(384deg);
+    stroke-dashoffset: -100;
   }
 }
 
@@ -914,6 +905,10 @@ body:has(.lv) .site-footer {
   opacity: 0;
   transform: rotate(-24deg);
   animation: lv-shoot 7s linear infinite;
+}
+/* on light ground, shooting stars are ink */
+.lv-shoot--ink {
+  background: linear-gradient(90deg, rgba(11, 12, 18, 0) 0%, rgba(11, 12, 18, 0.8) 55%, rgba(11, 12, 18, 0) 100%);
 }
 @keyframes lv-shoot {
   0%,
@@ -978,6 +973,12 @@ body:has(.lv) .site-footer {
   width: 100%;
   aspect-ratio: 1;
 }
+/* feather the canvas edge so the ambient glow never shows a square
+   boundary against the starfield */
+.lv-bh2 canvas {
+  -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 58%, transparent 74%);
+  mask-image: radial-gradient(circle at 50% 50%, #000 58%, transparent 74%);
+}
 .lv-about__love {
   position: absolute;
   right: -20%;
@@ -1002,7 +1003,11 @@ body:has(.lv) .site-footer {
   gap: clamp(32px, 4vw, 72px);
   align-items: center;
   color: #1e1b16;
-  padding: clamp(48px, 8vh, 96px) 0;
+  /* its own sheet of sketchbook paper, so the static page works on space too */
+  background: #f4efe4;
+  background-image: radial-gradient(rgba(30, 27, 22, 0.05) 1px, transparent 1.4px);
+  background-size: 26px 26px;
+  padding: clamp(36px, 5vw, 64px);
 }
 .lv-about__me {
   width: 100%;
@@ -1088,6 +1093,12 @@ body:has(.lv) .site-footer {
   align-self: center;
   margin: 0;
 }
+.lv-about--live .lv-about__bh {
+  justify-self: center;
+}
+.lv-about--live .lv-about__sketch {
+  justify-self: stretch;
+}
 .lv-about--live .lv-about__title {
   justify-self: center;
   text-align: center;
@@ -1162,6 +1173,21 @@ body:has(.lv) .site-footer {
     grid-template-columns: 1fr;
     gap: 8px;
   }
+  .lv-about__bh {
+    width: min(78vw, 360px);
+  }
+  .lv-about__love {
+    position: static;
+    margin-top: 14px;
+    text-align: center;
+  }
+  .lv-about__love::before {
+    display: none;
+  }
+  .lv-about__sketch {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
 }
 
 /* ============================================================
@@ -1175,8 +1201,8 @@ body:has(.lv) .site-footer {
   .lv-hero__cue svg {
     animation: none;
   }
-  .lv-galaxy,
-  .lv-galaxy--tilt {
+  .lv-orb__dash,
+  .lv-orb__dot {
     animation: none;
   }
   .lv-shoot {
