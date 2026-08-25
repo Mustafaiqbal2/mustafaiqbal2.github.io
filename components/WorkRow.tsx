@@ -28,8 +28,12 @@ export function WorkRow({ project, index }: { project: CaseStudy; index: number 
           </span>
         </span>
         <span className="work-row__aside">
-          <span className="work-row__metric">{project.featuredMetric.value}</span>
-          <Provenance tier={project.featuredMetric.tier} source={project.featuredMetric.source} />
+          {project.featuredMetric ? (
+            <>
+              <span className="work-row__metric">{project.featuredMetric.value}</span>
+              <Provenance tier={project.featuredMetric.tier} source={project.featuredMetric.source} />
+            </>
+          ) : null}
           <ArrowUpRight className="work-row__arrow" aria-hidden="true" />
         </span>
       </a>

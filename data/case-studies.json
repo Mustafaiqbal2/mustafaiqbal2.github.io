@@ -3,252 +3,198 @@
     "slug": "archphi",
     "title": "ArchPHI",
     "category": "Founder & CTO · archphi.com",
-    "oneLiner": "The operating system for architectural drawings. The first piece reads what a drawing declares and writes the bill of quantities.",
-    "summary": "ArchPHI is building the operating system for architectural drawings — one substrate that reads real CAD deliveries exactly, and a family of construction workflows on top of it. The first workflow is the bill of quantities. Everything rests on one rule: the system only accepts facts it can trace back to the exact CAD, and where a drawing carries no answer, it says so instead of guessing. The corpus behind it is eight real projects; every claim below cites the artifact it comes from.",
+    "oneLiner": "ArchPHI is building the operating system for architectural drawings. The first product reads CAD drawings and writes the bill of quantities — the list of materials and work a builder has to price.",
+    "summary": "Architects deliver their designs as CAD files. ArchPHI reads those files and writes the bill of quantities. One rule sits under everything: the system only states facts it can point to in the drawing. When the drawing has no answer, it says so instead of guessing. It is tested on eight real projects.",
     "status": "In development",
-    "role": "Founder & CTO — I own the architecture, the codebase, and the decision records. My cofounder brings the licensed-professional review.",
+    "role": "Founder & CTO. I build the system. My cofounder is the licensed professional who checks the results.",
     "dates": "2026 — present",
     "isPrivate": true,
-    "privateNote": "The corpus is real client work under anonymization — eight projects, never named. Quantities, bills, and drawings stay private.",
-    "featuredMetric": {
-      "value": "2,668,953",
-      "label": "records inventoried in one census of the corpus — every record bucketed exactly once",
-      "tier": "documented",
-      "source": "corpus census, 2026-08-03"
-    },
-    "metrics": [
-      {
-        "value": "766 / 766",
-        "label": "readable-sheet dimensions yielding a supported geometric measured value",
-        "tier": "documented",
-        "source": "real-package dimension audit"
-      },
-      {
-        "value": "8",
-        "label": "projects in the corpus — 304 files opened, 151 DXF conversions parsed",
-        "tier": "documented",
-        "source": "corpus census"
-      },
-      {
-        "value": "17",
-        "label": "scored evaluation runs archived, each against a held-out answer key",
-        "tier": "documented",
-        "source": "evaluation artifacts"
-      },
-      {
-        "value": "22 vs 16",
-        "label": "a no-preparation control beat the staged pipeline on a 39-line bill — the stages stayed unmerged",
-        "tier": "documented",
-        "source": "accuracy diagnosis"
-      }
-    ],
-    "problem": "Real architectural CAD deliveries are messy: nested blocks, references that point at files outside the package, corrupt sheets, dimensions whose displayed text disagrees with their true geometry. Any system that reasons over drawings — takeoff first, everything after it later — produces confident wrong answers unless every fact it accepts can be checked against the exact CAD. The hard problem is not the model. It is a substrate honest enough to keep a model from hallucinating in a domain where wrong numbers cost real money.",
+    "privateNote": "The test projects are real client work. They stay anonymous. Drawings, quantities, and bills stay private.",
+    "metrics": [],
+    "problem": "Real CAD files are messy. Some parts are corrupt. Some point to files that were never delivered. Some dimensions show a typed-in number that is not the drawn length. Software that guesses over files like these gives confident wrong answers, and in construction wrong numbers cost real money. So the hard part is not the AI. The hard part is a base layer where a guess can never look like a fact.",
     "constraints": [
-      "Element vocabulary — door, window, room — must come from each project's own schedules and tags, never from hardcoded modules. Real offices do not share conventions.",
-      "Nothing is silently dropped: corrupt drawings and missing references surface as evidence, not as absences.",
-      "DWG is not directly parseable; it converts out-of-band to DXF, and the conversion is recorded as provenance rather than assumed lossless.",
-      "Corpus numbers are never allowed to overclaim — the census itself states that 74.1% handled does not mean 74.1% understood.",
-      "Model calls are priced and capped before they are ever wired in."
+      "Every office draws differently. The system has to learn words like door and window from each project's own drawings, not from a built-in list.",
+      "Nothing may be dropped quietly. A corrupt drawing has to show up as a fact, not disappear.",
+      "The common CAD format (DWG) cannot be read directly. Files are converted first, and each conversion is recorded, because converting can lose detail.",
+      "AI calls cost money. Every call gets a price and a spending cap before it is allowed to run."
     ],
     "approach": [
       {
-        "decision": "Made 'element types are evidence, not code' an executable law — an AST gate fails the build if an element-named identifier appears in foundation code.",
-        "why": "Hardcoding one office's conventions is how a system stops generalizing. A build failure cannot quietly erode."
+        "decision": "No building-element names in the code. A check runs on every build and fails it if a word like door or window appears in the core code.",
+        "why": "Hardcoding one office's names makes the system fail on the next office. A failing build cannot be ignored."
       },
       {
-        "decision": "Built an exact-CAD extraction substrate instead of computer vision: nested blocks expanded into world-space primitives with full ancestry, and content-based IDs that survive re-extraction.",
-        "why": "Vector structure — geometry, text, dimensions, provenance — is a richer ground truth than pixels, and stable IDs let a later reasoner cite and re-verify a fact after unrelated edits."
+        "decision": "Read the drawing's real geometry, not pictures of it.",
+        "why": "The CAD file holds exact lines, text, and measurements. A screenshot does not. Every extracted fact keeps an ID, so it can be checked again later."
       },
       {
-        "decision": "Censused the entire corpus once: 2,668,953 records across eight projects, each bucketed exactly once as handled, raw-reachable, or unsupported.",
-        "why": "You cannot claim coverage you have not counted. The census also documents what its numbers are not — presence in this corpus is not presence in general."
+        "decision": "Count everything once. One pass over all eight projects counted 2,668,953 drawing records and put each one in exactly one bucket: readable, partly readable, or not supported.",
+        "why": "Coverage you have not counted is a guess. The count also states what it does not prove: readable here does not mean understood."
       },
       {
-        "decision": "Evaluated against held-out answer keys: sessions receive a deliberately sparse bill, the key is never shown, and scores land in six mutually exclusive buckets that sum to the bill length.",
-        "why": "Flagging must not look like accuracy and guessing must not look like coverage. Seventeen runs are archived under that scheme."
+        "decision": "Score against hidden answer sheets. The system gets a bill with blanks to fill. The answer sheet is never shown to it. Every line lands in one of six buckets, such as correct, wrong, or flagged as unknown.",
+        "why": "This stops two tricks. Guessing cannot look like knowledge, and saying I do not know cannot look like accuracy. Seventeen scored runs are saved."
       },
       {
-        "decision": "Deleted work that did not survive its own evidence — a prior pipeline that was semantically mute on 12 of 16 real sheets, and staged preparation that a no-preparation control beat 22 to 16 on a 39-line bill.",
-        "why": "Sophistication that does not generalize is a liability. The failure evidence is written down, not hidden."
+        "decision": "Delete work that fails its own test.",
+        "why": "An earlier pipeline could not read 12 of 16 real sheets, so it was removed. A staged preparation step scored worse than a plain control, 16 against 22 of 39 lines, so it was never merged."
       }
     ],
     "implementation": [
-      "The extraction substrate over DXF (ezdxf): nested INSERT/MINSERT blocks expanded to world space with full ancestry, OCS-to-WCS transforms, and content-based IDs stable across re-extraction.",
-      "A content-hashed ingestion boundary that types every delivered file into one of four evidence tiers, links DWG-to-DXF conversions as provenance, and surfaces corrupt drawings instead of dropping them.",
-      "A reference census that marks every declared image, underlay, XREF, and font present or missing — one real sheet declared 21 external images, all pointing outside the package, all flagged.",
-      "Dimension evidence read from true geometry rather than displayed text: 766 of 766 readable-sheet dimensions yield a supported measured value, with 13 explicit text-overrides surfaced rather than silently trusted.",
-      "The corpus census machinery: 304 files opened once, 2,668,953 records bucketed exactly once — 74.1% handled, 25.8% raw-reachable, 0.03% unsupported.",
-      "The evaluation harness: sparse bills in, answer keys isolated, six-bucket scoring out; 17 scored runs archived with per-run records.",
-      "A diagnosis of area measurement that names its root cause — 1 of 14 lines correct across 42 attempts, because vertical area needs a height the drawings do not carry."
+      "A reader that turns CAD files into exact geometry, with a record of where every piece came from.",
+      "An intake step that classifies every delivered file and records each DWG-to-DXF conversion. Broken files are kept and marked, not dropped.",
+      "A check for missing references. One sheet pointed to 21 images that were never delivered. All 21 were flagged.",
+      "Dimension reading from real geometry instead of displayed text. All 766 readable dimensions gave a supported measured value. 13 had typed-over text, and each one was flagged.",
+      "The scoring harness with hidden answer sheets, with 17 runs saved.",
+      "A written diagnosis of the biggest open failure, area measurement: 1 of 14 lines correct over 42 tries, because the drawings do not carry the height the math needs."
     ],
     "outcomes": [
       {
-        "label": "One census opened every drawing in the corpus and bucketed every record exactly once",
-        "value": "2,668,953 records",
+        "label": "drawing records counted across eight projects, each in exactly one bucket",
+        "value": "2,668,953",
         "tier": "documented",
-        "source": "corpus census, 2026-08-03"
+        "source": "corpus count, 2026-08-03"
       },
       {
-        "label": "Every readable-sheet dimension yields a supported geometric measured value",
+        "label": "readable dimensions gave a supported measured value",
         "value": "766 / 766",
         "tier": "documented",
         "source": "dimension audit"
       },
       {
-        "label": "A no-preparation control outscored the staged pipeline, so the stages were never merged",
-        "value": "22 vs 16 of 39",
+        "label": "a plain control beat the staged pipeline on a 39-line bill, so the pipeline was not merged",
+        "value": "22 vs 16",
         "tier": "documented",
         "source": "accuracy diagnosis"
       },
       {
-        "label": "Area measurement failed and the failure is diagnosed to a named root cause, not averaged away",
+        "label": "area lines correct so far. The cause is written down",
         "value": "1 / 14",
         "tier": "documented",
-        "source": "accuracy diagnosis, 42 attempts"
-      },
-      {
-        "label": "The interpretation layer stays unshipped until the verification spine can check its claims — a decision, not a gap",
-        "value": "by design",
-        "tier": "documented",
-        "source": "decision records"
+        "source": "accuracy diagnosis, 42 tries"
       }
     ],
     "stack": [
       "Python",
-      "ezdxf (DXF parsing)",
-      "ODA File Converter (DWG→DXF, behind a provenance seam)",
-      "SHA-256 content addressing",
-      "AST-based build gates",
-      "Priced, capped LLM transport",
+      "ezdxf (reads DXF drawing files)",
+      "ODA File Converter (DWG to DXF)",
+      "SHA-256 file hashing",
+      "Priced, capped AI calls",
       "Next.js (archphi.com)"
     ],
     "limitations": [
-      "74.1% of records handled does not mean 74.1% of a drawing understood — the census says so itself, and so do I.",
-      "No product accuracy number is claimed anywhere; the evaluation scheme exists precisely because one honest number does not exist yet.",
-      "The quantity-takeoff workflow the substrate serves is not shipped. First firms are onboarding soon.",
-      "DWG quality is bounded by the out-of-band converter until a first-party path exists.",
-      "Area measurement is unsolved: 1 of 14 lines correct across 42 attempts, root cause named — the drawings do not carry the height the computation needs."
+      "74.1% of records handled does not mean 74.1% of a drawing understood.",
+      "There is no product accuracy number yet. The scoring system exists to earn one.",
+      "The takeoff product is not shipped. First firms are onboarding soon.",
+      "DWG reading depends on the converter until a direct reader exists.",
+      "Area measurement does not work yet. The drawings do not carry the height the calculation needs."
     ],
     "mediaNotes": []
   },
   {
     "slug": "pilonecables",
     "title": "PiloneCables",
-    "category": "Search platform for a cable manufacturer · pilonecables.com",
-    "oneLiner": "A factory's site rebuilt into 288 pages that rank — organic clicks up 5.2× in six months, average position 17.8 → 8.4.",
-    "summary": "Pilone manufactures electrical cable in Pakistan. I build and run their website: product pages, guides, and sizing calculators generated from factory data. When I took it on it had roughly 65 indexed pages and sat at position 13 for the queries that mattered. Six months of measured work later, organic clicks are up 5.2×, average position moved from 17.8 to 8.4, and the site went from invisible to AI search to 3.87k impressions in three months. The part I keep: at one point the pipeline generated over a thousand pages, and the right move was deleting 405 of them.",
+    "category": "Website for a cable factory · pilonecables.com",
+    "oneLiner": "Pilone makes electrical cable in Pakistan. I built and run their website. In six months, clicks from Google grew from 204 to 1,070 and the average search position moved from 17.8 to 8.4.",
+    "summary": "The site has 288 pages: product pages, guides, and calculators, all generated from the factory's own data. The numbers on this page come from Google Search Console, which is Google's own report of how a site performs in search.",
     "status": "Live — I run it",
-    "role": "Sole builder and operator — the site, the build pipeline, the content system, and the search work.",
+    "role": "Sole builder and operator.",
     "dates": "Aug 2025 — present",
     "isPrivate": false,
     "privateNote": "",
     "featuredMetric": {
       "value": "204 → 1,070",
-      "label": "organic clicks, six months vs the prior six — 5.2×",
+      "label": "clicks from Google, six months against the six before",
       "tier": "documented",
       "source": "Google Search Console"
     },
     "metrics": [
       {
         "value": "17.8 → 8.4",
-        "label": "average position in Google Search over the same window",
+        "label": "average position in Google results over the same window",
         "tier": "documented",
         "source": "Google Search Console"
       },
       {
         "value": "0 → 3.87k",
-        "label": "impressions in AI search, three months",
+        "label": "times shown inside AI search answers, in three months",
         "tier": "documented",
         "source": "Google Search Console"
       },
       {
         "value": "288",
-        "label": "URLs in the live sitemap — 96 product, 89 guides, 70 city pages, plus tools",
+        "label": "pages on the site: 96 products, 89 guides, 70 city pages, plus tools",
         "tier": "documented",
         "source": "live sitemap"
-      },
-      {
-        "value": "98 · 13.2",
-        "label": "clicks and average position at the January baseline, before the overhaul",
-        "tier": "documented",
-        "source": "SEO assessment, Jan 2026"
       }
     ],
-    "problem": "A cable factory sells through distributors and word of mouth; buyers search by product, size, and price and find the established brands instead. The site had ~65 indexed pages, no answers to the questions people actually type, and no way for the factory's real advantage — its own data — to reach a search result.",
+    "problem": "Buyers search Google for cable types, sizes, and prices, and they found the big brands. Pilone's site had about 65 pages in Google and no answers to those searches.",
     "constraints": [
-      "Factory data is the source of truth — prices and specifications change, so pages regenerate from data rather than being hand-edited.",
-      "Volume without quality backfires: mass-generated pages had to earn their place or be cut.",
-      "AI assistants now answer buyer questions directly, so the site had to be legible to their crawlers, not just to Google.",
-      "One person runs this alongside everything else — the pipeline has to keep the site correct without daily attention."
+      "Prices and specifications change, so pages are generated from data, not edited by hand.",
+      "Many weak pages hurt ranking. Every page has to answer a real search or be removed.",
+      "People now ask AI assistants instead of Google, so the site has to be readable for AI crawlers too.",
+      "One person runs this next to everything else."
     ],
     "approach": [
       {
-        "decision": "Generate pages from the factory's data — a product × size × guide matrix with structured data on every page.",
-        "why": "The factory's own specifications and prices are what buyers search for, and no competitor can copy data it does not have."
+        "decision": "Generate the pages from factory data.",
+        "why": "Buyers search for exact products and sizes. The factory's own data answers those searches, and competitors cannot copy data they do not have."
       },
       {
-        "decision": "Prune hard: of 1,053 generated pages, 405 thin ones were deleted and 236 became redirects, leaving 288 that earn their rank.",
-        "why": "Search rewards a site where every page answers something. The deletion moved the numbers, not the generation."
+        "decision": "Delete weak pages. The pipeline once generated 1,053 pages. 405 thin ones were deleted and 236 became redirects. 288 stayed.",
+        "why": "Google ranks a site better when every page has a clear answer. The numbers improved after the deletion, not after the generation."
       },
       {
-        "decision": "Build tools buyers actually use — a cable-size calculator and a voltage-drop calculator, with conversion events on both.",
-        "why": "A calculator answers the question a spec table cannot, and its usage shows up in analytics as intent, not traffic."
+        "decision": "Build calculators buyers actually use: cable size and voltage drop.",
+        "why": "A calculator answers a question a table cannot, and its use is a sign of buying intent."
       },
       {
-        "decision": "Make the site legible to AI search: llms.txt, an AI-crawler allowlist, and clean structured data.",
-        "why": "Buyers increasingly ask an assistant instead of Google. Three months after the work: 3.87k impressions in AI search, from zero."
+        "decision": "Make the site readable for AI search.",
+        "why": "Three months later the site had been shown 3,870 times inside AI answers, up from zero."
       },
       {
-        "decision": "Measure everything in Search Console and let the numbers pick the next move.",
-        "why": "Position and clicks are the only verdict that matters here — the work iterates against them, not against opinions."
+        "decision": "Check Search Console and let the numbers pick the next task.",
+        "why": "Position and clicks are the verdict here. The work iterates against them, not against opinions."
       }
     ],
     "implementation": [
-      "A static multi-page site (Vite) where every page is generated from factory data at build time.",
-      "A 19-script build pipeline: price sync, navigation injection, search index, sitemap, llms.txt, and redirect stubs.",
-      "Cable-size and voltage-drop calculators plus ampacity, wire-size, and copper-weight reference charts.",
-      "Client-side search over a 288-entry index.",
-      "GA4 with custom events for contact clicks and calculator use.",
-      "Deployed on Render behind Cloudflare, from a repo I have committed to for over a year."
+      "A static site where every page is generated from factory data at build time.",
+      "A build pipeline that syncs prices, rebuilds navigation, the search index, and the sitemap.",
+      "Cable-size and voltage-drop calculators, plus reference charts.",
+      "Search across all pages, on the page itself.",
+      "Analytics with events for contact clicks and calculator use."
     ],
     "outcomes": [
       {
-        "label": "Organic clicks, six months vs the prior six",
+        "label": "clicks from Google, six months against the six before",
         "value": "204 → 1,070",
         "tier": "documented",
         "source": "Google Search Console"
       },
       {
-        "label": "Average position in Google Search",
+        "label": "average position in Google results",
         "value": "17.8 → 8.4",
         "tier": "documented",
         "source": "Google Search Console"
       },
       {
-        "label": "Impressions in AI search, three months, from a standing start",
+        "label": "times shown inside AI search answers, three months",
         "value": "0 → 3.87k",
-        "tier": "documented",
-        "source": "Google Search Console"
-      },
-      {
-        "label": "Click-through rate over the same six-month window",
-        "value": "2.1% → 2.3%",
         "tier": "documented",
         "source": "Google Search Console"
       }
     ],
     "stack": [
-      "Vite (static multi-page)",
-      "Vanilla JavaScript",
+      "Vite (static site build)",
+      "Plain JavaScript",
       "Node.js build scripts",
-      "JSON-LD structured data",
-      "GA4",
-      "Render + Cloudflare"
+      "GA4 analytics",
+      "Render + Cloudflare hosting"
     ],
     "limitations": [
-      "Impressions grew 9.92k → 46.2k in the same window, but part of that range sits inside a documented Search Console logging-error period — clicks and position are the series I trust, so they lead.",
-      "Sitemap URLs are not the same as indexed pages; I do not claim an indexed count.",
-      "Growth attribution is observational — there was no controlled experiment, just a baseline, the work, and the after."
+      "Times shown in results grew from 9.92k to 46.2k, but part of that window had a known Google logging error. Clicks and position are the numbers I trust.",
+      "Pages on the site is not the same as pages Google has indexed.",
+      "There was no controlled experiment. The evidence is the before and the after."
     ],
     "mediaNotes": []
   },
@@ -256,322 +202,208 @@
     "slug": "recruitment-rag-platform",
     "title": "TalentFlow",
     "category": "Recruitment platform · Genesys Research Lab",
-    "oneLiner": "Recruitment end to end: five candidate sources into one semantic pipeline, and a conversational agent that runs the first interview. Built by four engineers I led.",
-    "summary": "TalentFlow replaces keyword CV screening with retrieval: a candidate's public footprint — CV, GitHub, LinkedIn, ORIC, personal site — is ingested, embedded with Nomic into Weaviate, and matched against LLM-enhanced job descriptions by meaning rather than keyword overlap. On top sits the interview agent, built as a loop: an orchestrator with windowed memory picks the next topic, a two-stage generator writes a question that avoids template phrasing, TTS speaks it, the candidate answers, Whisper transcribes, and the transcript feeds the next turn. On conclude, a report engine scores the session. I led the four-person team and owned the architecture, over a fixed summer internship.",
+    "oneLiner": "A recruitment platform built at a research lab. It gathers a candidate's public information, matches it to jobs by meaning, and runs the first interview with a voice agent. Four engineers built it. I led the team.",
+    "summary": "Instead of matching CVs by keywords, the platform turns text into embeddings. An embedding is a list of numbers that captures meaning, so texts that mean similar things get similar numbers. Candidates and jobs land in the same number space, and close means a good match. On top of that, a voice agent runs the first interview: it picks a topic, asks a question out loud, listens to the answer, and continues. At the end it writes a scored report.",
     "status": "Internal lab build",
-    "role": "Team lead — four engineers, architecture owned end to end.",
+    "role": "Team lead. Four engineers, and I owned the architecture.",
     "dates": "Jun — Aug 2025",
     "isPrivate": true,
-    "privateNote": "Internal research-lab build over personal data — described by architecture, never by candidates.",
-    "featuredMetric": {
-      "value": "4",
-      "label": "engineers led, architecture owned end to end",
-      "tier": "team",
-      "source": "Genesys Research Lab"
-    },
-    "metrics": [
-      {
-        "value": "5",
-        "label": "candidate sources ingested — CV, GitHub, LinkedIn, ORIC, personal site",
-        "tier": "self-reported"
-      },
-      {
-        "value": "2-stage",
-        "label": "question generation — a draft pass, then a strict-JSON pass that rejects template phrasing",
-        "tier": "self-reported"
-      },
-      {
-        "value": "< 5s",
-        "label": "interview-agent response on Groq-served Llama 3, as reported — not an audited benchmark",
-        "tier": "self-reported",
-        "source": "CV"
-      }
-    ],
-    "problem": "Manual screening is slow and shallow: recruiters skim CVs and miss the context spread across a candidate's GitHub, LinkedIn, and personal site. The lab wanted the whole first pass automated — assemble the footprint, match it to a role by meaning, and run a conversational first-round interview that does not repeat itself.",
+    "privateNote": "Built over personal data inside a lab. Described by how it works, never by candidates.",
+    "metrics": [],
+    "problem": "Recruiters skim CVs and miss what is on a candidate's GitHub or personal site. The lab wanted the whole first pass automated: gather the information, match it to a role, and run a first interview.",
     "constraints": [
-      "A fixed internship window to ship end to end with a team of four.",
-      "Heterogeneous, personal input data — five sources with five structures, all carrying PII.",
-      "Lab servers, not managed cloud — deployment had to be self-hosted and reproducible.",
-      "A conversational interview is a state problem: low latency, no repeated questions, coherent topic progression.",
-      "Small open models only — Llama 3 on Groq, not frontier APIs."
+      "A fixed summer window to ship it end to end.",
+      "Five sources with five different formats — CV, GitHub, LinkedIn, a research registry, personal sites — all with personal data.",
+      "Lab servers only, so everything had to be self-hosted and easy to rebuild.",
+      "The interview must not repeat questions, and answers have to come fast enough to feel like a conversation.",
+      "Small open models only, no expensive APIs."
     ],
     "approach": [
       {
-        "decision": "Semantic retrieval over keyword filtering: Nomic embeddings in Weaviate, matching candidates and roles in one vector space.",
-        "why": "Fit lives in context and phrasing that keyword filters miss."
+        "decision": "Match by meaning, not keywords.",
+        "why": "Two texts can say the same thing with different words. Keyword matching misses that. Embeddings still match."
       },
       {
-        "decision": "Enhance job descriptions with an LLM before embedding them.",
-        "why": "Raw job posts are terse and inconsistent; normalizing them first gives retrieval a comparable vector on both sides."
+        "decision": "Rewrite job ads before matching them.",
+        "why": "Job ads are short and messy. A cleaned and expanded version matches candidates better."
       },
       {
-        "decision": "Build the interviewer as a loop of small parts — orchestrator, topic selection, two-stage question generation, TTS, STT — instead of one looping prompt.",
-        "why": "Non-repetition and topic progression are state management. The orchestrator keeps windowed memory, checks for gaps every two questions, and votes on ending every five."
+        "decision": "Build the interviewer as a loop of small parts.",
+        "why": "One part remembers what was asked. One part picks the next topic. One part writes the question. Splitting them is what stops repeated questions."
       },
       {
-        "decision": "Serve the loop on Llama 3 via Groq.",
-        "why": "Conversation needs low latency, and fast inference on a small model beat slow inference on a large one for this loop."
+        "decision": "Run the model on Groq, a service that runs open models very fast.",
+        "why": "A conversation feels wrong when answers come slowly."
       },
       {
-        "decision": "Split ingestion, embedding, matching, and interviewing into containerized services with async jobs.",
-        "why": "The stages have different runtime shapes, and Docker Compose made the whole pipeline reproducible on lab hardware."
+        "decision": "Split the system into services in Docker containers.",
+        "why": "Each stage runs at its own pace, and the whole system can be rebuilt on lab servers with one command."
       }
     ],
     "implementation": [
-      "Multi-source ingestion that scrapes and normalizes candidate data from five sources into structured JSON.",
-      "Nomic embeddings indexed in Weaviate for candidate-job matching, with LLM-enhanced job descriptions.",
-      "The interview loop: orchestrator with windowed memory and gap checks, two-stage anti-template question generation, TTS voice out, Whisper transcription back.",
-      "A report engine that runs on conclude: audio features extracted from the session plus parallel scoring over the transcript.",
-      "A FastAPI backend with async job processing, deployed as containerized microservices on lab servers."
+      "Ingestion that gathers and cleans candidate data from all five sources.",
+      "Matching on embeddings stored in a vector database (a database that finds items by similarity, not exact words).",
+      "The interview loop: pick a topic, write a question, speak it, transcribe the answer, continue.",
+      "A report step that runs at the end and scores the session.",
+      "The services deployed with Docker on lab servers."
     ],
     "outcomes": [
       {
-        "label": "Led four engineers and owned the platform architecture end to end",
-        "value": "4",
+        "label": "Led the four-engineer team and owned the architecture",
         "tier": "team",
         "source": "Genesys Research Lab"
       },
       {
-        "label": "Interview agent responds in under five seconds without repeating questions, as reported",
-        "value": "< 5s",
+        "label": "The agent answers in under five seconds and does not repeat questions. Reported, not benchmarked",
         "tier": "self-reported",
         "source": "CV"
-      },
-      {
-        "label": "The first screening pass runs without a human in the loop; no measured screening-time percentage is claimed",
-        "tier": "self-reported"
       }
     ],
     "stack": [
       "Python",
       "FastAPI",
-      "Weaviate",
-      "Nomic embeddings",
-      "Llama 3 (Groq)",
-      "Whisper STT (Groq)",
+      "Weaviate (vector database)",
+      "Nomic (text embeddings)",
+      "Llama 3 on Groq",
+      "Whisper (speech to text)",
       "Docker Compose"
     ],
     "limitations": [
-      "Match quality was never benchmarked — no precision or recall was measured, so the retrieval win is architectural, not proven.",
-      "The sub-5s figure is reported from one Groq-served setup, not audited.",
-      "It is a lab prototype: before real candidates it would need consent, retention limits, and access controls that were out of scope for the internship.",
-      "An 8B model bounds interview judgment; a production system would evaluate against stronger models first."
+      "Match quality was never measured. There is no number that says the matching works better.",
+      "The under-five-seconds figure was observed during development, not measured properly.",
+      "It is a lab prototype. Before real candidates it would need consent, data retention rules, and access controls.",
+      "A small model limits how well the interviewer judges answers."
     ],
     "mediaNotes": []
   },
   {
     "slug": "revvy-review-automation",
     "title": "Revvy",
-    "category": "Google-review response automation",
-    "oneLiner": "Ingests a business's Google reviews at scale and drafts on-brand replies for an operator to approve — with the throughput and cost work documented.",
-    "summary": "Revvy connects to Google Business Profile over OAuth, syncs reviews, and generates per-location reply drafts an operator approves and publishes. Each workspace picks how much runs unattended: manual, draft-then-approve, or auto-post above a star threshold. The engineering story is throughput and cost — pre-filtering that skips ineligible reviews before any model call, three generation strategies matched to the job, batched writes, and tagged caching. The numbers below come from the project's own PERFORMANCE.md.",
+    "category": "Google-review replies for businesses",
+    "oneLiner": "Revvy reads a business's Google reviews and writes reply drafts. A person approves each reply before it posts. Built for a client.",
+    "summary": "Revvy connects to Google Business Profile, the system behind a business's Google listing and its reviews. It pulls the reviews in, drafts a reply for each one in the business's voice, and a person approves or edits it before it posts. Each business chooses how much runs on its own: nothing, drafts only, or auto-posting for good reviews.",
     "status": "Client work",
-    "role": "Sole builder — data model, OAuth layer, background jobs, generation pipeline, dashboard.",
+    "role": "Sole builder.",
     "dates": "2025",
     "isPrivate": false,
-    "privateNote": "Built for a client; no connected accounts, business names, or review text are ever shown.",
-    "featuredMetric": {
-      "value": "6–10×",
-      "label": "faster large syncs — 2,000 reviews from ~60–120 min sequential to ~10–20 min parallel",
-      "tier": "documented",
-      "source": "PERFORMANCE.md"
-    },
-    "metrics": [
-      {
-        "value": "50–200ms",
-        "label": "cached page loads, down from 300–1,000ms",
-        "tier": "documented",
-        "source": "PERFORMANCE.md"
-      },
-      {
-        "value": "~2,000 → 20–40",
-        "label": "database queries per full sync after write batching",
-        "tier": "documented",
-        "source": "PERFORMANCE.md"
-      },
-      {
-        "value": "30–50%",
-        "label": "generation cost cut by pre-filtering ineligible reviews before any model call",
-        "tier": "documented",
-        "source": "PERFORMANCE.md"
-      }
-    ],
-    "problem": "A business with many locations accumulates reviews faster than anyone can read, draft, and post replies. The naive automation is worse: a sequential sync of a few thousand reviews takes over an hour, and generating a reply for every review spends model budget on reviews that are already answered or never needed one.",
+    "privateNote": "Built for a client. No business names, accounts, or review text are shown anywhere.",
+    "metrics": [],
+    "problem": "A business with many locations gets more reviews than anyone can answer. Automating it the naive way is slow and wasteful: pulling thousands of reviews one at a time takes over an hour, and drafting a reply for every single review spends AI money on reviews that need none.",
     "constraints": [
-      "Live customer data under Google's platform terms — nothing identifying leaves the system.",
-      "Access tokens expire mid-sync and refresh grants get permanently revoked; the integration has to tell those apart.",
-      "Model calls cost money per review and rate limits are real.",
-      "Multi-tenant from day one — every workspace's locations, prompts, and caches stay isolated.",
-      "No extra infrastructure: the job queue had to live in the database already in the stack."
+      "Real customer data under Google's rules. Nothing identifying leaves the system.",
+      "Google access expires while a long sync runs, and access can also be revoked for good. The code has to tell those two apart.",
+      "Every AI call costs money, and Google limits how fast you can call its API.",
+      "Many businesses on one system, kept fully separate.",
+      "No extra infrastructure to run."
     ],
     "approach": [
       {
-        "decision": "Pre-filter before generating: skip reviews already replied to, below threshold, or already drafted.",
-        "why": "The cheapest model call is the one that never happens — the filter is where the cost discipline comes from."
+        "decision": "Filter first, draft second.",
+        "why": "Reviews that are already answered, or below the chosen star rating, never reach the AI. The cheapest AI call is the one that does not happen. In this system that cut drafting cost by about a third to a half."
       },
       {
-        "decision": "Three generation strategies instead of one code path: parallel for small syncs, throttled for rate-limit safety, and the Batch API for cheap bulk work.",
-        "why": "Throughput, cost, and latency trade against each other; one path cannot serve all three."
+        "decision": "Three drafting modes instead of one.",
+        "why": "Small batches run fast in parallel. Large backfills run overnight at about half the cost. A slowed-down mode stays inside Google's speed limits."
       },
       {
-        "decision": "A real OAuth lifecycle: refresh with an expiry buffer, cache tokens per request, and treat invalid_grant as a dead connection, not a retry.",
-        "why": "Long syncs outlive tokens, and a revoked grant loops forever if the code cannot tell it from a transient failure."
+        "decision": "Handle Google access properly.",
+        "why": "Access is refreshed before it expires, and a revoked account is marked as needing reconnection instead of being retried forever."
       },
       {
-        "decision": "pg-boss for jobs, so the queue is a Postgres table instead of a second system.",
-        "why": "One fewer thing to operate mattered more than a marginally faster broker."
+        "decision": "Keep the background job queue inside the database.",
+        "why": "One less system to install, watch, and debug."
       },
       {
-        "decision": "Batch writes in transactions and cache read-heavy pages with per-workspace invalidation.",
-        "why": "The hidden bottleneck was ~2,000 individual queries per sync, not the model."
+        "decision": "Write to the database in batches.",
+        "why": "A full sync used to make about 2,000 small writes. Batching cut that to a few dozen. Syncing 2,000 reviews went from one to two hours down to 10 to 20 minutes."
       }
     ],
     "implementation": [
-      "Google Business Profile integration on NextAuth with offline access and a token layer that survives expiry mid-sync.",
-      "Review ingestion that paginates the API and batch-upserts into Postgres inside transactions.",
-      "A reply pipeline with per-location prompts, business context injection, and first-name-only personalization.",
-      "The three-mode automation model — manual, draft-then-approve, auto-post at or above a per-location star threshold.",
-      "Background jobs on pg-boss: sync, generate, and post as typed handlers, plus a Pub/Sub endpoint for near-real-time triggers.",
-      "The operator dashboard: connect, locations, and an inbox to generate, edit, approve, and publish."
+      "The Google connection, including access that survives long syncs.",
+      "Review ingestion that pulls pages of reviews and saves them in batches.",
+      "The drafting step, with a per-location voice and settings.",
+      "The three modes: manual, draft then approve, and auto-post above a chosen star rating.",
+      "Background jobs for syncing, drafting, and posting.",
+      "The dashboard: connect, see locations, and approve or edit drafts."
     ],
-    "outcomes": [
-      {
-        "label": "2,000-review sync, sequential vs parallel",
-        "value": "60–120 min → 10–20 min",
-        "tier": "documented",
-        "source": "PERFORMANCE.md"
-      },
-      {
-        "label": "Cached reviews and locations pages",
-        "value": "300–1,000ms → 50–200ms",
-        "tier": "documented",
-        "source": "PERFORMANCE.md"
-      },
-      {
-        "label": "Database queries per full sync after batching",
-        "value": "~2,000 → 20–40",
-        "tier": "documented",
-        "source": "PERFORMANCE.md"
-      },
-      {
-        "label": "Generation spend cut by filtering ineligible reviews before any call",
-        "value": "30–50%",
-        "tier": "documented",
-        "source": "PERFORMANCE.md"
-      }
-    ],
+    "outcomes": [],
     "stack": [
       "Next.js",
       "TypeScript",
       "PostgreSQL + Prisma",
-      "pg-boss",
-      "NextAuth (Google OAuth)",
+      "pg-boss (job queue inside Postgres)",
       "Google Business Profile API",
-      "OpenAI + Batch API",
+      "OpenAI",
       "Vercel"
     ],
     "limitations": [
-      "The numbers are the project's own benchmarks from PERFORMANCE.md, not audited production metrics.",
-      "Per-location voice memory is scaffolded but not in the shipped loop — reply voice comes from prompts and injected context.",
-      "Auto-post above a threshold exists, but I would want reply-quality evaluation in place before trusting it more broadly."
+      "The speed numbers come from the project's own benchmark notes, not from audited production use.",
+      "Reply voice comes from written instructions per location. A memory of past replies is prepared but not switched on.",
+      "I would want checks on reply quality before trusting auto-posting more widely."
     ],
     "mediaNotes": []
   },
   {
     "slug": "emmy-email-categorization",
     "title": "Emmy",
-    "category": "Email agent · shipped on Simplabots",
-    "oneLiner": "Sorts a business inbox into its own categories as native Gmail labels — known senders routed by rule, everything ambiguous classified with thread context, every decision logged with its reasoning.",
-    "summary": "Emmy sorts incoming Gmail into a client's own categories and applies each decision as a real Gmail label, near-real-time. The design is two layers: deterministic contact-group rules resolve known senders with zero model cost, and a thread-aware LLM handles the rest using full conversation context, the owner's To/CC/BCC role, and the client's past corrections. New mail arrives through a Gmail Pub/Sub webhook into a background job, and every categorization is persisted with a structured reasoning log — who sent it, how it was addressed, what category, and why — visible in the dashboard. It runs on real inboxes as client work and ships on the Simplabots platform.",
+    "category": "Email agent · runs on Simplabots",
+    "oneLiner": "Emmy sorts a business inbox. It labels every email inside Gmail itself and keeps a note of why. Built for a client, running on the Simplabots platform.",
+    "summary": "Emmy sorts incoming mail into the client's own categories and applies each decision as a normal Gmail label. Known senders are sorted by fixed rules and never cost an AI call. Everything else goes to the AI, which reads the whole conversation before deciding. Every decision is saved with its reason and can be checked in a dashboard.",
     "status": "Client work — live on Simplabots",
-    "role": "Sole builder — pipeline, prompting, Gmail integration, dashboard.",
+    "role": "Sole builder.",
     "dates": "Oct — Dec 2025",
     "isPrivate": true,
-    "privateNote": "Runs over real client inboxes — architecture is public, inbox content never is.",
-    "featuredMetric": {
-      "value": "0",
-      "label": "model calls for known senders — single-category contact groups route by rule",
-      "tier": "documented",
-      "source": "rules-first short-circuit"
-    },
-    "metrics": [
-      {
-        "value": "per-email",
-        "label": "structured reasoning log — sender, To/CC/BCC role, category, and the model's reasoning, stored and shown",
-        "tier": "documented",
-        "source": "shipped feature"
-      },
-      {
-        "value": "100–1,000",
-        "label": "configurable initial ingest, chosen in the setup wizard",
-        "tier": "documented",
-        "source": "shipped feature"
-      },
-      {
-        "value": "rejected",
-        "label": "the Batch API — up to 24h latency is wrong for an inbox that should feel live",
-        "tier": "documented",
-        "source": "engineering trade-off"
-      }
-    ],
-    "problem": "A client needed incoming mail sorted into their operational categories, inside the inbox they already use — not another app. Sending every message to a model is slow, expensive, and drifts within conversations; pure rules cannot handle the mail that actually needs judgment. And when the system gets one wrong, the fix has to teach it.",
+    "privateNote": "Runs on real client inboxes. How it works is public. What is in the inbox is not.",
+    "metrics": [],
+    "problem": "A client wanted incoming mail sorted into their own categories, inside the inbox they already use. Sending every email to an AI is slow and expensive, and it can put two emails from the same conversation into different folders. Simple rules alone cannot handle the mail that needs judgment. And when the system sorts something wrong, correcting it has to teach it.",
     "constraints": [
-      "Near-real-time: new mail gets labeled promptly or the sorting is useless.",
-      "Real inboxes — tokens and message bodies stay server-side, always.",
-      "Known senders must never cost a model call.",
-      "A thread split across categories is worse than no sorting at all.",
-      "Corrections have to change future behavior without a retraining pipeline."
+      "New mail has to be labeled quickly, or the sorting is useless.",
+      "Email content stays on the server. Always.",
+      "Known senders must never cost an AI call.",
+      "A conversation stays in one category. Splitting it is worse than not sorting.",
+      "Corrections have to change future behavior without retraining anything."
     ],
     "approach": [
       {
-        "decision": "Two layers: contact-group rules first, the model only for what rules cannot resolve.",
-        "why": "Known senders are the common case. Matching sender or domain to a single-category group short-circuits with zero cost, so the model budget goes where judgment is actually needed."
+        "decision": "Two layers: fixed rules first, AI second.",
+        "why": "Most mail comes from known senders. A sender list sorts those instantly and for free. The AI only sees the mail that actually needs judgment."
       },
       {
-        "decision": "Classify threads, not messages.",
-        "why": "The classifier reads the conversation and keeps it in one category; moving one message re-routes the thread. Per-message drift is the failure users notice first."
+        "decision": "Sort conversations, not single emails.",
+        "why": "The AI reads the whole conversation, and moving one email moves the thread. Mail from one conversation landing in two folders is the mistake people notice first."
       },
       {
-        "decision": "Structured context instead of raw text: the owner's To/CC/BCC role, internal vs external domain, reply and forward signals, and per-category descriptions — with a strict-JSON contract and a safe fallback on any parse failure.",
-        "why": "Concrete signals make the output consistent enough to automate; the contract makes failure safe instead of silent."
+        "decision": "Give the AI clear facts and demand a fixed answer format.",
+        "why": "The AI sees who sent it, whether the client was addressed directly or copied in, and what each category means. It must answer in a fixed format. If the answer does not fit, the email is left unsorted instead of guessed."
       },
       {
-        "decision": "Corrections feed forward: the last ten corrections are injected into subsequent prompts.",
-        "why": "The client's real conventions show up immediately, with no training loop to own."
+        "decision": "Feed corrections back in.",
+        "why": "The last ten corrections are shown to the AI when it decides. The client's habits show up in the sorting within days, with nothing to retrain."
       },
       {
-        "decision": "Contact groups do double duty: CRUD with bulk email import, and multi-category assignment that drives auto-routing.",
-        "why": "The client's own address book is the best classifier there is — the model should only see what it cannot answer."
+        "decision": "Let the client's contact groups drive the sorting.",
+        "why": "The client already knows who their senders are. Groups can be created and filled from a simple file upload, and each group routes to its categories automatically."
       }
     ],
     "implementation": [
-      "The ingestion path: Gmail Pub/Sub webhook, decoded into a background job (Inngest) that categorizes in small batches and applies labels.",
-      "The deterministic layer: sender and domain matching against contact groups, with single-category groups short-circuiting.",
-      "The classification prompt and strict-JSON contract, tuned for deterministic single-pass output.",
-      "Label writes through a manager that can also restore everything to the inbox on account deletion — uninstalling leaves the inbox clean.",
-      "The reasoning log: structured JSON per email — sender, addressed-to role, category, reasoning — persisted and surfaced in a dashboard modal.",
-      "The dashboard: category manager, contact-group CRUD with bulk import, setup wizard with configurable ingest, and a thread-grouped inbox view."
+      "The path from Gmail to the sorter: new mail triggers a background job that sorts in small batches.",
+      "The rules layer that matches senders and domains to contact groups.",
+      "The AI step with its fixed answer format and safe fallback.",
+      "Label writing, including putting everything back in the inbox if the account is removed.",
+      "The saved reason for every decision, shown in the dashboard.",
+      "The dashboard: categories, contact groups with file upload, a setup wizard, and a conversation view."
     ],
     "outcomes": [
       {
-        "label": "Known senders route with zero model cost, by construction",
-        "value": "0 calls",
+        "label": "Known senders are sorted instantly, at zero AI cost",
         "tier": "documented"
       },
       {
-        "label": "Every categorization is auditable in-product: structured reasoning plus confidence, per email",
-        "value": "per-email logs",
+        "label": "Every decision is stored with its reason and can be checked in the dashboard",
         "tier": "documented"
       },
       {
-        "label": "Shipped configurable initial ingest (100–1,000 emails) and contact groups with bulk import driving auto-routing",
-        "value": "shipped",
-        "tier": "documented",
-        "source": "weekly update, Nov 2025"
-      },
-      {
-        "label": "Runs commercially — Emmy is live as an agent on the Simplabots platform",
-        "value": "live",
+        "label": "Live as an agent on the Simplabots platform",
         "tier": "documented",
         "source": "simplabots.com"
       }
@@ -580,131 +412,96 @@
       "Next.js",
       "TypeScript",
       "Prisma + PostgreSQL",
-      "Inngest",
-      "Gmail API + Pub/Sub",
-      "OpenAI",
-      "Zod"
+      "Inngest (background jobs)",
+      "Gmail API",
+      "OpenAI"
     ],
     "limitations": [
-      "Confidence scores are a heuristic that flags fallbacks — they are not calibrated probabilities.",
-      "Some ambiguous mail is left uncategorized on purpose; a human deciding is the correct outcome for those.",
-      "An embedding layer is scaffolded in the schema but the shipped path is rules plus prompt — I would measure whether vectors earn their place before wiring them in."
+      "The confidence score is a simple flag, not a real probability.",
+      "Some mail is left unsorted on purpose. For genuinely unclear mail, a person deciding is the right outcome.",
+      "A similarity-search layer is wired into the database but not used. I would measure whether it helps before switching it on."
     ],
     "mediaNotes": []
   },
   {
     "slug": "melodymind",
     "title": "MelodyMind",
-    "category": "Cross-modal ML · FAST-NUCES thesis",
-    "oneLiner": "Emotion-aware playlists from text, images, and voice — built on a frozen CLAP audio encoder aligned to a text embedding space, a design reached only after the naive baselines collapsed.",
-    "summary": "MelodyMind generates playlists from what you say, type, or show it. The research core is cross-modal alignment: a frozen CLAP audio encoder projected through a trained head into the same latent space as Nomic text embeddings, aligned with an InfoNCE contrastive loss. That design was not the first idea — it came after spectrogram CNNs and text-sentiment baselines collapsed, and after a structured zero-shot evaluation mapped exactly where the pretrained model fails. The model was then productized over three iterations into a working prototype: text, image, and voice playlist generation, a real-time talk-to-your-DJ voice loop, and stem separation — served by FastAPI and Pinecone, with a React Native app. Thesis work, built by a team of three.",
+    "category": "Music app · FAST-NUCES thesis",
+    "oneLiner": "A music app from my thesis. You type, speak, or show it a picture, and it builds a playlist that fits the mood. Built by a team of three.",
+    "summary": "The research problem: mood lives in words, music lives in sound, and a computer has no direct way to compare the two. The fix: turn both into embeddings — lists of numbers that capture meaning — in one shared space, so a mood and a song can be compared directly. The first attempts failed: every song ended up with nearly the same numbers. The design that worked uses a pretrained audio model called CLAP, kept frozen, with one small trained layer that maps its output into the text space.",
     "status": "Thesis",
-    "role": "One of three builders (with Hassaan Anwar and Saad Nadeem). The thesis does not attribute modules to individuals, so this page describes shared work.",
-    "dates": "Thesis dated May 2026 · three iterations",
+    "role": "One of three builders, with Hassaan Anwar and Saad Nadeem. The thesis does not split the work by person, so this page describes shared work.",
+    "dates": "Thesis dated May 2026",
     "isPrivate": false,
     "privateNote": "",
-    "featuredMetric": {
-      "value": "17 epochs",
-      "label": "to stable embedding separation — the feature collapse of the earlier baselines, eliminated",
-      "tier": "thesis",
-      "source": "reported in thesis"
-    },
-    "metrics": [
-      {
-        "value": "3",
-        "label": "builders — team thesis at FAST-NUCES",
-        "tier": "team",
-        "source": "thesis"
-      },
-      {
-        "value": "10",
-        "label": "zero-shot emotion probes mapping where pretrained CLAP succeeds and fails",
-        "tier": "thesis"
-      },
-      {
-        "value": "3",
-        "label": "iterations — embedding research, multimodal productization, stem separation",
-        "tier": "thesis"
-      }
-    ],
-    "problem": "Emotional intent lives in text — 'something for a rainy focus session' — while the signal lives in audio, and the two have no shared representation. The first attempts made that concrete: sentiment classifiers over lyrics, spectrogram CNNs, concatenated pipelines — all collapsed into embeddings that did not separate by emotion. The real question became how to align audio and text into one space reliably enough to recommend across modalities.",
+    "metrics": [],
+    "problem": "Ask for music for a rainy focus session and the request is words, but the answer is sound. With no shared representation, the computer cannot compare them. Our first attempts made that concrete: mood classifiers over lyrics and image-style networks over audio both collapsed, meaning every song got nearly the same numbers and nothing separated by mood.",
     "constraints": [
-      "No labeled emotion-to-audio ground truth — training data assembled from public sources with real class imbalance.",
-      "Audio limited to short public previews, not full tracks.",
-      "Three people, a fixed academic timeline.",
-      "No compute to train an audio encoder — the design had to lean on a frozen pretrained one."
+      "No ready-made dataset links moods to songs. Training data came from public sources and was unevenly spread across moods.",
+      "Only short public audio previews, not full tracks.",
+      "Three people and a fixed academic deadline.",
+      "No budget to train an audio model from scratch."
     ],
     "approach": [
       {
-        "decision": "Freeze CLAP and train only a small projection head into the Nomic text space.",
-        "why": "It reuses CLAP's audio understanding and reduces the problem to one learnable projection — the tractable path with no ground-truth dataset and no training budget."
+        "decision": "Keep the pretrained audio model frozen and train only one small layer on top.",
+        "why": "CLAP already understands audio. Training one small layer to map its output into the text space needs little data and little computing power. That was the only realistic path."
       },
       {
-        "decision": "Align with an InfoNCE in-batch contrastive loss rather than regression or classification.",
-        "why": "Contrastive pairing optimizes audio-text matching and song-to-song discrimination at once — which is what fixed the collapse."
+        "decision": "Train that layer by pulling matching pairs together and pushing others apart (the method is called InfoNCE).",
+        "why": "It teaches the model both jobs at once: match audio to text, and keep different songs apart. That second part is what fixed the collapse."
       },
       {
-        "decision": "Run a structured zero-shot evaluation before committing to training: ten emotion prompts against pretrained CLAP.",
-        "why": "It showed exactly where the model is strong (direct emotions, tempo, timbre) and weak (abstract cues like 'focus') — evidence for the projection head, not an assumption."
+        "decision": "Test the pretrained model before training anything, with ten mood prompts.",
+        "why": "The test showed where it was already good (clear emotions, tempo) and where it failed (abstract moods like focus). That result justified the design instead of assuming it."
       },
       {
-        "decision": "Serve recommendation as vector geometry: weighted centroids in Pinecone with mood filtering by distance.",
-        "why": "Once the modalities share a space, playlists reduce to geometry and the serving path stays inspectable."
+        "decision": "Build playlists with vector math.",
+        "why": "Once songs and moods share one space, a playlist is the songs closest to the request. Simple to build and simple to inspect."
       },
       {
-        "decision": "Route conversation through Gemini with a Llama-on-Groq fallback.",
-        "why": "The voice loop needs to stay responsive when the primary model is slow."
+        "decision": "Use a fast fallback model for the voice chat.",
+        "why": "The talk-to-your-DJ feature has to answer quickly, so a slow reply switches to a faster model."
       }
     ],
     "implementation": [
-      "The projection head mapping frozen CLAP audio embeddings into the Nomic text dimensionality, trained with InfoNCE.",
-      "The naive baselines that failed first — lyric and Reddit sentiment classifiers, spectrogram CNNs — kept as the documented reason for the design.",
-      "A data pipeline over Reddit, Last.fm, Genius lyrics, and Deezer previews with concurrent download and feature extraction.",
-      "A FastAPI backend with async SQLAlchemy, embeddings served from Pinecone with centroid-based playlist construction.",
-      "The talk-to-your-DJ loop: voice in, Whisper transcript, an agent that updates the playlist mid-session, streamed spoken reply.",
-      "Image-to-playlist via multimodal mood extraction mapped to embedding queries.",
-      "Demucs-based stem separation with an async job lifecycle and downloadable stems.",
-      "The React Native app: chat playlists, image upload, the animated voice screen, stem upload and preview — verified on real devices."
+      "The trained mapping layer between the audio model and the text space.",
+      "The earlier failed attempts, kept as the documented reason for the design.",
+      "A data pipeline over Reddit, Last.fm, song lyrics, and audio previews.",
+      "The backend and the vector search that builds playlists.",
+      "The voice loop: you speak, it transcribes, updates the playlist, and answers out loud.",
+      "Picture-to-playlist: the app reads the mood of a photo and queries with it.",
+      "A tool that splits a song into vocals, drums, bass, and the rest.",
+      "The mobile app, tested on real phones."
     ],
     "outcomes": [
       {
-        "label": "The CLAP-InfoNCE model stabilized with clear embedding separation, eliminating the baselines' feature collapse",
-        "value": "17 epochs",
+        "label": "Training became stable after 17 full passes over the data, with songs clearly separated by mood",
         "tier": "thesis"
       },
       {
-        "label": "The zero-shot evaluation documented strengths and weaknesses honestly — a diagnosis used to justify the design, not a headline",
-        "value": "10 probes",
+        "label": "A working prototype on real phones: playlists from text, pictures, and voice",
         "tier": "thesis"
       },
       {
-        "label": "A working multimodal prototype: text, image, and voice playlist generation plus the voice loop, on real devices",
-        "value": "working prototype",
-        "tier": "thesis"
-      },
-      {
-        "label": "End-to-end stem separation shipped in the final iteration — vocals, drums, bass, and other, downloadable",
-        "value": "shipped",
+        "label": "Song splitting shipped in the final iteration, with downloadable tracks",
         "tier": "thesis"
       }
     ],
     "stack": [
-      "CLAP (frozen)",
-      "InfoNCE contrastive learning",
-      "Nomic embeddings",
+      "CLAP (pretrained audio model, frozen)",
       "PyTorch",
-      "Demucs",
+      "Nomic (text embeddings)",
+      "Pinecone (vector search)",
       "FastAPI",
-      "Pinecone",
-      "LangChain",
-      "Gemini + Groq (Llama 3, Whisper)",
-      "React Native (Expo)"
+      "Demucs (song splitting)",
+      "React Native (mobile app)"
     ],
     "limitations": [
-      "No recommendation-quality benchmark was measured — no accuracy, MAP, or nDCG. The honest next step is a held-out evaluation against a labeled set.",
-      "The encoder stays weak on abstract, situational prompts; closing that needs targeted data, not more epochs.",
-      "It is a research demonstrator, not a launched app — some integrations were finished only in the last iteration.",
-      "Training data came from public sources with real imbalance and preview-length audio."
+      "Playlist quality was never measured with a benchmark. Results are qualitative.",
+      "The model stays weak on abstract moods. Fixing that needs better data, not more training.",
+      "It is a research demo, not a launched app.",
+      "Training used public data with uneven mood coverage and short previews."
     ],
     "mediaNotes": []
   }

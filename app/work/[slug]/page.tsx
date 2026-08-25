@@ -60,14 +60,16 @@ export default async function ProjectPage({ params }: Props) {
         </div>
       </section>
 
-      <div className="wrap">
-        <div className="case-metrics">
-          <StatBlock metric={project.featuredMetric} />
-          {project.metrics.map((metric) => (
-            <StatBlock key={metric.label} metric={metric} />
-          ))}
+      {project.featuredMetric || project.metrics.length ? (
+        <div className="wrap">
+          <div className="case-metrics">
+            {project.featuredMetric ? <StatBlock metric={project.featuredMetric} /> : null}
+            {project.metrics.map((metric) => (
+              <StatBlock key={metric.label} metric={metric} />
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       <div className="wrap">
         <div className="case-layout">
@@ -110,7 +112,7 @@ export default async function ProjectPage({ params }: Props) {
 
             {project.constraints.length ? (
               <Reveal as="section" className="case-block">
-                <h2>Constraints</h2>
+                <h2>What made it hard</h2>
                 <ul className="plain-list">
                   {project.constraints.map((item) => (
                     <li key={item}>
@@ -122,7 +124,7 @@ export default async function ProjectPage({ params }: Props) {
             ) : null}
 
             <Reveal as="section" className="case-block">
-              <h2>Approach &amp; key decisions</h2>
+              <h2>Decisions</h2>
               <ul className="decision-list">
                 {project.approach.map((decision) => (
                   <li className="decision" key={decision.decision}>
@@ -146,7 +148,7 @@ export default async function ProjectPage({ params }: Props) {
 
             {project.outcomes.length ? (
               <Reveal as="section" className="case-block">
-                <h2>Outcomes</h2>
+                <h2>Results</h2>
                 <ul className="stack-v" style={{ margin: 0, padding: 0, listStyle: "none", gap: 18 }}>
                   {project.outcomes.map((metric) => (
                     <li key={metric.label} style={{ display: "grid", gap: 6 }}>
@@ -167,7 +169,7 @@ export default async function ProjectPage({ params }: Props) {
 
             {media.length ? (
               <Reveal as="section" className="case-block" style={{ maxWidth: "none" }}>
-                <h2>Selected media</h2>
+                <h2>Figures</h2>
                 <div className="stack-v" style={{ gap: 20 }}>
                   {media.map((item) => (
                     <figure className="figure" key={item.src}>
@@ -183,7 +185,7 @@ export default async function ProjectPage({ params }: Props) {
 
             {project.limitations.length ? (
               <Reveal as="section" className="case-block">
-                <h2>Limitations &amp; what&apos;s next</h2>
+                <h2>What is not done yet</h2>
                 <ul className="plain-list">
                   {project.limitations.map((item) => (
                     <li key={item}>

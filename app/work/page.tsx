@@ -2,14 +2,13 @@ import type { Metadata } from "next";
 import { ArrowUpRight } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { WorkRow } from "@/components/WorkRow";
-import { featuredProjects, platformContribution, profile, secondaryProjects, siteUrl } from "@/data/portfolio";
+import { featuredProjects, profile, secondaryProjects, siteUrl } from "@/data/portfolio";
 import "@/app/landing.css";
 import "@/app/work.css";
 
 export const metadata: Metadata = {
   title: "Work",
-  description:
-    "Six projects in depth — ArchPHI, PiloneCables, TalentFlow, Revvy, Emmy, and MelodyMind — plus the smaller builds around them.",
+  description: "Six projects in depth: ArchPHI, PiloneCables, TalentFlow, Revvy, Emmy, and MelodyMind. Plus smaller builds.",
   alternates: { canonical: `${siteUrl}/work/` }
 };
 
@@ -35,8 +34,8 @@ export default function WorkPage() {
               Work<b>.</b>
             </h1>
             <p className="lede">
-              Companies, client systems, and a thesis — each with the decisions behind it. Client work is described by
-              problem, scale, and role; customer data stays out.
+              Companies, client work, and a thesis. Client work is described by the problem, the size, and my role.
+              Customer data stays out.
             </p>
           </Reveal>
         </div>
@@ -49,20 +48,6 @@ export default function WorkPage() {
               <WorkRow project={project} index={index} key={project.slug} />
             ))}
           </div>
-        </div>
-      </section>
-
-      <section className="section section--divided" aria-labelledby="platform-title">
-        <div className="wrap editorial">
-          <Reveal className="editorial__aside">
-            <p className="eyebrow">Team contribution</p>
-            <h2 id="platform-title">{platformContribution.title}</h2>
-          </Reveal>
-          <Reveal className="editorial__body" delay={0.06}>
-            <p className="lede">{platformContribution.role}</p>
-            <p className="editorial__text">{platformContribution.summary}</p>
-            <p className="muted">{platformContribution.note}</p>
-          </Reveal>
         </div>
       </section>
 

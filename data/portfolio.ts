@@ -48,7 +48,7 @@ export type CaseStudy = {
   dates: string;
   isPrivate: boolean;
   privateNote: string;
-  featuredMetric: Metric;
+  featuredMetric?: Metric;
   metrics: Metric[];
   problem: string;
   constraints: string[];
@@ -262,48 +262,49 @@ export type SecondaryProject = {
 export const secondaryProjects: SecondaryProject[] = [
   {
     title: "Adzee",
-    signal: "Staged ad-creative pipeline",
+    signal: "Ad-making agent",
     summary:
-      "Turns a brand profile and a one-line theme into a full ad set — brief, ranked headlines, copy, imagery — with a self-correcting image-quality loop that regenerates weak results.",
+      "Give it a brand and a one-line idea, and it makes a full ad set: a plan, ten ranked headlines, the text, and the images. Weak images are redone automatically. Runs on Simplabots as Adsy.",
+    href: "https://simplabots.com/agents/adsy/",
     icon: Sparkles
   },
   {
     title: "Dominic",
-    signal: "Domain-naming agent",
+    signal: "Domain-finding agent",
     summary:
-      "Turns a company brief into brandable domain candidates, checks real availability over RDAP, and ranks the results with a hybrid heuristic-plus-model scorer.",
+      "Give it a company description and it suggests domain names, checks which ones are really available, and ranks them.",
     href: "https://simplabots.com/agents/dominic/",
     icon: Globe2
   },
   {
     title: "ResearchAI",
-    signal: "Two-agent take-home",
+    signal: "Research assistant",
     summary:
-      "A research assistant built under take-home pressure: two agents, four tools, and an explicit state machine on Mastra, with live web research and PDF export.",
+      "Built for a hiring test. Two AI agents work through fixed steps, search the web, and turn the findings into a PDF report.",
     href: "https://github.com/Mustafaiqbal2/CA-TASK",
     icon: Layers3
   },
   {
-    title: "Offline document RAG",
-    signal: "Cloud + fully offline",
+    title: "Offline document summarizer",
+    signal: "Works without internet",
     summary:
-      "Document summarization that runs in the cloud or fully offline, pairing FAISS retrieval with Groq or a local TinyLlama fallback.",
+      "Summarizes large documents. Runs in the cloud, or fully offline on a laptop with a small local model.",
     href: "https://github.com/Mustafaiqbal2/BIG_Document_RAG",
     icon: Network
   },
   {
     title: "Neural network acceleration",
-    signal: "34.79× at the top end",
+    signal: "GPU speed study",
     summary:
-      "Six MNIST classifiers from a sequential C baseline through CUDA, Tensor Cores, OpenACC, and cuBLAS — with the negative results kept, including a naive CUDA port slower than the CPU.",
+      "Six versions of the same digit-recognition network, from plain C code up through GPU libraries. The failed attempts are in the write-up too.",
     href: "https://github.com/Mustafaiqbal2/Neural-Network_Acceleration",
     icon: Cpu
   },
   {
     title: "CUDA Canny optimization",
-    signal: "~48× reported speedup",
+    signal: "GPU image filter",
     summary:
-      "Optimized CUDA Canny edge detection with kernel fusion, shared memory, and minimized host–device transfers.",
+      "Made an edge-detection filter run much faster on a GPU by merging steps and moving less data around.",
     href: "https://github.com/Mustafaiqbal2/Canny_optimization",
     icon: Cpu
   },
@@ -311,17 +312,9 @@ export const secondaryProjects: SecondaryProject[] = [
     title: "Custom compiler",
     signal: "Compiler internals",
     summary:
-      "A Java compiler front end — lexical analysis, symbol tables, LL(1) parsing, AST construction, and error recovery.",
+      "The front half of a compiler, in Java: it reads source code, checks it, and builds the structure a compiler works on.",
     href: "https://github.com/Mustafaiqbal2/Custom-Compiler",
     icon: Cpu
   }
 ];
 
-/* Platform-contribution note, shown on Work — team product, not a solo case study. */
-export const platformContribution = {
-  title: "Simplabots — platform work",
-  role: "Outsourced agent builder, with contributions across the platform itself",
-  summary:
-    "Simplabots sells AI agents to small businesses. I was brought in to build agents — Emmy and Revvy are mine end to end, Adzee and Dominic were built as standalone products — and I contributed features across the ~20-person team's production platform: billing credits, model routing, retrieval, background queues, and object storage on a shared Next.js / Prisma / AWS backbone.",
-  note: "The agents I own are on my GitHub; the platform is the team's — simplabots.com."
-};
