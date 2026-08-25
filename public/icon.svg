@@ -1,6 +1,5 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-label="Mustafa Iqbal monogram">
-  <rect width="180" height="180" rx="42" fill="#0b111a"/>
-  <path d="M40 124V56h22l28 43 28-43h22v68h-20V87l-22 34H82L60 87v37H40Z" fill="#f8fafc"/>
-  <path d="M139 34h12v12h-12zM151 46h12v12h-12zM127 46h12v12h-12z" fill="#2dd4bf"/>
-  <path d="M38 142h104" stroke="#7c3aed" stroke-width="8" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-label="Mustafa">
+  <rect width="180" height="180" rx="40" fill="#0b0c12"/>
+  <path d="M37 129V55l36 45 37-45v74" fill="none" stroke="#f2f2ee" stroke-width="20"/>
+  <rect x="130" y="101" width="20" height="38" fill="#b79cff"/>
 </svg>
