@@ -16,16 +16,8 @@ export function WorkRow({ project, index }: { project: CaseStudy; index: number 
         <span className="work-row__main">
           <span className="work-row__titlerow">
             <span className="work-row__title">{project.title}</span>
-            <span className="status-tag">{project.status}</span>
           </span>
           <span className="work-row__desc">{project.oneLiner}</span>
-          <span className="chips">
-            {project.stack.slice(0, 5).map((item) => (
-              <span className="chip" key={item}>
-                {item}
-              </span>
-            ))}
-          </span>
         </span>
         <span className="work-row__aside">
           {project.featuredMetric ? (

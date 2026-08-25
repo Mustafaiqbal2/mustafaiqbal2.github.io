@@ -63,7 +63,6 @@ export default function WorkPage() {
               const inner = (
                 <>
                   <Icon aria-hidden="true" />
-                  <span className="status-tag">{project.signal}</span>
                   <h3>
                     {project.title}
                     {project.href ? <ArrowUpRight size={15} aria-hidden="true" /> : null}

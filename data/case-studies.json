@@ -11,10 +11,10 @@
     "isPrivate": true,
     "privateNote": "The test projects are real client work. They stay anonymous. Drawings, quantities, and bills stay private.",
     "metrics": [],
-    "problem": "Real CAD files are messy. Some parts are corrupt. Some point to files that were never delivered. Some dimensions show a typed-in number that is not the drawn length. Software that guesses over files like these gives confident wrong answers, and in construction wrong numbers cost real money. So the hard part is not the AI. The hard part is a base layer where a guess can never look like a fact.",
+    "problem": "Real CAD files are messy. Some parts are corrupt. Some point to files that were never delivered. Some dimensions show a typed-in number that is different from the drawn length. Software that guesses over files like these gives confident wrong answers, and in construction wrong numbers cost real money. So the base layer has one job: make it impossible for a guess to look like a fact.",
     "constraints": [
-      "Every office draws differently. The system has to learn words like door and window from each project's own drawings, not from a built-in list.",
-      "Nothing may be dropped quietly. A corrupt drawing has to show up as a fact, not disappear.",
+      "Every office draws differently. The system has to learn words like door and window from each project's own drawings, because a built-in list would fail on the next office.",
+      "A corrupt drawing has to show up in the results as a broken file. Dropping it quietly would hide missing work.",
       "The common CAD format (DWG) cannot be read directly. Files are converted first, and each conversion is recorded, because converting can lose detail.",
       "AI calls cost money. Every call gets a price and a spending cap before it is allowed to run."
     ],
@@ -24,16 +24,16 @@
         "why": "Hardcoding one office's names makes the system fail on the next office. A failing build cannot be ignored."
       },
       {
-        "decision": "Read the drawing's real geometry, not pictures of it.",
-        "why": "The CAD file holds exact lines, text, and measurements. A screenshot does not. Every extracted fact keeps an ID, so it can be checked again later."
+        "decision": "Read the drawing's real geometry instead of screenshots of it.",
+        "why": "The CAD file holds exact lines, text, and measurements. Every extracted fact keeps an ID, so it can be checked again later."
       },
       {
-        "decision": "Count everything once. One pass over all eight projects counted 2,668,953 drawing records and put each one in exactly one bucket: readable, partly readable, or not supported.",
-        "why": "Coverage you have not counted is a guess. The count also states what it does not prove: readable here does not mean understood."
+        "decision": "Count everything once. One pass over all eight projects counted 2,668,953 drawing records and put each one in exactly one bucket: readable, partly readable, or unsupported.",
+        "why": "The count shows exactly what the system can and cannot read. It also states its own limit: readable here does not mean understood."
       },
       {
         "decision": "Score against hidden answer sheets. The system gets a bill with blanks to fill. The answer sheet is never shown to it. Every line lands in one of six buckets, such as correct, wrong, or flagged as unknown.",
-        "why": "This stops two tricks. Guessing cannot look like knowledge, and saying I do not know cannot look like accuracy. Seventeen scored runs are saved."
+        "why": "The system cannot score well by guessing, and it cannot hide behind saying I do not know. Seventeen scored runs are saved."
       },
       {
         "decision": "Delete work that fails its own test.",
@@ -42,11 +42,11 @@
     ],
     "implementation": [
       "A reader that turns CAD files into exact geometry, with a record of where every piece came from.",
-      "An intake step that classifies every delivered file and records each DWG-to-DXF conversion. Broken files are kept and marked, not dropped.",
+      "An intake step that classifies every delivered file and records each DWG-to-DXF conversion. Broken files are kept and marked as broken.",
       "A check for missing references. One sheet pointed to 21 images that were never delivered. All 21 were flagged.",
-      "Dimension reading from real geometry instead of displayed text. All 766 readable dimensions gave a supported measured value. 13 had typed-over text, and each one was flagged.",
+      "Dimension reading from real geometry. All 766 readable dimensions gave a supported measured value. 13 had typed-over text, and each one was flagged.",
       "The scoring harness with hidden answer sheets, with 17 runs saved.",
-      "A written diagnosis of the biggest open failure, area measurement: 1 of 14 lines correct over 42 tries, because the drawings do not carry the height the math needs."
+      "A diagnosis of the biggest open failure, area measurement: 1 of 14 lines correct over 42 tries."
     ],
     "outcomes": [
       {
@@ -66,12 +66,6 @@
         "value": "22 vs 16",
         "tier": "documented",
         "source": "accuracy diagnosis"
-      },
-      {
-        "label": "area lines correct so far. The cause is written down",
-        "value": "1 / 14",
-        "tier": "documented",
-        "source": "accuracy diagnosis, 42 tries"
       }
     ],
     "stack": [
@@ -86,8 +80,7 @@
       "74.1% of records handled does not mean 74.1% of a drawing understood.",
       "There is no product accuracy number yet. The scoring system exists to earn one.",
       "The takeoff product is not shipped. First firms are onboarding soon.",
-      "DWG reading depends on the converter until a direct reader exists.",
-      "Area measurement does not work yet. The drawings do not carry the height the calculation needs."
+      "Area measurement does not work yet: 1 of 14 lines correct over 42 tries. The drawings do not carry the height the calculation needs."
     ],
     "mediaNotes": []
   },
@@ -130,10 +123,9 @@
     ],
     "problem": "Buyers search Google for cable types, sizes, and prices, and they found the big brands. Pilone's site had about 65 pages in Google and no answers to those searches.",
     "constraints": [
-      "Prices and specifications change, so pages are generated from data, not edited by hand.",
+      "Prices and specifications change, so the pages are generated from the factory's data.",
       "Many weak pages hurt ranking. Every page has to answer a real search or be removed.",
-      "People now ask AI assistants instead of Google, so the site has to be readable for AI crawlers too.",
-      "One person runs this next to everything else."
+      "People now ask AI assistants instead of Google, so the site has to be readable for AI crawlers too."
     ],
     "approach": [
       {
@@ -142,7 +134,7 @@
       },
       {
         "decision": "Delete weak pages. The pipeline once generated 1,053 pages. 405 thin ones were deleted and 236 became redirects. 288 stayed.",
-        "why": "Google ranks a site better when every page has a clear answer. The numbers improved after the deletion, not after the generation."
+        "why": "Google ranks a site better when every page has a clear answer. The rankings improved after the deletion."
       },
       {
         "decision": "Build calculators buyers actually use: cable size and voltage drop.",
@@ -154,12 +146,12 @@
       },
       {
         "decision": "Check Search Console and let the numbers pick the next task.",
-        "why": "Position and clicks are the verdict here. The work iterates against them, not against opinions."
+        "why": "Position and clicks decide what to build next."
       }
     ],
     "implementation": [
       "A static site where every page is generated from factory data at build time.",
-      "A build pipeline that syncs prices, rebuilds navigation, the search index, and the sitemap.",
+      "A build pipeline that syncs prices and rebuilds navigation, the search index, and the sitemap.",
       "Cable-size and voltage-drop calculators, plus reference charts.",
       "Search across all pages, on the page itself.",
       "Analytics with events for contact clicks and calculator use."
@@ -193,7 +185,7 @@
     ],
     "limitations": [
       "Times shown in results grew from 9.92k to 46.2k, but part of that window had a known Google logging error. Clicks and position are the numbers I trust.",
-      "Pages on the site is not the same as pages Google has indexed.",
+      "Pages on the site and pages Google has indexed are different counts.",
       "There was no controlled experiment. The evidence is the before and the after."
     ],
     "mediaNotes": []
@@ -212,16 +204,15 @@
     "metrics": [],
     "problem": "Recruiters skim CVs and miss what is on a candidate's GitHub or personal site. The lab wanted the whole first pass automated: gather the information, match it to a role, and run a first interview.",
     "constraints": [
-      "A fixed summer window to ship it end to end.",
       "Five sources with five different formats — CV, GitHub, LinkedIn, a research registry, personal sites — all with personal data.",
       "Lab servers only, so everything had to be self-hosted and easy to rebuild.",
-      "The interview must not repeat questions, and answers have to come fast enough to feel like a conversation.",
-      "Small open models only, no expensive APIs."
+      "The interview must never repeat a question, and answers have to come fast enough to feel like a conversation.",
+      "Small open models only."
     ],
     "approach": [
       {
-        "decision": "Match by meaning, not keywords.",
-        "why": "Two texts can say the same thing with different words. Keyword matching misses that. Embeddings still match."
+        "decision": "Match by meaning instead of keywords.",
+        "why": "Two texts can say the same thing with different words. Embeddings still match them."
       },
       {
         "decision": "Rewrite job ads before matching them.",
@@ -242,7 +233,7 @@
     ],
     "implementation": [
       "Ingestion that gathers and cleans candidate data from all five sources.",
-      "Matching on embeddings stored in a vector database (a database that finds items by similarity, not exact words).",
+      "Matching on embeddings stored in a vector database, a database that finds items by similarity.",
       "The interview loop: pick a topic, write a question, speak it, transcribe the answer, continue.",
       "A report step that runs at the end and scores the session.",
       "The services deployed with Docker on lab servers."
@@ -254,7 +245,7 @@
         "source": "Genesys Research Lab"
       },
       {
-        "label": "The agent answers in under five seconds and does not repeat questions. Reported, not benchmarked",
+        "label": "The agent answers in under five seconds and does not repeat questions, as observed during development",
         "tier": "self-reported",
         "source": "CV"
       }
@@ -270,19 +261,18 @@
     ],
     "limitations": [
       "Match quality was never measured. There is no number that says the matching works better.",
-      "The under-five-seconds figure was observed during development, not measured properly.",
-      "It is a lab prototype. Before real candidates it would need consent, data retention rules, and access controls.",
-      "A small model limits how well the interviewer judges answers."
+      "The under-five-seconds figure was observed during development.",
+      "It is a lab prototype. Before real candidates it would need consent, data retention rules, and access controls."
     ],
     "mediaNotes": []
   },
   {
     "slug": "revvy-review-automation",
     "title": "Revvy",
-    "category": "Google-review replies for businesses",
-    "oneLiner": "Revvy reads a business's Google reviews and writes reply drafts. A person approves each reply before it posts. Built for a client.",
-    "summary": "Revvy connects to Google Business Profile, the system behind a business's Google listing and its reviews. It pulls the reviews in, drafts a reply for each one in the business's voice, and a person approves or edits it before it posts. Each business chooses how much runs on its own: nothing, drafts only, or auto-posting for good reviews.",
-    "status": "Client work",
+    "category": "Google-review agent · runs on Simplabots",
+    "oneLiner": "Revvy reads a business's Google reviews and writes reply drafts. A person approves each reply before it posts. Built for a client, running on the Simplabots platform.",
+    "summary": "Revvy connects to Google Business Profile, the system behind a business's Google listing and its reviews. It pulls the reviews in, drafts a reply for each one in the business's voice, and a person approves or edits it before it posts. Each business chooses how much runs on its own: nothing, drafts only, or auto-posting for good reviews. Revvy runs as an agent on the Simplabots platform.",
+    "status": "Client work — live on Simplabots",
     "role": "Sole builder.",
     "dates": "2025",
     "isPrivate": false,
@@ -293,13 +283,12 @@
       "Real customer data under Google's rules. Nothing identifying leaves the system.",
       "Google access expires while a long sync runs, and access can also be revoked for good. The code has to tell those two apart.",
       "Every AI call costs money, and Google limits how fast you can call its API.",
-      "Many businesses on one system, kept fully separate.",
-      "No extra infrastructure to run."
+      "Many businesses on one system, kept fully separate."
     ],
     "approach": [
       {
         "decision": "Filter first, draft second.",
-        "why": "Reviews that are already answered, or below the chosen star rating, never reach the AI. The cheapest AI call is the one that does not happen. In this system that cut drafting cost by about a third to a half."
+        "why": "Reviews that are already answered, or below the chosen star rating, never reach the AI. That cut drafting cost by about a third to a half."
       },
       {
         "decision": "Three drafting modes instead of one.",
@@ -337,8 +326,8 @@
       "Vercel"
     ],
     "limitations": [
-      "The speed numbers come from the project's own benchmark notes, not from audited production use.",
-      "Reply voice comes from written instructions per location. A memory of past replies is prepared but not switched on.",
+      "The speed numbers come from the project's own benchmark notes.",
+      "Reply voice comes from written instructions per location. A memory of past replies is prepared but switched off.",
       "I would want checks on reply quality before trusting auto-posting more widely."
     ],
     "mediaNotes": []
@@ -358,9 +347,9 @@
     "problem": "A client wanted incoming mail sorted into their own categories, inside the inbox they already use. Sending every email to an AI is slow and expensive, and it can put two emails from the same conversation into different folders. Simple rules alone cannot handle the mail that needs judgment. And when the system sorts something wrong, correcting it has to teach it.",
     "constraints": [
       "New mail has to be labeled quickly, or the sorting is useless.",
-      "Email content stays on the server. Always.",
+      "Email content never leaves the server.",
       "Known senders must never cost an AI call.",
-      "A conversation stays in one category. Splitting it is worse than not sorting.",
+      "A conversation has to stay in one category.",
       "Corrections have to change future behavior without retraining anything."
     ],
     "approach": [
@@ -369,12 +358,12 @@
         "why": "Most mail comes from known senders. A sender list sorts those instantly and for free. The AI only sees the mail that actually needs judgment."
       },
       {
-        "decision": "Sort conversations, not single emails.",
+        "decision": "Sort conversations instead of single emails.",
         "why": "The AI reads the whole conversation, and moving one email moves the thread. Mail from one conversation landing in two folders is the mistake people notice first."
       },
       {
         "decision": "Give the AI clear facts and demand a fixed answer format.",
-        "why": "The AI sees who sent it, whether the client was addressed directly or copied in, and what each category means. It must answer in a fixed format. If the answer does not fit, the email is left unsorted instead of guessed."
+        "why": "The AI sees who sent it, whether the client was addressed directly or copied in, and what each category means. If the answer does not fit the format, the email is left unsorted instead of guessed."
       },
       {
         "decision": "Feed corrections back in.",
@@ -382,7 +371,7 @@
       },
       {
         "decision": "Let the client's contact groups drive the sorting.",
-        "why": "The client already knows who their senders are. Groups can be created and filled from a simple file upload, and each group routes to its categories automatically."
+        "why": "The client already knows who their senders are. Groups can be filled from a simple file upload, and each group routes to its categories automatically."
       }
     ],
     "implementation": [
@@ -417,9 +406,9 @@
       "OpenAI"
     ],
     "limitations": [
-      "The confidence score is a simple flag, not a real probability.",
+      "The confidence score is a simple flag. It marks the cases where the AI fell back to a default.",
       "Some mail is left unsorted on purpose. For genuinely unclear mail, a person deciding is the right outcome.",
-      "A similarity-search layer is wired into the database but not used. I would measure whether it helps before switching it on."
+      "A similarity-search layer is wired into the database but switched off. I would measure whether it helps before using it."
     ],
     "mediaNotes": []
   },
@@ -427,56 +416,54 @@
     "slug": "melodymind",
     "title": "MelodyMind",
     "category": "Music app · FAST-NUCES thesis",
-    "oneLiner": "A music app from my thesis. You type, speak, or show it a picture, and it builds a playlist that fits the mood. Built by a team of three.",
-    "summary": "The research problem: mood lives in words, music lives in sound, and a computer has no direct way to compare the two. The fix: turn both into embeddings — lists of numbers that capture meaning — in one shared space, so a mood and a song can be compared directly. The first attempts failed: every song ended up with nearly the same numbers. The design that worked uses a pretrained audio model called CLAP, kept frozen, with one small trained layer that maps its output into the text space.",
+    "oneLiner": "A music app from my thesis. Describe a situation — a breakup, a rainy drive, a late night of studying — and it finds songs that fit it. It takes text, a picture, or your voice.",
+    "summary": "Most music search matches a mood word like sad or happy. That was never the goal. A sad song about a breakup is not a sad song about losing someone, and the app should hear that difference. To compare a described situation with actual audio, both are turned into embeddings — lists of numbers that capture meaning — in one shared space. The design that worked: a pretrained audio embedding model called CLAP, kept frozen, with one small trained layer that maps songs into the same space as the text.",
     "status": "Thesis",
-    "role": "One of three builders, with Hassaan Anwar and Saad Nadeem. The thesis does not split the work by person, so this page describes shared work.",
+    "role": "Built with Hassaan Anwar and Saad Nadeem. I set up the backend and built the voice DJ end to end — speech to text, text to speech, and the session logic — plus the chat system and the first Spotify integration.",
     "dates": "Thesis dated May 2026",
     "isPrivate": false,
     "privateNote": "",
     "metrics": [],
-    "problem": "Ask for music for a rainy focus session and the request is words, but the answer is sound. With no shared representation, the computer cannot compare them. Our first attempts made that concrete: mood classifiers over lyrics and image-style networks over audio both collapsed, meaning every song got nearly the same numbers and nothing separated by mood.",
+    "problem": "Ask for a song for a breakup, and the request is words while the answer is sound. A mood tag cannot carry the difference between two situations that share a mood. Our first attempts showed how hard the problem is: mood classifiers over lyrics and image-style networks over audio both collapsed, and every song came out with nearly the same numbers.",
     "constraints": [
-      "No ready-made dataset links moods to songs. Training data came from public sources and was unevenly spread across moods.",
-      "Only short public audio previews, not full tracks.",
-      "Three people and a fixed academic deadline.",
-      "No budget to train an audio model from scratch."
+      "No dataset links situations to songs. The training pairs had to be built from public sources.",
+      "Only short public audio previews were available, not full tracks.",
+      "No budget to train an audio model, so the design had to reuse a pretrained one."
     ],
     "approach": [
       {
-        "decision": "Keep the pretrained audio model frozen and train only one small layer on top.",
-        "why": "CLAP already understands audio. Training one small layer to map its output into the text space needs little data and little computing power. That was the only realistic path."
+        "decision": "Keep the pretrained audio embedding model (CLAP) frozen and train one small layer on top.",
+        "why": "CLAP already turns audio into useful numbers. Training one small layer to map those numbers into the text space needs little data and little computing power."
       },
       {
-        "decision": "Train that layer by pulling matching pairs together and pushing others apart (the method is called InfoNCE).",
-        "why": "It teaches the model both jobs at once: match audio to text, and keep different songs apart. That second part is what fixed the collapse."
+        "decision": "Train that layer by pulling matching pairs together and pushing everything else apart. The method is called InfoNCE.",
+        "why": "It teaches two things at once: match a song to its description, and keep different songs apart. The second part is what fixed the collapse."
       },
       {
-        "decision": "Test the pretrained model before training anything, with ten mood prompts.",
-        "why": "The test showed where it was already good (clear emotions, tempo) and where it failed (abstract moods like focus). That result justified the design instead of assuming it."
+        "decision": "Test the pretrained model first, with ten situation prompts.",
+        "why": "It handled clear emotions and tempo well but missed situations like a focus session. That gap is what the trained layer had to close."
+      },
+      {
+        "decision": "Build the training data from places where people already describe music in real situations: Reddit threads, Last.fm tags, and lyrics, paired with audio previews.",
+        "why": "People describing music to each other is the closest thing to situation-to-song data that exists."
       },
       {
         "decision": "Build playlists with vector math.",
-        "why": "Once songs and moods share one space, a playlist is the songs closest to the request. Simple to build and simple to inspect."
-      },
-      {
-        "decision": "Use a fast fallback model for the voice chat.",
-        "why": "The talk-to-your-DJ feature has to answer quickly, so a slow reply switches to a faster model."
+        "why": "Once songs and situations share one space, a playlist is the songs closest to the request. Simple to build and simple to inspect."
       }
     ],
     "implementation": [
-      "The trained mapping layer between the audio model and the text space.",
-      "The earlier failed attempts, kept as the documented reason for the design.",
-      "A data pipeline over Reddit, Last.fm, song lyrics, and audio previews.",
+      "The trained layer that maps audio embeddings into the text space.",
+      "The data pipeline over Reddit, Last.fm, lyrics, and audio previews.",
       "The backend and the vector search that builds playlists.",
-      "The voice loop: you speak, it transcribes, updates the playlist, and answers out loud.",
-      "Picture-to-playlist: the app reads the mood of a photo and queries with it.",
+      "The voice DJ: you speak, it transcribes, updates the playlist, and answers out loud.",
+      "Picture-to-playlist: the app reads the situation in a photo and searches with it.",
       "A tool that splits a song into vocals, drums, bass, and the rest.",
       "The mobile app, tested on real phones."
     ],
     "outcomes": [
       {
-        "label": "Training became stable after 17 full passes over the data, with songs clearly separated by mood",
+        "label": "Training became stable after 17 full passes over the data, with clear separation between songs",
         "tier": "thesis"
       },
       {
@@ -489,7 +476,7 @@
       }
     ],
     "stack": [
-      "CLAP (pretrained audio model, frozen)",
+      "CLAP (pretrained audio embedding model, frozen)",
       "PyTorch",
       "Nomic (text embeddings)",
       "Pinecone (vector search)",
@@ -498,10 +485,8 @@
       "React Native (mobile app)"
     ],
     "limitations": [
-      "Playlist quality was never measured with a benchmark. Results are qualitative.",
-      "The model stays weak on abstract moods. Fixing that needs better data, not more training.",
-      "It is a research demo, not a launched app.",
-      "Training used public data with uneven mood coverage and short previews."
+      "Playlist quality was never measured against a benchmark.",
+      "It is a research prototype, not a launched app."
     ],
     "mediaNotes": []
   }

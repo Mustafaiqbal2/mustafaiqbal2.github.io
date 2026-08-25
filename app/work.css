@@ -501,22 +501,16 @@
 }
 .wk .plain-list li {
   position: relative;
-  padding-left: 22px;
+  padding: 0;
+  margin: 0;
   font-size: clamp(14px, 1.2vw, 16px);
   line-height: 1.6;
   color: #3a3a36;
 }
-.wk .plain-list li::before {
-  content: "—";
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: auto;
-  height: auto;
-  background: none;
-  border: 0;
-  border-radius: 0;
-  color: var(--wk-accent);
+/* the old theme draws a marker here; the poster list is plain text */
+.wk .plain-list li::before,
+.wk .plain-list li::after {
+  content: none;
 }
 .wk .decision-list {
   margin: 0;
