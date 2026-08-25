@@ -19,9 +19,6 @@ export function WorkRow({ project, index }: { project: CaseStudy; index: number 
           <span className="work-row__desc">{project.oneLiner}</span>
         </span>
         <span className="work-row__aside">
-          {project.featuredMetric ? (
-            <span className="work-row__metric">{project.featuredMetric.value}</span>
-          ) : null}
           <ArrowUpRight className="work-row__arrow" aria-hidden="true" />
         </span>
       </a>

@@ -43,8 +43,7 @@ export type CaseStudy = {
   status: string;
   role: string;
   dates: string;
-  isPrivate: boolean;
-  privateNote: string;
+  links?: { label: string; href: string }[];
   featuredMetric?: Metric;
   metrics: Metric[];
   problem: string;

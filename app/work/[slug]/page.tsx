@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { ArrowRight, ArrowUpRight, Lock } from "lucide-react";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { StatBlock } from "@/components/Evidence";
 import { featuredProjects, getProject, projectMedia, siteUrl } from "@/data/portfolio";
@@ -11,6 +11,85 @@ type Props = { params: Promise<{ slug: string }> };
 
 export function generateStaticParams() {
   return featuredProjects.map((project) => ({ slug: project.slug }));
+}
+
+/* /work/archphi/ renders as a classified file. The case content is not in
+   the page at all — the paragraphs are redaction bars, and inspecting them
+   finds only "nice try". */
+type FileItem = { w?: number; t?: string };
+const FILE_BLOCKS: { head: number; lines: FileItem[][] }[] = [
+  {
+    head: 170,
+    lines: [
+      [{ w: 120 }, { t: "drawings" }, { w: 180 }, { w: 64 }],
+      [{ w: 90 }, { w: 210 }, { t: "the bill of quantities" }, { w: 70 }],
+      [{ w: 250 }, { w: 110 }, { w: 60 }]
+    ]
+  },
+  {
+    head: 130,
+    lines: [
+      [{ t: "eight projects" }, { w: 200 }, { w: 90 }],
+      [{ w: 160 }, { w: 120 }, { t: "2,668,953" }, { w: 80 }],
+      [{ w: 220 }, { w: 140 }, { w: 56 }]
+    ]
+  },
+  {
+    head: 210,
+    lines: [
+      [{ w: 190 }, { t: "guessing" }, { w: 130 }, { w: 74 }],
+      [{ w: 110 }, { w: 240 }],
+      [{ w: 70 }, { w: 180 }, { w: 90 }, { w: 120 }]
+    ]
+  },
+  {
+    head: 150,
+    lines: [
+      [{ w: 260 }, { w: 100 }],
+      [{ t: "766 / 766" }, { w: 200 }, { w: 60 }],
+      [{ w: 150 }, { w: 220 }, { w: 84 }]
+    ]
+  }
+];
+
+function ClassifiedFile() {
+  return (
+    <div className="wrap">
+      <div className="wk-file">
+        <div className="wk-file__head lv-mono">
+          <span>Case file 01 · ArchPHI</span>
+          <span>Clearance required</span>
+        </div>
+        <div className="wk-classified wk-classified--file" aria-hidden="true">
+          <span className="wk-classified__stamp">Classified</span>
+        </div>
+        {FILE_BLOCKS.map((block, bi) => (
+          <div className="wk-file__block" key={bi}>
+            <span className="wk-redact wk-redact--head" style={{ width: block.head }} aria-hidden="true" />
+            <span hidden>nice try</span>
+            {block.lines.map((line, li) => (
+              <div className="wk-file__line" key={li}>
+                {line.map((item, ii) =>
+                  item.t ? (
+                    <span className="wk-file__word" key={ii}>
+                      {item.t}
+                    </span>
+                  ) : (
+                    <span className="wk-redact" style={{ width: item.w }} aria-hidden="true" key={ii} />
+                  )
+                )}
+              </div>
+            ))}
+          </div>
+        ))}
+        <div className="wk-file__foot">
+          <a className="textlink" href="https://archphi.com" target="_blank" rel="noreferrer">
+            archphi.com <ArrowUpRight aria-hidden="true" />
+          </a>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -58,14 +137,12 @@ export default async function ProjectPage({ params }: Props) {
           <h1>{project.title}</h1>
           <p className="case-hero__sub">{project.oneLiner}</p>
         </div>
-        {project.slug === "archphi" ? (
-          <div className="wk-classified" aria-hidden="true">
-            <span className="wk-classified__stamp">Classified</span>
-            <span hidden>nice try</span>
-          </div>
-        ) : null}
       </section>
 
+      {project.slug === "archphi" ? (
+        <ClassifiedFile />
+      ) : (
+        <>
       {project.featuredMetric || project.metrics.length ? (
         <div className="wrap">
           <div className="case-metrics">
@@ -102,11 +179,17 @@ export default async function ProjectPage({ params }: Props) {
                 ))}
               </div>
             </div>
-            {project.isPrivate && project.privateNote ? (
-              <p className="private-note">
-                <Lock aria-hidden="true" />
-                {project.privateNote}
-              </p>
+            {project.links?.length ? (
+              <div className="case-rail__group">
+                <span>Links</span>
+                <div className="wk-rail-links">
+                  {project.links.map((link) => (
+                    <a key={link.href} href={link.href} target="_blank" rel="noreferrer">
+                      {link.label} <ArrowUpRight aria-hidden="true" />
+                    </a>
+                  ))}
+                </div>
+              </div>
             ) : null}
           </aside>
 
@@ -204,6 +287,8 @@ export default async function ProjectPage({ params }: Props) {
           </div>
         </div>
       </div>
+        </>
+      )}
 
       <section className="section section--divided">
         <div className="wrap">

@@ -33,10 +33,7 @@ export default function WorkPage() {
             <h1>
               Work<b>.</b>
             </h1>
-            <p className="lede">
-              Companies, client work, and a thesis. Client work is described by the problem, the size, and my role.
-              Customer data stays out.
-            </p>
+            <p className="lede">Companies, client work, and a thesis.</p>
           </Reveal>
         </div>
       </section>
@@ -63,11 +60,13 @@ export default function WorkPage() {
               const inner = (
                 <>
                   <Icon aria-hidden="true" />
-                  <h3>
-                    {project.title}
-                    {project.href ? <ArrowUpRight size={15} aria-hidden="true" /> : null}
-                  </h3>
+                  <h3>{project.title}</h3>
                   <p>{project.summary}</p>
+                  {project.href ? (
+                    <span className="wk-card__arrow" aria-hidden="true">
+                      <ArrowUpRight />
+                    </span>
+                  ) : null}
                 </>
               );
               return (

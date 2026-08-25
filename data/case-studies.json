@@ -14,8 +14,6 @@
     "status": "In development",
     "role": "Founder & CTO. I build the system. My cofounder is the licensed professional who checks the results.",
     "dates": "2026 — present",
-    "isPrivate": true,
-    "privateNote": "The test projects are real client work. They stay anonymous. Drawings, quantities, and bills stay private.",
     "metrics": [],
     "problem": "Real CAD files are messy. Some parts are corrupt. Some point to files that were never delivered. Some dimensions show a typed-in number that is different from the drawn length. Software that guesses over files like these gives wrong answers, and in construction wrong numbers cost real money. So the base layer refuses to guess. Every number it states has to trace back to the drawing.",
     "constraints": [
@@ -91,8 +89,7 @@
     "status": "Live — I run it",
     "role": "Sole builder and operator.",
     "dates": "Aug 2025 — present",
-    "isPrivate": false,
-    "privateNote": "",
+    "links": [{ "label": "pilonecables.com", "href": "https://www.pilonecables.com" }],
     "featuredMetric": {
       "value": "204 → 1,070",
       "label": "clicks from Google in the last six months, compared with the six before"
@@ -171,12 +168,10 @@
     "status": "Internal lab build",
     "role": "Team lead — I owned the architecture.",
     "dates": "Jun — Aug 2025",
-    "isPrivate": true,
-    "privateNote": "Built over real personal data inside a lab. Candidate data stays private.",
     "metrics": [],
     "problem": "Recruiters skim CVs and miss what is on a candidate's GitHub or personal site. The lab wanted the whole first pass automated: gather the information, match it to a role, and run a first interview.",
     "constraints": [
-      "Each of the five sources uses a different format, and all of them hold personal data.",
+      "Each of the five sources uses a different format.",
       "Lab servers only, so everything had to be self-hosted and easy to rebuild.",
       "The interview must never repeat a question, and answers have to come fast enough to feel like a conversation.",
       "Only small, freely available AI models."
@@ -243,12 +238,13 @@
     "status": "Client work — live on Simplabots",
     "role": "Sole builder.",
     "dates": "2025",
-    "isPrivate": false,
-    "privateNote": "Built for a client. No business names, accounts, or review text are shown anywhere.",
+    "links": [
+      { "label": "GitHub", "href": "https://github.com/Mustafaiqbal2/Revvy" },
+      { "label": "Simplabots", "href": "https://simplabots.com/agents/revvy/" }
+    ],
     "metrics": [],
     "problem": "A business with many locations gets more reviews than anyone can answer. Automating it the naive way is slow and wasteful: pulling thousands of reviews one at a time takes over an hour, and drafting a reply for every single review spends AI money on reviews that need none.",
     "constraints": [
-      "Real customer data under Google's rules. Nothing identifying leaves the system.",
       "Google access expires while a long sync runs, and access can also be revoked for good. The code has to tell those two apart.",
       "Every AI call costs money, and Google limits how fast you can call its API.",
       "Many businesses on one system, kept fully separate."
@@ -313,13 +309,14 @@
     "status": "Client work — live on Simplabots",
     "role": "Sole builder.",
     "dates": "Oct — Dec 2025",
-    "isPrivate": true,
-    "privateNote": "Runs on real client inboxes. Inbox contents stay private.",
+    "links": [
+      { "label": "GitHub", "href": "https://github.com/Mustafaiqbal2/Emmy" },
+      { "label": "Simplabots", "href": "https://simplabots.com/agents/emmy/" }
+    ],
     "metrics": [],
     "problem": "A client wanted incoming mail sorted into their own categories, inside the inbox they already use. Sending every email to an AI is slow and expensive, and it can put two emails from the same conversation into different folders. Simple rules alone cannot handle the mail that needs judgment. And when the system files something wrong, the client's correction has to teach it.",
     "constraints": [
       "New mail has to be labeled quickly, or the sorting is useless.",
-      "Inbox contents stay on the server. Only the text needed for a decision goes to the AI.",
       "Known senders must never cost an AI call.",
       "A conversation has to stay in one category.",
       "Corrections have to change future behavior without retraining anything."
@@ -379,8 +376,6 @@
     "status": "Thesis",
     "role": "Built with Hassaan Anwar and Saad Nadeem. I set up the backend and built the voice DJ end to end: speech to text, text to speech, and the session logic. I also built the chat system and the first Spotify integration.",
     "dates": "Thesis dated May 2026",
-    "isPrivate": false,
-    "privateNote": "",
     "metrics": [],
     "problem": "The request is text and songs are audio, and nothing compares them directly. A mood tag cannot carry the difference between two situations that share a mood. Our first attempts, one reading lyrics and one treating audio like pictures, both failed the same way: every song came out with nearly the same numbers.",
     "constraints": [
