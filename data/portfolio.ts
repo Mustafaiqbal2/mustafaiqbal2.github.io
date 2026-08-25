@@ -17,13 +17,9 @@ import caseStudies from "./case-studies.json";
 
 export const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://mustafaiqbal2.github.io";
 
-export type ProvenanceTier = "documented" | "self-reported" | "target" | "team" | "thesis" | "private";
-
 export type Metric = {
   value?: string;
   label: string;
-  tier: ProvenanceTier;
-  source?: string;
 };
 
 export type Decision = { decision: string; why: string };
@@ -43,6 +39,7 @@ export type CaseStudy = {
   category: string;
   oneLiner: string;
   summary: string;
+  features: string[];
   status: string;
   role: string;
   dates: string;
@@ -56,17 +53,7 @@ export type CaseStudy = {
   implementation: string[];
   outcomes: Metric[];
   stack: string[];
-  limitations: string[];
   mediaNotes: string[];
-};
-
-export const provenanceLabel: Record<ProvenanceTier, { glyph: string; label: string }> = {
-  documented: { glyph: "■", label: "Documented" },
-  "self-reported": { glyph: "◧", label: "Self-reported" },
-  target: { glyph: "□", label: "Target" },
-  team: { glyph: "■", label: "Team lead" },
-  thesis: { glyph: "◧", label: "Thesis" },
-  private: { glyph: "□", label: "Private" }
 };
 
 export const profile = {
@@ -84,7 +71,7 @@ export const profile = {
   positioning:
     "I build things end to end — ArchPHI, production AI agents, and a factory site on page one.",
   bioShort:
-    "Software engineer and founder. Building ArchPHI — the operating system for architectural drawings — with production agents and a ranking factory site behind it."
+    "Software engineer and founder. Building ArchPHI — the operating system for architectural drawings — with production agents and a factory website that ranks on Google behind it."
 };
 
 export const navigation = [{ label: "Work", href: "/work/" }];
@@ -104,13 +91,13 @@ const mediaForSlug: Record<string, MediaItem[]> = {
       src: "/projects/recruitment-rag/interview-demo-frame-1.webp",
       type: "image",
       alt: "Recruitment platform interview workflow frame",
-      caption: "Interview agent flow (sanitized lab artifact — no candidate data shown)."
+      caption: "Interview agent flow."
     },
     {
       src: "/projects/recruitment-rag/job-automation-frame-1.webp",
       type: "image",
       alt: "Recruitment platform candidate-matching workflow frame",
-      caption: "Candidate ingestion and semantic matching (sanitized lab artifact)."
+      caption: "Candidate ingestion and matching."
     }
   ],
   melodymind: [
@@ -147,14 +134,6 @@ export const pageRoutes = [
   "/",
   "/work/",
   ...featuredProjects.map((project) => `/work/${project.slug}/`)
-];
-
-/* Home evidence band — real, sourced facts. */
-export const evidence: Metric[] = [
-  { value: "6–10×", label: "faster large-review syncs", tier: "documented", source: "Revvy PERFORMANCE.md" },
-  { value: "50–200ms", label: "cached page loads", tier: "documented", source: "Revvy benchmark" },
-  { value: "30–50%", label: "lower generation cost, pre-filtered", tier: "target", source: "design target" },
-  { value: "4", label: "engineers led at Genesys Research Lab", tier: "team", source: "Jun–Aug 2025" }
 ];
 
 export const pillars = [
@@ -296,7 +275,7 @@ export const secondaryProjects: SecondaryProject[] = [
     title: "Neural network acceleration",
     signal: "GPU speed study",
     summary:
-      "Six versions of the same digit-recognition network, from plain C code up through GPU libraries. The failed attempts are in the write-up too.",
+      "Six versions of the same digit-recognition network, from plain C code up through GPU libraries.",
     href: "https://github.com/Mustafaiqbal2/Neural-Network_Acceleration",
     icon: Cpu
   },

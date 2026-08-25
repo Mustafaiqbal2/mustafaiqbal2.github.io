@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowRight, ArrowUpRight, Lock } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
-import { Provenance, StatBlock } from "@/components/Evidence";
+import { StatBlock } from "@/components/Evidence";
 import { featuredProjects, getProject, projectMedia, siteUrl } from "@/data/portfolio";
 import "@/app/landing.css";
 import "@/app/work.css";
@@ -58,6 +58,12 @@ export default async function ProjectPage({ params }: Props) {
           <h1>{project.title}</h1>
           <p className="case-hero__sub">{project.oneLiner}</p>
         </div>
+        {project.slug === "archphi" ? (
+          <div className="wk-classified" aria-hidden="true">
+            <span className="wk-classified__stamp">Classified</span>
+            <span hidden>nice try</span>
+          </div>
+        ) : null}
       </section>
 
       {project.featuredMetric || project.metrics.length ? (
@@ -110,6 +116,19 @@ export default async function ProjectPage({ params }: Props) {
               <p>{project.problem}</p>
             </Reveal>
 
+            {project.features.length ? (
+              <Reveal as="section" className="case-block">
+                <h2>What it does</h2>
+                <ul className="plain-list">
+                  {project.features.map((item) => (
+                    <li key={item}>
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </Reveal>
+            ) : null}
+
             {project.constraints.length ? (
               <Reveal as="section" className="case-block">
                 <h2>What made it hard</h2>
@@ -160,7 +179,6 @@ export default async function ProjectPage({ params }: Props) {
                         ) : null}
                         {metric.label}
                       </span>
-                      <Provenance tier={metric.tier} source={metric.source} />
                     </li>
                   ))}
                 </ul>
@@ -183,18 +201,6 @@ export default async function ProjectPage({ params }: Props) {
               </Reveal>
             ) : null}
 
-            {project.limitations.length ? (
-              <Reveal as="section" className="case-block">
-                <h2>What is not done yet</h2>
-                <ul className="plain-list">
-                  {project.limitations.map((item) => (
-                    <li key={item}>
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </Reveal>
-            ) : null}
           </div>
         </div>
       </div>

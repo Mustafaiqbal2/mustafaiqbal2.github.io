@@ -4,14 +4,20 @@
     "title": "ArchPHI",
     "category": "Founder & CTO · archphi.com",
     "oneLiner": "ArchPHI is building the operating system for architectural drawings. The first product reads CAD drawings and writes the bill of quantities — the list of materials and work a builder has to price.",
-    "summary": "Architects deliver their designs as CAD files. ArchPHI reads those files and writes the bill of quantities. One rule sits under everything: the system only states facts it can point to in the drawing. When the drawing has no answer, it says so instead of guessing. It is tested on eight real projects.",
+    "summary": "The system only states facts it can point to in the drawing. When the drawing has no answer, it says so instead of guessing. It is tested on eight real projects.",
+    "features": [
+      "Reads the delivered CAD files, both DWG and DXF.",
+      "Writes the bill of quantities from what the drawings declare.",
+      "Flags broken files and missing references instead of skipping them.",
+      "Links every number back to its place in the drawing."
+    ],
     "status": "In development",
     "role": "Founder & CTO. I build the system. My cofounder is the licensed professional who checks the results.",
     "dates": "2026 — present",
     "isPrivate": true,
     "privateNote": "The test projects are real client work. They stay anonymous. Drawings, quantities, and bills stay private.",
     "metrics": [],
-    "problem": "Real CAD files are messy. Some parts are corrupt. Some point to files that were never delivered. Some dimensions show a typed-in number that is different from the drawn length. Software that guesses over files like these gives confident wrong answers, and in construction wrong numbers cost real money. So the base layer has one job: make it impossible for a guess to look like a fact.",
+    "problem": "Real CAD files are messy. Some parts are corrupt. Some point to files that were never delivered. Some dimensions show a typed-in number that is different from the drawn length. Software that guesses over files like these gives wrong answers, and in construction wrong numbers cost real money. So the base layer refuses to guess. Every number it states has to trace back to the drawing.",
     "constraints": [
       "Every office draws differently. The system has to learn words like door and window from each project's own drawings, because a built-in list would fail on the next office.",
       "A corrupt drawing has to show up in the results as a broken file. Dropping it quietly would hide missing work.",
@@ -20,52 +26,42 @@
     ],
     "approach": [
       {
-        "decision": "No building-element names in the code. A check runs on every build and fails it if a word like door or window appears in the core code.",
-        "why": "Hardcoding one office's names makes the system fail on the next office. A failing build cannot be ignored."
+        "decision": "No building-element names in the code. An automatic check blocks any new version if a word like door or window appears in the core code.",
+        "why": "Hardcoding one office's names makes the system fail on the next office."
       },
       {
         "decision": "Read the drawing's real geometry instead of screenshots of it.",
         "why": "The CAD file holds exact lines, text, and measurements. Every extracted fact keeps an ID, so it can be checked again later."
       },
       {
-        "decision": "Count everything once. One pass over all eight projects counted 2,668,953 drawing records and put each one in exactly one bucket: readable, partly readable, or unsupported.",
-        "why": "The count shows exactly what the system can and cannot read. It also states its own limit: readable here does not mean understood."
+        "decision": "Count everything once. One pass over all eight projects put every drawing record in exactly one bucket: readable, partly readable, or unsupported.",
+        "why": "The count shows exactly what the system can and cannot read."
       },
       {
-        "decision": "Score against hidden answer sheets. The system gets a bill with blanks to fill. The answer sheet is never shown to it. Every line lands in one of six buckets, such as correct, wrong, or flagged as unknown.",
-        "why": "The system cannot score well by guessing, and it cannot hide behind saying I do not know. Seventeen scored runs are saved."
+        "decision": "Score against hidden answer sheets. The system gets a bill with blanks to fill. The answer sheet is never shown to it.",
+        "why": "The system cannot score well by guessing, and it cannot hide behind saying I do not know. Seventeen scored runs are saved, so every score can be rechecked."
       },
       {
         "decision": "Delete work that fails its own test.",
-        "why": "An earlier pipeline could not read 12 of 16 real sheets, so it was removed. A staged preparation step scored worse than a plain control, 16 against 22 of 39 lines, so it was never merged."
+        "why": "An earlier pipeline could not read 12 of 16 real sheets, so it was removed. A more elaborate preparation step got 16 of 39 bill lines right while the simple version got 22, so the elaborate one was thrown away."
       }
     ],
     "implementation": [
       "A reader that turns CAD files into exact geometry, with a record of where every piece came from.",
       "An intake step that classifies every delivered file and records each DWG-to-DXF conversion. Broken files are kept and marked as broken.",
       "A check for missing references. One sheet pointed to 21 images that were never delivered. All 21 were flagged.",
-      "Dimension reading from real geometry. All 766 readable dimensions gave a supported measured value. 13 had typed-over text, and each one was flagged.",
-      "The scoring harness with hidden answer sheets, with 17 runs saved.",
-      "A diagnosis of the biggest open failure, area measurement: 1 of 14 lines correct over 42 tries."
+      "Dimension reading from real geometry. 13 dimensions had typed-over text, and each one was flagged.",
+      "The scoring harness with hidden answer sheets.",
+      "A diagnosis of the biggest open failure, area measurement: each of 14 lines was tried three times, and only one ever came out right. The drawings do not carry the height the calculation needs."
     ],
     "outcomes": [
       {
         "label": "drawing records counted across eight projects, each in exactly one bucket",
-        "value": "2,668,953",
-        "tier": "documented",
-        "source": "corpus count, 2026-08-03"
+        "value": "2,668,953"
       },
       {
-        "label": "readable dimensions gave a supported measured value",
-        "value": "766 / 766",
-        "tier": "documented",
-        "source": "dimension audit"
-      },
-      {
-        "label": "a plain control beat the staged pipeline on a 39-line bill, so the pipeline was not merged",
-        "value": "22 vs 16",
-        "tier": "documented",
-        "source": "accuracy diagnosis"
+        "label": "readable dimensions traced back to real geometry in the drawing",
+        "value": "766 / 766"
       }
     ],
     "stack": [
@@ -76,12 +72,6 @@
       "Priced, capped AI calls",
       "Next.js (archphi.com)"
     ],
-    "limitations": [
-      "74.1% of records handled does not mean 74.1% of a drawing understood.",
-      "There is no product accuracy number yet. The scoring system exists to earn one.",
-      "The takeoff product is not shipped. First firms are onboarding soon.",
-      "Area measurement does not work yet: 1 of 14 lines correct over 42 tries. The drawings do not carry the height the calculation needs."
-    ],
     "mediaNotes": []
   },
   {
@@ -90,6 +80,14 @@
     "category": "Website for a cable factory · pilonecables.com",
     "oneLiner": "Pilone makes electrical cable in Pakistan. I built and run their website. In six months, clicks from Google grew from 204 to 1,070 and the average search position moved from 17.8 to 8.4.",
     "summary": "The site has 288 pages: product pages, guides, and calculators, all generated from the factory's own data. The numbers on this page come from Google Search Console, which is Google's own report of how a site performs in search.",
+    "features": [
+      "Product pages with the factory's real specifications and prices.",
+      "Buying guides for the questions buyers actually search.",
+      "A cable-size calculator and a voltage-drop calculator.",
+      "Reference charts for current ratings, wire sizes, and copper weight.",
+      "Search across the whole site.",
+      "City pages for buyers searching locally."
+    ],
     "status": "Live — I run it",
     "role": "Sole builder and operator.",
     "dates": "Aug 2025 — present",
@@ -97,28 +95,20 @@
     "privateNote": "",
     "featuredMetric": {
       "value": "204 → 1,070",
-      "label": "clicks from Google, six months against the six before",
-      "tier": "documented",
-      "source": "Google Search Console"
+      "label": "clicks from Google in the last six months, compared with the six before"
     },
     "metrics": [
       {
         "value": "17.8 → 8.4",
-        "label": "average position in Google results over the same window",
-        "tier": "documented",
-        "source": "Google Search Console"
+        "label": "average position in Google results over the same window"
       },
       {
         "value": "0 → 3.87k",
-        "label": "times shown inside AI search answers, in three months",
-        "tier": "documented",
-        "source": "Google Search Console"
+        "label": "times shown inside AI search answers, in three months"
       },
       {
         "value": "288",
-        "label": "pages on the site: 96 products, 89 guides, 70 city pages, plus tools",
-        "tier": "documented",
-        "source": "live sitemap"
+        "label": "pages on the site: 96 products, 89 guides, 70 city pages, plus tools and other pages"
       }
     ],
     "problem": "Buyers search Google for cable types, sizes, and prices, and they found the big brands. Pilone's site had about 65 pages in Google and no answers to those searches.",
@@ -133,7 +123,7 @@
         "why": "Buyers search for exact products and sizes. The factory's own data answers those searches, and competitors cannot copy data they do not have."
       },
       {
-        "decision": "Delete weak pages. The pipeline once generated 1,053 pages. 405 thin ones were deleted and 236 became redirects. 288 stayed.",
+        "decision": "Delete weak pages. The pipeline once generated 1,053 pages. Most were cut, and 288 stayed.",
         "why": "Google ranks a site better when every page has a clear answer. The rankings improved after the deletion."
       },
       {
@@ -142,40 +132,21 @@
       },
       {
         "decision": "Make the site readable for AI search.",
-        "why": "Three months later the site had been shown 3,870 times inside AI answers, up from zero."
+        "why": "Buyers now ask AI assistants too, and an assistant can only recommend what it can read."
       },
       {
-        "decision": "Check Search Console and let the numbers pick the next task.",
-        "why": "Position and clicks decide what to build next."
+        "decision": "Let Search Console pick the next task.",
+        "why": "The report shows which pages are close to page one, so the work goes where it moves rankings."
       }
     ],
     "implementation": [
       "A static site where every page is generated from factory data at build time.",
       "A build pipeline that syncs prices and rebuilds navigation, the search index, and the sitemap.",
       "Cable-size and voltage-drop calculators, plus reference charts.",
-      "Search across all pages, on the page itself.",
+      "Site search that runs instantly in the browser.",
       "Analytics with events for contact clicks and calculator use."
     ],
-    "outcomes": [
-      {
-        "label": "clicks from Google, six months against the six before",
-        "value": "204 → 1,070",
-        "tier": "documented",
-        "source": "Google Search Console"
-      },
-      {
-        "label": "average position in Google results",
-        "value": "17.8 → 8.4",
-        "tier": "documented",
-        "source": "Google Search Console"
-      },
-      {
-        "label": "times shown inside AI search answers, three months",
-        "value": "0 → 3.87k",
-        "tier": "documented",
-        "source": "Google Search Console"
-      }
-    ],
+    "outcomes": [],
     "stack": [
       "Vite (static site build)",
       "Plain JavaScript",
@@ -183,31 +154,32 @@
       "GA4 analytics",
       "Render + Cloudflare hosting"
     ],
-    "limitations": [
-      "Times shown in results grew from 9.92k to 46.2k, but part of that window had a known Google logging error. Clicks and position are the numbers I trust.",
-      "Pages on the site and pages Google has indexed are different counts.",
-      "There was no controlled experiment. The evidence is the before and the after."
-    ],
     "mediaNotes": []
   },
   {
     "slug": "recruitment-rag-platform",
     "title": "TalentFlow",
     "category": "Recruitment platform · Genesys Research Lab",
-    "oneLiner": "A recruitment platform built at a research lab. It gathers a candidate's public information, matches it to jobs by meaning, and runs the first interview with a voice agent. Four engineers built it. I led the team.",
+    "oneLiner": "A recruitment platform built at a research lab. It gathers a candidate's public information, matches it to jobs by meaning, and runs the first interview with a voice agent. I led the four-engineer team that built it.",
     "summary": "Instead of matching CVs by keywords, the platform turns text into embeddings. An embedding is a list of numbers that captures meaning, so texts that mean similar things get similar numbers. Candidates and jobs land in the same number space, and close means a good match. On top of that, a voice agent runs the first interview: it picks a topic, asks a question out loud, listens to the answer, and continues. At the end it writes a scored report.",
+    "features": [
+      "Builds a candidate profile from five sources: CV, GitHub, LinkedIn, a research registry, and personal sites.",
+      "Matches candidates to roles by meaning.",
+      "Runs the first interview by voice and adapts its questions to the answers.",
+      "Writes a scored report when the interview ends."
+    ],
     "status": "Internal lab build",
-    "role": "Team lead. Four engineers, and I owned the architecture.",
+    "role": "Team lead — I owned the architecture.",
     "dates": "Jun — Aug 2025",
     "isPrivate": true,
-    "privateNote": "Built over personal data inside a lab. Described by how it works, never by candidates.",
+    "privateNote": "Built over real personal data inside a lab. Candidate data stays private.",
     "metrics": [],
     "problem": "Recruiters skim CVs and miss what is on a candidate's GitHub or personal site. The lab wanted the whole first pass automated: gather the information, match it to a role, and run a first interview.",
     "constraints": [
-      "Five sources with five different formats — CV, GitHub, LinkedIn, a research registry, personal sites — all with personal data.",
+      "Each of the five sources uses a different format, and all of them hold personal data.",
       "Lab servers only, so everything had to be self-hosted and easy to rebuild.",
       "The interview must never repeat a question, and answers have to come fast enough to feel like a conversation.",
-      "Small open models only."
+      "Only small, freely available AI models."
     ],
     "approach": [
       {
@@ -240,14 +212,7 @@
     ],
     "outcomes": [
       {
-        "label": "Led the four-engineer team and owned the architecture",
-        "tier": "team",
-        "source": "Genesys Research Lab"
-      },
-      {
-        "label": "The agent answers in under five seconds and does not repeat questions, as observed during development",
-        "tier": "self-reported",
-        "source": "CV"
+        "label": "In test runs the agent answered in under five seconds and never repeated a question."
       }
     ],
     "stack": [
@@ -259,11 +224,6 @@
       "Whisper (speech to text)",
       "Docker Compose"
     ],
-    "limitations": [
-      "Match quality was never measured. There is no number that says the matching works better.",
-      "The under-five-seconds figure was observed during development.",
-      "It is a lab prototype. Before real candidates it would need consent, data retention rules, and access controls."
-    ],
     "mediaNotes": []
   },
   {
@@ -271,7 +231,15 @@
     "title": "Revvy",
     "category": "Google-review agent · runs on Simplabots",
     "oneLiner": "Revvy reads a business's Google reviews and writes reply drafts. A person approves each reply before it posts. Built for a client, running on the Simplabots platform.",
-    "summary": "Revvy connects to Google Business Profile, the system behind a business's Google listing and its reviews. It pulls the reviews in, drafts a reply for each one in the business's voice, and a person approves or edits it before it posts. Each business chooses how much runs on its own: nothing, drafts only, or auto-posting for good reviews. Revvy runs as an agent on the Simplabots platform.",
+    "summary": "Revvy connects to Google Business Profile, the system behind a business's Google listing and its reviews. It pulls the reviews in, drafts a reply for each one in the business's voice, and a person approves or edits it before it posts. Each business chooses how much runs on its own.",
+    "features": [
+      "Connects to a business's Google listing and pulls in all of its reviews.",
+      "Drafts a reply for each review in the business's own voice.",
+      "An inbox to approve, edit, or discard drafts before they post.",
+      "Per-location settings and reply style.",
+      "Three levels of automation: manual, draft then approve, or auto-post above a chosen star rating.",
+      "An overnight bulk mode for large backlogs at about half the cost."
+    ],
     "status": "Client work — live on Simplabots",
     "role": "Sole builder.",
     "dates": "2025",
@@ -292,14 +260,14 @@
       },
       {
         "decision": "Three drafting modes instead of one.",
-        "why": "Small batches run fast in parallel. Large backfills run overnight at about half the cost. A slowed-down mode stays inside Google's speed limits."
+        "why": "Small batches run fast in parallel. Large backlogs run overnight. A slowed-down mode stays inside Google's speed limits."
       },
       {
         "decision": "Handle Google access properly.",
         "why": "Access is refreshed before it expires, and a revoked account is marked as needing reconnection instead of being retried forever."
       },
       {
-        "decision": "Keep the background job queue inside the database.",
+        "decision": "Keep the system's queue of background work inside the database it already uses.",
         "why": "One less system to install, watch, and debug."
       },
       {
@@ -311,7 +279,7 @@
       "The Google connection, including access that survives long syncs.",
       "Review ingestion that pulls pages of reviews and saves them in batches.",
       "The drafting step, with a per-location voice and settings.",
-      "The three modes: manual, draft then approve, and auto-post above a chosen star rating.",
+      "The three automation levels, selectable per business.",
       "Background jobs for syncing, drafting, and posting.",
       "The dashboard: connect, see locations, and approve or edit drafts."
     ],
@@ -325,11 +293,6 @@
       "OpenAI",
       "Vercel"
     ],
-    "limitations": [
-      "The speed numbers come from the project's own benchmark notes.",
-      "Reply voice comes from written instructions per location. A memory of past replies is prepared but switched off.",
-      "I would want checks on reply quality before trusting auto-posting more widely."
-    ],
     "mediaNotes": []
   },
   {
@@ -337,17 +300,26 @@
     "title": "Emmy",
     "category": "Email agent · runs on Simplabots",
     "oneLiner": "Emmy sorts a business inbox. It labels every email inside Gmail itself and keeps a note of why. Built for a client, running on the Simplabots platform.",
-    "summary": "Emmy sorts incoming mail into the client's own categories and applies each decision as a normal Gmail label. Known senders are sorted by fixed rules and never cost an AI call. Everything else goes to the AI, which reads the whole conversation before deciding. Every decision is saved with its reason and can be checked in a dashboard.",
+    "summary": "Emmy sorts incoming mail into the client's own categories and applies each decision as a normal Gmail label. Known senders are sorted by fixed rules. Everything else goes to the AI, which reads the whole conversation before deciding.",
+    "features": [
+      "Labels every incoming email inside Gmail itself.",
+      "Sorts into the client's own categories.",
+      "Shows the reason behind every decision in the dashboard.",
+      "Upload a list of contacts, and mail from those senders is sorted automatically.",
+      "Learns from corrections.",
+      "A setup wizard with a first pass over 100 to 1,000 existing emails.",
+      "Removing the account puts every email back in the inbox."
+    ],
     "status": "Client work — live on Simplabots",
     "role": "Sole builder.",
     "dates": "Oct — Dec 2025",
     "isPrivate": true,
-    "privateNote": "Runs on real client inboxes. How it works is public. What is in the inbox is not.",
+    "privateNote": "Runs on real client inboxes. Inbox contents stay private.",
     "metrics": [],
-    "problem": "A client wanted incoming mail sorted into their own categories, inside the inbox they already use. Sending every email to an AI is slow and expensive, and it can put two emails from the same conversation into different folders. Simple rules alone cannot handle the mail that needs judgment. And when the system sorts something wrong, correcting it has to teach it.",
+    "problem": "A client wanted incoming mail sorted into their own categories, inside the inbox they already use. Sending every email to an AI is slow and expensive, and it can put two emails from the same conversation into different folders. Simple rules alone cannot handle the mail that needs judgment. And when the system files something wrong, the client's correction has to teach it.",
     "constraints": [
       "New mail has to be labeled quickly, or the sorting is useless.",
-      "Email content never leaves the server.",
+      "Inbox contents stay on the server. Only the text needed for a decision goes to the AI.",
       "Known senders must never cost an AI call.",
       "A conversation has to stay in one category.",
       "Corrections have to change future behavior without retraining anything."
@@ -355,7 +327,7 @@
     "approach": [
       {
         "decision": "Two layers: fixed rules first, AI second.",
-        "why": "Most mail comes from known senders. A sender list sorts those instantly and for free. The AI only sees the mail that actually needs judgment."
+        "why": "Most mail comes from known senders, and a sender list sorts those instantly. The AI only sees the mail that actually needs judgment."
       },
       {
         "decision": "Sort conversations instead of single emails.",
@@ -367,11 +339,11 @@
       },
       {
         "decision": "Feed corrections back in.",
-        "why": "The last ten corrections are shown to the AI when it decides. The client's habits show up in the sorting within days, with nothing to retrain."
+        "why": "The last ten corrections are shown to the AI when it decides, so the client's habits reach the sorting with nothing to retrain."
       },
       {
         "decision": "Let the client's contact groups drive the sorting.",
-        "why": "The client already knows who their senders are. Groups can be filled from a simple file upload, and each group routes to its categories automatically."
+        "why": "The client already knows who their senders are. Each group routes to its categories automatically."
       }
     ],
     "implementation": [
@@ -379,24 +351,9 @@
       "The rules layer that matches senders and domains to contact groups.",
       "The AI step with its fixed answer format and safe fallback.",
       "Label writing, including putting everything back in the inbox if the account is removed.",
-      "The saved reason for every decision, shown in the dashboard.",
       "The dashboard: categories, contact groups with file upload, a setup wizard, and a conversation view."
     ],
-    "outcomes": [
-      {
-        "label": "Known senders are sorted instantly, at zero AI cost",
-        "tier": "documented"
-      },
-      {
-        "label": "Every decision is stored with its reason and can be checked in the dashboard",
-        "tier": "documented"
-      },
-      {
-        "label": "Live as an agent on the Simplabots platform",
-        "tier": "documented",
-        "source": "simplabots.com"
-      }
-    ],
+    "outcomes": [],
     "stack": [
       "Next.js",
       "TypeScript",
@@ -405,26 +362,27 @@
       "Gmail API",
       "OpenAI"
     ],
-    "limitations": [
-      "The confidence score is a simple flag. It marks the cases where the AI fell back to a default.",
-      "Some mail is left unsorted on purpose. For genuinely unclear mail, a person deciding is the right outcome.",
-      "A similarity-search layer is wired into the database but switched off. I would measure whether it helps before using it."
-    ],
     "mediaNotes": []
   },
   {
     "slug": "melodymind",
     "title": "MelodyMind",
     "category": "Music app · FAST-NUCES thesis",
-    "oneLiner": "A music app from my thesis. Describe a situation — a breakup, a rainy drive, a late night of studying — and it finds songs that fit it. It takes text, a picture, or your voice.",
-    "summary": "Most music search matches a mood word like sad or happy. That was never the goal. A sad song about a breakup is not a sad song about losing someone, and the app should hear that difference. To compare a described situation with actual audio, both are turned into embeddings — lists of numbers that capture meaning — in one shared space. The design that worked: a pretrained audio embedding model called CLAP, kept frozen, with one small trained layer that maps songs into the same space as the text.",
+    "oneLiner": "A music app from my thesis. Describe a situation, like a breakup or a rainy drive, and it finds songs that fit it. It takes text, a picture, or your voice.",
+    "summary": "Most music search matches a mood word like sad or happy. Matching a mood word was never the goal here. A sad song about a breakup is not a sad song about losing someone, and the app should hear that difference. To compare a described situation with actual audio, both are turned into embeddings. An embedding is a list of numbers that captures meaning, and songs and situations live in one shared space. The design that worked: a pretrained audio embedding model called CLAP, which we never retrain, with one small trained layer that maps songs into the same space as the text.",
+    "features": [
+      "Playlists from a typed description, a picture, or your voice.",
+      "A voice DJ you can talk to while music plays. It updates the playlist as you speak.",
+      "Plays through Spotify.",
+      "Splits any song into vocals, drums, bass, and the rest, with downloads."
+    ],
     "status": "Thesis",
-    "role": "Built with Hassaan Anwar and Saad Nadeem. I set up the backend and built the voice DJ end to end — speech to text, text to speech, and the session logic — plus the chat system and the first Spotify integration.",
+    "role": "Built with Hassaan Anwar and Saad Nadeem. I set up the backend and built the voice DJ end to end: speech to text, text to speech, and the session logic. I also built the chat system and the first Spotify integration.",
     "dates": "Thesis dated May 2026",
     "isPrivate": false,
     "privateNote": "",
     "metrics": [],
-    "problem": "Ask for a song for a breakup, and the request is words while the answer is sound. A mood tag cannot carry the difference between two situations that share a mood. Our first attempts showed how hard the problem is: mood classifiers over lyrics and image-style networks over audio both collapsed, and every song came out with nearly the same numbers.",
+    "problem": "The request is text and songs are audio, and nothing compares them directly. A mood tag cannot carry the difference between two situations that share a mood. Our first attempts, one reading lyrics and one treating audio like pictures, both failed the same way: every song came out with nearly the same numbers.",
     "constraints": [
       "No dataset links situations to songs. The training pairs had to be built from public sources.",
       "Only short public audio previews were available, not full tracks.",
@@ -458,35 +416,27 @@
       "The backend and the vector search that builds playlists.",
       "The voice DJ: you speak, it transcribes, updates the playlist, and answers out loud.",
       "Picture-to-playlist: the app reads the situation in a photo and searches with it.",
-      "A tool that splits a song into vocals, drums, bass, and the rest.",
       "The mobile app, tested on real phones."
     ],
     "outcomes": [
       {
-        "label": "Training became stable after 17 full passes over the data, with clear separation between songs",
-        "tier": "thesis"
+        "label": "Training became stable after 17 full passes over the data, with clear separation between songs"
       },
       {
-        "label": "A working prototype on real phones: playlists from text, pictures, and voice",
-        "tier": "thesis"
+        "label": "A working prototype on real phones: playlists from text, pictures, and voice"
       },
       {
-        "label": "Song splitting shipped in the final iteration, with downloadable tracks",
-        "tier": "thesis"
+        "label": "Song splitting was added in the last version, with downloadable tracks"
       }
     ],
     "stack": [
-      "CLAP (pretrained audio embedding model, frozen)",
+      "CLAP (pretrained audio embedding model)",
       "PyTorch",
       "Nomic (text embeddings)",
       "Pinecone (vector search)",
       "FastAPI",
       "Demucs (song splitting)",
       "React Native (mobile app)"
-    ],
-    "limitations": [
-      "Playlist quality was never measured against a benchmark.",
-      "It is a research prototype, not a launched app."
     ],
     "mediaNotes": []
   }

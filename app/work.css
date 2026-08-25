@@ -212,23 +212,6 @@
   color: var(--wk-accent-bright);
 }
 
-.wk .status-tag {
-  font-family: var(--font-mono), Consolas, monospace;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--wk-accent);
-  border: 1px solid currentColor;
-  border-radius: 0;
-  background: transparent;
-  padding: 3px 8px;
-  white-space: nowrap;
-}
-.wk .work-row a:hover .status-tag {
-  color: var(--wk-accent-bright);
-}
-
 .wk .chips {
   display: flex;
   flex-wrap: wrap;
@@ -246,27 +229,6 @@
   border-radius: 0;
   background: transparent;
   padding: 3px 8px;
-}
-.wk .work-row a:hover .chip {
-  color: #c9cbd4;
-  border-color: rgba(242, 242, 238, 0.35);
-}
-
-.wk .prov {
-  font-family: var(--font-mono), Consolas, monospace;
-  font-size: 10px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--wk-grey-light);
-  background: transparent;
-  border: 0;
-  padding: 0;
-}
-.wk .prov__glyph {
-  color: var(--wk-accent);
-}
-.wk .work-row a:hover .prov {
-  color: #9094a3;
 }
 
 /* ---------- editorial (team contribution) ---------- */
@@ -326,9 +288,6 @@
   height: 20px;
   color: var(--wk-accent);
 }
-.wk .pillar .status-tag {
-  justify-self: start;
-}
 .wk .pillar h3 {
   margin: 0;
   display: flex;
@@ -382,6 +341,43 @@
   font-size: clamp(16px, 1.5vw, 20px);
   line-height: 1.55;
   color: #c9cbd4;
+}
+
+/* ---------- classified stamp (ArchPHI hero) ---------- */
+
+.wk-classified {
+  position: absolute;
+  top: clamp(120px, 22vh, 200px);
+  right: clamp(24px, 9vw, 150px);
+  transform: rotate(-12deg);
+  z-index: 2;
+  pointer-events: none;
+}
+.wk-classified__stamp {
+  display: inline-block;
+  font-family: var(--font-mono), Consolas, monospace;
+  font-size: clamp(16px, 2vw, 28px);
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-indent: 0.32em;
+  text-transform: uppercase;
+  color: #ff5f57;
+  border: 3px solid #ff5f57;
+  border-radius: 4px;
+  padding: 10px 14px;
+  opacity: 0.85;
+  box-shadow: inset 0 0 0 1px rgba(255, 95, 87, 0.4);
+}
+@media (max-width: 820px) {
+  .wk-classified {
+    top: 84px;
+    right: 16px;
+  }
+  .wk-classified__stamp {
+    font-size: 12px;
+    border-width: 2px;
+    padding: 6px 8px;
+  }
 }
 
 /* ---------- case metrics ---------- */

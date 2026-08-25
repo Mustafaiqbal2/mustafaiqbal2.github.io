@@ -1,6 +1,5 @@
 import type { CSSProperties } from "react";
 import { ArrowUpRight } from "lucide-react";
-import { Provenance } from "@/components/Evidence";
 import type { CaseStudy } from "@/data/portfolio";
 
 export function WorkRow({ project, index }: { project: CaseStudy; index: number }) {
@@ -21,10 +20,7 @@ export function WorkRow({ project, index }: { project: CaseStudy; index: number 
         </span>
         <span className="work-row__aside">
           {project.featuredMetric ? (
-            <>
-              <span className="work-row__metric">{project.featuredMetric.value}</span>
-              <Provenance tier={project.featuredMetric.tier} source={project.featuredMetric.source} />
-            </>
+            <span className="work-row__metric">{project.featuredMetric.value}</span>
           ) : null}
           <ArrowUpRight className="work-row__arrow" aria-hidden="true" />
         </span>
