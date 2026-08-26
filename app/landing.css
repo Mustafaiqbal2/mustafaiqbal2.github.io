@@ -6,7 +6,10 @@
    complete page).
    ============================================================ */
 
-.lv {
+/* Palette on :root, not .lv: the topbar, .lv-mono and .lv-space are shared
+   with the /work pages (main.wk), where a .lv-scoped token resolves to
+   nothing — background: var(--lv-accent) painted a transparent cursor. */
+:root {
   --lv-bone: #f2f2ee;
   --lv-ink: #0b0c12;
   --lv-accent: #6d28d9; /* nebula violet on light ground */
@@ -17,7 +20,9 @@
   --lv-grey-light: #9094a3;
   --lv-rule: #262a36;
   --lv-pad: clamp(20px, 4vw, 56px);
+}
 
+.lv {
   background: var(--lv-bone);
   color: var(--lv-ink);
   font-family: var(--font-sans), "Helvetica Neue", Arial, sans-serif;

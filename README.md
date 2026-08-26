@@ -1,44 +1,32 @@
-# Mustafa Iqbal Portfolio
+# mustafaiqbal2.github.io
 
-Evidence-driven portfolio for Mustafa Iqbal, a software engineer focused on AI automation, full-stack product systems, RAG workflows, OAuth-heavy integrations, and systems depth.
+Portfolio of Mustafa Iqbal — software engineer and founder. A scroll-driven landing page and a set of case-study pages, exported as a static site.
 
 ## Stack
 
-- Next.js + TypeScript
-- Static export compatible with GitHub Pages
-- Vercel-ready with no server dependency
-- Local typed content model for projects, experience, skills, and SEO
-- System-aware light/dark theme with manual override
-- Branded GitHub/LinkedIn links and optimized static assets
+- Next.js (App Router, `output: "export"`) + TypeScript
+- GSAP ScrollTrigger + Lenis for the landing page's scroll scenes
+- Plain CSS: `app/landing.css` (landing, scoped under `.lv`), `app/work.css` (work pages, scoped under `.wk`), `app/globals.css` (shared chrome: footer, buttons, reveals, lightbox)
 
 ## Commands
 
 ```bash
 npm install
-npm run prepare:media
-npm run typecheck
-npm run dev
-npm run build
-npm run verify:site
+npm run dev        # local dev server
+npm run typecheck  # tsc --noEmit
+npm run build      # static export to out/
 ```
-
-`npm run build` emits the static site to `out/`.
 
 ## Content
 
-Primary content lives in `data/portfolio.ts`. Update that file for project/case-study edits instead of changing section markup directly.
+- `data/case-studies.json` — the six case studies rendered at `/work/` and `/work/<slug>/`
+- `data/portfolio.ts` — profile, secondary projects, media, routes
+
+Edit those files for content changes; the section markup stays put.
 
 ## Deployment
 
-Vercel can import this repository directly.
-
-GitHub Pages is supported for the `mustafaiqbal2.github.io` user site:
-
-1. Push to the `main` branch.
-2. In GitHub, set Pages source to **GitHub Actions**.
-3. `.github/workflows/pages.yml` runs `npm ci`, `npm run build`, and deploys the static `out/` artifact.
-
-The current Next config uses `output: "export"`, `trailingSlash: true`, and unoptimized images, so the exported site works on GitHub Pages without a server.
+Push to `main`. `.github/workflows/pages.yml` builds the static export and deploys `out/` to GitHub Pages (source must be set to **GitHub Actions** in the repo settings). Feature work happens on `revamp`, then fast-forwards into `main`.
 
 ## Links
 

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
-import { StatBlock } from "@/components/Evidence";
+import { StatBlock } from "@/components/StatBlock";
 import { TypedBrand } from "@/components/TypedBrand";
 import { featuredProjects, getProject, projectMedia, siteUrl } from "@/data/portfolio";
 import "@/app/landing.css";

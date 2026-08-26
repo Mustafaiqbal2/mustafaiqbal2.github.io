@@ -7,13 +7,14 @@
    ============================================================ */
 
 .wk {
-  --wk-bone: #f2f2ee;
-  --wk-ink: #0b0c12;
-  --wk-accent: #6d28d9;
-  --wk-accent-bright: #b79cff;
-  --wk-grey: #6e6e68;
-  --wk-grey-light: #9094a3;
-  --wk-pad: clamp(20px, 4vw, 56px);
+  /* aliases of the :root palette in landing.css — single source of truth */
+  --wk-bone: var(--lv-bone);
+  --wk-ink: var(--lv-ink);
+  --wk-accent: var(--lv-accent);
+  --wk-accent-bright: var(--lv-accent-bright);
+  --wk-grey: var(--lv-grey);
+  --wk-grey-light: var(--lv-grey-light);
+  --wk-pad: var(--lv-pad);
 
   background: var(--wk-bone);
   color: var(--wk-ink);
