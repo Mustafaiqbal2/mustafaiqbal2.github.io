@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ArrowUpRight } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
+import { TypedBrand } from "@/components/TypedBrand";
 import { WorkRow } from "@/components/WorkRow";
 import { featuredProjects, profile, secondaryProjects, siteUrl } from "@/data/portfolio";
 import "@/app/landing.css";
@@ -17,9 +18,7 @@ export default function WorkPage() {
     <main id="main" className="wk">
       <div className="wk-top">
         <div className="lv-topbar lv-mono">
-          <a className="lv-topbar__brand" href="/">
-            &gt;Mustafa<i aria-hidden="true" />
-          </a>
+          <TypedBrand />
           <a className="lv-topbar__link" href={`mailto:${profile.email}`}>
             Talk to me <ArrowUpRight />
           </a>

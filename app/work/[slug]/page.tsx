@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { Reveal } from "@/components/Reveal";
 import { StatBlock } from "@/components/Evidence";
+import { TypedBrand } from "@/components/TypedBrand";
 import { featuredProjects, getProject, projectMedia, siteUrl } from "@/data/portfolio";
 import "@/app/landing.css";
 import "@/app/work.css";
@@ -124,9 +125,7 @@ export default async function ProjectPage({ params }: Props) {
       <section className="case-hero lv-space">
         <div className="wk-top wk-top--dark">
           <div className="lv-topbar lv-mono">
-            <a className="lv-topbar__brand" href="/">
-              &gt;Mustafa<i aria-hidden="true" />
-            </a>
+            <TypedBrand />
             <a className="lv-topbar__link" href="/work/">
               All work <ArrowUpRight />
             </a>

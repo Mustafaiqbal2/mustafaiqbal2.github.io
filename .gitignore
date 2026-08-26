@@ -97,3 +97,4 @@ data/generated/
 audit-shots/
 analysis-shots/
 scripts/_*.mjs
+scripts/_typed/

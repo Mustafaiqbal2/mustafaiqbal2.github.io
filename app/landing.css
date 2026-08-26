@@ -197,6 +197,9 @@ html.lv-page .site-footer {
   align-items: baseline;
   gap: 3px;
 }
+.lv-topbar__brand .lv-typed {
+  white-space: pre;
+}
 .lv-topbar__brand i {
   display: inline-block;
   width: 8px;
@@ -204,6 +207,34 @@ html.lv-page .site-footer {
   background: var(--lv-accent);
   animation: lv-blink 1.15s steps(1) infinite;
   transform: translateY(1px);
+}
+.lv-topbar__brand.is-typing i {
+  animation: none;
+  opacity: 1;
+}
+@media (prefers-reduced-motion: reduce) {
+  .lv-topbar__brand i {
+    animation: none;
+    opacity: 1;
+  }
+}
+@media (max-width: 480px) {
+  .lv-topbar__brand {
+    font-size: 13px;
+  }
+  .lv-topbar__brand i {
+    width: 7px;
+    height: 12px;
+  }
+}
+@media (max-width: 400px) {
+  .lv-topbar__brand {
+    font-size: 12px;
+  }
+  .lv-topbar__brand i {
+    width: 6px;
+    height: 11px;
+  }
 }
 @keyframes lv-blink {
   0%,
@@ -219,6 +250,7 @@ html.lv-page .site-footer {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  white-space: nowrap;
   color: var(--lv-ink);
   text-decoration: none;
   border-bottom: 2px solid transparent;

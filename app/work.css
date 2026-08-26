@@ -54,6 +54,9 @@
 .wk-top--dark .lv-topbar__link {
   color: var(--wk-bone);
 }
+.wk-top--dark .lv-topbar__brand i {
+  background: var(--wk-accent-bright);
+}
 .wk-top--dark .lv-topbar__link:hover {
   color: var(--wk-accent-bright);
   border-color: var(--wk-accent-bright);

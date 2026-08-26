@@ -5,6 +5,7 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import Lenis from "lenis";
 import { BlackHole } from "@/components/BlackHole";
+import { TypedBrand } from "@/components/TypedBrand";
 import { GalaxyDoodleA, GalaxyDoodleB, ShootingStarDoodle, SketchPortrait } from "@/components/SketchPortrait";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -918,7 +919,7 @@ export function Landing() {
         <span className="lv-orb lv-orb--ink lv-orb--sm" style={{ right: "22%", top: "58%", opacity: 0.3 }} aria-hidden="true"><PlanetMark /></span>
         <div className="lv-hero__top">
           <div className="lv-topbar lv-mono">
-            <a className="lv-topbar__brand" href="/">&gt;Mustafa<i aria-hidden="true" /></a>
+            <TypedBrand />
             <a className="lv-topbar__link" href="/work/">
               Work <ArrowUpRight />
             </a>
