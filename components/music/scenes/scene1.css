@@ -85,15 +85,39 @@
   transform: translateX(-38%);
 }
 
+/* the university, standing behind the whole conversation */
+.mu-s1-campus {
+  position: absolute;
+  left: 50%;
+  bottom: calc(26% + 44px);
+  transform: translateX(-50%);
+  width: min(1010px, 80%);
+  height: auto;
+  color: var(--lv-ink);
+  /* background plane: faint enough that the cast reads in front of it */
+  opacity: 0.55;
+}
+.mu-s1-campus .mu-s1-thin {
+  stroke-width: 1.3;
+  opacity: 0.55;
+}
+.mu-s1-campus-label {
+  fill: var(--lv-ink);
+  stroke: none;
+  font-size: 15px;
+  letter-spacing: 0.18em;
+  opacity: 0.85;
+}
+
 /* speech bubbles — anchored to their speakers, floating above the heads */
 .mu-s1-bubbleA {
   position: absolute;
-  top: -104px;
+  top: -146px;
   left: -46px;
 }
 .mu-s1-bubbleB {
   position: absolute;
-  top: -128px;
+  top: -150px;
   left: 58px;
   width: 150px;
   height: 52px;

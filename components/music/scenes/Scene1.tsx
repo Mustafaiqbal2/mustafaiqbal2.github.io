@@ -45,6 +45,87 @@ const SHARDS: Shard[] = [
   { left: "3%", top: "28%", w: 56, h: 48, clip: "polygon(0% 22%, 66% 0%, 100% 74%, 28% 100%)", fx: -700, fy: -220, fr: -95 }
 ];
 
+/**
+ * FAST NUCES Islamabad (H-11), drawn from the ground the way you actually
+ * stand in front of it: twin corner towers with vertical window slots, the
+ * stepped centre parapet over two big curtain-glass panels, the projecting
+ * mid cornice, a long window row, the balcony rail, trees hiding the base.
+ * Three groups so the detonation can throw the towers and the centre block
+ * on different arcs.
+ */
+const CampusBackdrop = () => (
+  <svg
+    className="mu-s1-campus"
+    viewBox="0 0 1200 430"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.3}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <g className="mu-s1-campus-l">
+      <path className="mu-draw" d="M64 418 L61 78 Q62 70 70 71 L226 68 Q233 68 232 76 L235 418" />
+      <path className="mu-draw" d="M52 80 Q145 72 244 78" />
+      <path className="mu-draw" d="M92 96 L91 204 L107 205 L106 96 Z" />
+      <path className="mu-draw" d="M139 95 L138 205 L154 205 L153 95 Z" />
+      <path className="mu-draw" d="M186 96 L185 204 L201 205 L200 95 Z" />
+      <path className="mu-draw" d="M92 240 L91 368 L107 368 L106 240 Z" />
+      <path className="mu-draw" d="M139 240 L138 368 L154 369 L153 240 Z" />
+      <path className="mu-draw" d="M186 240 L185 368 L201 368 L200 239 Z" />
+      <path className="mu-draw" d="M118 424 Q104 394 128 382 Q136 356 166 362 Q196 352 206 380 Q228 392 214 412 Q210 426 190 425 Z" />
+    </g>
+    <g className="mu-s1-campus-c">
+      <path
+        className="mu-draw"
+        d="M235 130 Q267 127 298 128 L300 114 Q375 110 448 113 L450 128 Q545 126 638 127 L640 113 Q715 109 788 112 L790 127 Q878 126 965 129"
+      />
+      <path className="mu-draw" d="M302 140 L300 258 L448 260 L450 142 Z" />
+      <path className="mu-draw mu-s1-thin" d="M337 141 L336 259 M373 142 L372 258 M410 141 L409 259" />
+      <path className="mu-draw mu-s1-thin" d="M301 170 L449 171 M300 199 L448 200 M301 228 L449 229" />
+      <path className="mu-draw mu-s1-thin" d="M322 244 L428 154" />
+      <path className="mu-draw" d="M642 140 L640 258 L788 260 L790 142 Z" />
+      <path className="mu-draw mu-s1-thin" d="M677 141 L676 259 M713 142 L712 258 M750 141 L749 259" />
+      <path className="mu-draw mu-s1-thin" d="M641 170 L789 171 M640 199 L788 200 M641 228 L789 229" />
+      <path className="mu-draw mu-s1-thin" d="M662 244 L768 154" />
+      <path className="mu-draw" d="M255 152 h26 v26 h-26 Z M492 151 h26 v26 h-26 Z M562 152 h26 v26 h-26 Z M817 151 h26 v26 h-26 Z M887 152 h26 v26 h-26 Z" />
+      <path className="mu-draw" d="M255 194 h26 v26 h-26 Z M492 193 h26 v26 h-26 Z M562 194 h26 v26 h-26 Z M817 193 h26 v26 h-26 Z M887 194 h26 v26 h-26 Z" />
+      <path className="mu-draw" d="M255 236 h26 v26 h-26 Z M492 235 h26 v26 h-26 Z M562 236 h26 v26 h-26 Z M817 235 h26 v26 h-26 Z M887 236 h26 v26 h-26 Z" />
+      <path className="mu-draw mu-s1-thin" d="M478 140 L477 258 M535 141 L534 259 M606 140 L605 258 M804 141 L803 259" />
+      <path className="mu-draw" d="M228 272 Q600 266 972 273" />
+      <path className="mu-draw mu-s1-thin" d="M232 281 Q600 276 968 282" />
+      <path
+        className="mu-draw"
+        d="M252 292 h24 v26 h-24 Z M316 293 h24 v26 h-24 Z M380 292 h24 v26 h-24 Z M444 293 h24 v26 h-24 Z M508 292 h24 v26 h-24 Z M572 293 h24 v26 h-24 Z M636 292 h24 v26 h-24 Z M700 293 h24 v26 h-24 Z M764 292 h24 v26 h-24 Z M828 293 h24 v26 h-24 Z M892 292 h24 v26 h-24 Z"
+      />
+      <path className="mu-draw" d="M240 338 Q600 333 960 339" />
+      <path
+        className="mu-draw mu-s1-thin"
+        d="M256 339 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10 m30 -10 v10"
+      />
+      <path className="mu-draw mu-s1-thin" d="M262 420 L263 302 M255 301 L279 300" />
+      <path className="mu-draw mu-s1-thin" d="M934 420 L935 302 M927 301 L951 300" />
+      <path className="mu-draw" d="M330 427 Q315 396 342 385 Q352 358 384 365 Q414 356 424 384 Q447 396 433 415 Q428 428 408 427 Z" />
+      <path className="mu-draw" d="M540 426 Q522 398 550 384 Q558 354 592 362 Q626 352 636 382 Q660 394 646 414 Q640 428 618 427 Z" />
+      <path className="mu-draw" d="M742 427 Q727 398 753 386 Q763 360 793 366 Q823 358 833 384 Q855 396 841 414 Q836 427 816 426 Z" />
+      <text className="mu-s1-campus-label lv-mono" x="600" y="100" textAnchor="middle">
+        fast nuces · h-11
+      </text>
+    </g>
+    <g className="mu-s1-campus-r">
+      <path className="mu-draw" d="M965 418 L963 76 Q963 68 971 69 L1128 71 Q1136 70 1135 78 L1138 418" />
+      <path className="mu-draw" d="M954 78 Q1046 71 1147 80" />
+      <path className="mu-draw" d="M994 96 L993 204 L1009 205 L1008 96 Z" />
+      <path className="mu-draw" d="M1041 95 L1040 205 L1056 205 L1055 95 Z" />
+      <path className="mu-draw" d="M1088 96 L1087 204 L1103 205 L1102 95 Z" />
+      <path className="mu-draw" d="M994 240 L993 368 L1009 368 L1008 240 Z" />
+      <path className="mu-draw" d="M1041 240 L1040 368 L1056 369 L1055 240 Z" />
+      <path className="mu-draw" d="M1088 240 L1087 368 L1103 368 L1102 239 Z" />
+      <path className="mu-draw" d="M984 425 Q970 396 994 384 Q1002 358 1032 364 Q1062 355 1072 382 Q1094 394 1080 413 Q1076 426 1056 425 Z" />
+    </g>
+  </svg>
+);
+
 export function Scene1() {
   return (
     <section
@@ -56,6 +137,7 @@ export function Scene1() {
         <div className="mu-s1-paper" />
 
         <div className="mu-s1-art">
+          <CampusBackdrop />
           <svg
             className="mu-s1-ground"
             viewBox="0 0 860 40"
@@ -136,6 +218,7 @@ export function buildScene1(ctx: SceneCtx): void {
   /* ---------- mobile: no pin, a few simple scrubbed entrances ---------- */
   if (!ctx.desktop) {
     const entrances: Array<{ sel: string; y: number }> = [
+      { sel: ".mu-s1-campus", y: 30 },
       { sel: ".mu-s1-left", y: 36 },
       { sel: ".mu-s1-right", y: 36 },
       { sel: ".mu-s1-bubbleA", y: 24 },
@@ -170,7 +253,7 @@ export function buildScene1(ctx: SceneCtx): void {
     }
   });
 
-  /* 0 – 0.7 : the paper skit draws itself */
+  /* 0 – 0.7 : the paper skit draws itself — campus first, then the cast */
   tl.fromTo(
     q(".mu-s1-ground .mu-draw"),
     ctx.drawFrom(),
@@ -178,12 +261,19 @@ export function buildScene1(ctx: SceneCtx): void {
     0
   )
     .fromTo(
+      q(".mu-s1-campus .mu-draw"),
+      ctx.drawFrom(),
+      { strokeDashoffset: 0, duration: 0.52, stagger: 0.006, ease: "none" },
+      0.04
+    )
+    .from(q(".mu-s1-campus-label"), { opacity: 0, duration: 0.14 }, 0.56)
+    .fromTo(
       q(".mu-s1-left .mu-draw, .mu-s1-idle .mu-draw"),
       ctx.drawFrom(),
-      { strokeDashoffset: 0, duration: 0.45, stagger: 0.02, ease: "none" },
-      0.18
+      { strokeDashoffset: 0, duration: 0.42, stagger: 0.02, ease: "none" },
+      0.3
     )
-    .from(q(".mu-s1-tag"), { opacity: 0, duration: 0.12, stagger: 0.05 }, 0.55);
+    .from(q(".mu-s1-tag"), { opacity: 0, duration: 0.12, stagger: 0.05 }, 0.62);
 
   /* 0.8 – 1.3 : bubble a — the question */
   tl.fromTo(
@@ -247,6 +337,9 @@ export function buildScene1(ctx: SceneCtx): void {
   );
 
   const scatter: Array<{ sel: string; x: number; y: number; r: number }> = [
+    { sel: ".mu-s1-campus-l", x: -680, y: -440, r: -64 },
+    { sel: ".mu-s1-campus-c", x: 40, y: -620, r: 26 },
+    { sel: ".mu-s1-campus-r", x: 700, y: -400, r: 72 },
     { sel: ".mu-s1-left", x: -520, y: -340, r: -38 },
     { sel: ".mu-s1-right", x: 560, y: -300, r: 42 },
     { sel: ".mu-s1-bubbleA", x: -640, y: -460, r: -24 },
