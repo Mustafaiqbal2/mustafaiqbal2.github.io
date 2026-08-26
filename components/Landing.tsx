@@ -814,33 +814,58 @@ export function Landing() {
                   cineActive = false;
                 }
               });
+              const black = q(".lv-boom__blackout");
+              /* anime impact grammar (the Gear-5 cuts): every hit is a
+                 WHITE/BLACK polarity strobe, the drawn frames are white
+                 ground + ink and last 2-3 film frames, the rhythm
+                 accelerates, and a held white "dead air" precedes the
+                 blast proper */
               cine
                 .set(q(".lv-boom__implode"), { opacity: 1 }, 0)
                 .fromTo(q(".lv-boom__implode"), { scale: 1.7 }, { scale: 0.12, duration: 0.24, ease: "power2.in" }, 0)
                 .set(q(".lv-boom__implode"), { opacity: 0 }, 0.26)
                 .to(bhWrap, { scale: 0.85, duration: 0.12, ease: "power2.in" }, 0.12)
-                .set(flash, { opacity: 1 }, 0.28)
-                .to(bhWrap, { opacity: 0, scale: 1.22, duration: 0.06, ease: "none" }, 0.3)
-                .set(flash, { opacity: 0 }, 0.36)
-                .call(() => popFrame(0, 0.07), undefined, 0.36)
-                .set(q(".lv-boom__star--a"), { opacity: 1 }, 0.6)
-                .fromTo(q(".lv-boom__star--a"), { scale: 0.15 }, { scale: 1.5, duration: 0.35, ease: "power2.out" }, 0.6)
-                .to(q(".lv-boom__star--a"), { opacity: 0, duration: 0.12 }, 0.97)
-                .set(flash, { opacity: 1 }, 1.1)
-                .set(flash, { opacity: 0 }, 1.17)
-                .call(() => popFrame(1, 0.09), undefined, 1.17)
-                .set(q(".lv-boom__star--b"), { opacity: 1 }, 1.36)
-                .fromTo(q(".lv-boom__star--b"), { scale: 0.15 }, { scale: 1.9, duration: 0.4, ease: "power2.out" }, 1.36)
-                .to(q(".lv-boom__star--b"), { opacity: 0, duration: 0.12 }, 1.78)
-                .set(q(".lv-boom__star--c"), { opacity: 1 }, 1.5)
-                .fromTo(q(".lv-boom__star--c"), { scale: 0.15 }, { scale: 1.6, duration: 0.35, ease: "power2.out" }, 1.5)
-                .to(q(".lv-boom__star--c"), { opacity: 0, duration: 0.12 }, 1.87)
-                .set(flash, { opacity: 1 }, 2.0)
-                .set(flash, { opacity: 0 }, 2.07)
-                .call(() => popFrame(2, 0.09), undefined, 2.07)
-                /* the white screen after About You — then scroll returns */
-                .set(flash, { opacity: 1 }, 2.2)
-                .to(flash, { opacity: 0, duration: 0.35, ease: "power1.in" }, 2.6);
+                /* hit 1: strobe -> speed lines */
+                .set(flash, { opacity: 1 }, 0.26)
+                .to(bhWrap, { opacity: 0, scale: 1.22, duration: 0.05, ease: "none" }, 0.27)
+                .set(flash, { opacity: 0 }, 0.31)
+                .set(black, { opacity: 1 }, 0.31)
+                .set(black, { opacity: 0 }, 0.36)
+                .set(flash, { opacity: 1 }, 0.36)
+                .set(flash, { opacity: 0 }, 0.41)
+                .call(() => popFrame(0, 0.08), undefined, 0.41)
+                .set(black, { opacity: 1 }, 0.49)
+                .set(black, { opacity: 0 }, 0.55)
+                /* beat: a far star detonates, snappy */
+                .set(q(".lv-boom__star--a"), { opacity: 1 }, 0.68)
+                .fromTo(q(".lv-boom__star--a"), { scale: 0.15 }, { scale: 1.5, duration: 0.2, ease: "power4.out" }, 0.68)
+                .to(q(".lv-boom__star--a"), { opacity: 0, duration: 0.08 }, 0.92)
+                /* hit 2: strobe -> the graffiti wall */
+                .set(flash, { opacity: 1 }, 1.06)
+                .set(flash, { opacity: 0 }, 1.11)
+                .set(black, { opacity: 1 }, 1.11)
+                .set(black, { opacity: 0 }, 1.16)
+                .call(() => popFrame(1, 0.09), undefined, 1.16)
+                .set(black, { opacity: 1 }, 1.25)
+                .set(black, { opacity: 0 }, 1.31)
+                /* beat: two closer stars, overlapping, faster */
+                .set(q(".lv-boom__star--b"), { opacity: 1 }, 1.4)
+                .fromTo(q(".lv-boom__star--b"), { scale: 0.15 }, { scale: 1.9, duration: 0.22, ease: "power4.out" }, 1.4)
+                .to(q(".lv-boom__star--b"), { opacity: 0, duration: 0.08 }, 1.66)
+                .set(q(".lv-boom__star--c"), { opacity: 1 }, 1.52)
+                .fromTo(q(".lv-boom__star--c"), { scale: 0.15 }, { scale: 1.6, duration: 0.2, ease: "power4.out" }, 1.52)
+                .to(q(".lv-boom__star--c"), { opacity: 0, duration: 0.08 }, 1.74)
+                /* hit 3: strobe -> About You in negative */
+                .set(flash, { opacity: 1 }, 1.86)
+                .set(flash, { opacity: 0 }, 1.9)
+                .set(black, { opacity: 1 }, 1.9)
+                .set(black, { opacity: 0 }, 1.94)
+                .call(() => popFrame(2, 0.09), undefined, 1.94)
+                .set(black, { opacity: 1 }, 2.03)
+                .set(black, { opacity: 0 }, 2.09)
+                /* dead air: the held white silence, then scroll returns */
+                .set(flash, { opacity: 1 }, 2.09)
+                .to(flash, { opacity: 0, duration: 0.3, ease: "power1.in" }, 2.55);
             };
             tl.fromTo(q(".lv-about__title"), { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.4 }, 0)
               .to(q(".lv-about__title"), { opacity: 0, y: -40, scale: 0.96, duration: 0.3 }, 0.55)
@@ -1381,6 +1406,7 @@ export function Landing() {
             props, every one authored hidden until the timeline fires them */}
         <div className="lv-boom" aria-hidden="true">
           <span className="lv-boom__flash"></span>
+          <span className="lv-boom__blackout"></span>
           <span className="lv-boom__frame">
             <ImpactLines />
           </span>

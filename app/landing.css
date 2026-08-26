@@ -1058,10 +1058,16 @@ html.lv-page .site-footer {
   inset: 0;
   background: var(--lv-bone);
 }
-.lv-boom__frame {
+/* anime impact grammar: frames are WHITE ground with rough ink art; the
+   blackout is the opposite polarity used for the strobe alternation */
+.lv-boom__blackout {
   inset: 0;
   background: #07080d;
-  color: var(--lv-bone);
+}
+.lv-boom__frame {
+  inset: 0;
+  background: var(--lv-bone);
+  color: var(--lv-ink);
 }
 .lv-boom__frame svg {
   width: 100%;
@@ -1138,11 +1144,11 @@ html.lv-page .site-footer {
   top: calc(50% - 290px);
   width: 70px;
 }
-/* ---- impact-frame easter eggs ---- */
+/* ---- impact-frame easter eggs (white ground, ink art) ---- */
 .lv-boom__tag {
   inset: 0;
-  background: #07080d;
-  color: var(--lv-bone);
+  background: var(--lv-bone);
+  color: var(--lv-ink);
 }
 .lv-boom__tag svg {
   width: 100%;
@@ -1172,7 +1178,7 @@ html.lv-page .site-footer {
   font-weight: 800;
   letter-spacing: 0.01em;
   fill: none;
-  stroke: var(--lv-accent-bright);
+  stroke: var(--lv-accent);
   stroke-width: 3.5;
 }
 .lv-tag__swash {
@@ -1193,14 +1199,14 @@ html.lv-page .site-footer {
 }
 .lv-boom__cover {
   inset: 0;
-  background: #07080d;
+  background: var(--lv-bone);
   display: grid;
   place-items: center;
 }
 .lv-boom__cover-art {
   width: min(62vh, 62vw);
   aspect-ratio: 1 / 1;
-  outline: 1px solid rgba(242, 242, 238, 0.35);
+  outline: 3px solid var(--lv-ink);
 }
 .lv-boom__cover-art img {
   width: 100%;
