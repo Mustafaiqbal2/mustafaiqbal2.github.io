@@ -166,6 +166,32 @@ const SparkStreak = () => (
   </svg>
 );
 
+/* the visitor: a little line-art saucer, soon to regret its flight path */
+const UfoDoodle = () => (
+  <svg
+    viewBox="0 0 120 64"
+    aria-hidden="true"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth={2.25}
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M52 30 C52 20 54 14 66 14 C78 14 80 20 80 30" />
+    <path d="M60 21 C61 19 63 18 65 18" />
+    <path d="M66 14 L66 7" />
+    <circle cx={66} cy={5.5} r={1.5} fill="currentColor" stroke="none" />
+    <ellipse cx={66} cy={35} rx={34} ry={10} />
+    <path d="M38 39 C46 43 86 43 94 39" />
+    <circle cx={52} cy={47} r={2} fill="currentColor" stroke="none" />
+    <circle cx={66} cy={49} r={2} fill="currentColor" stroke="none" />
+    <circle cx={80} cy={47} r={2} fill="currentColor" stroke="none" />
+    <path d="M6 28 L18 28" />
+    <path d="M10 36 L24 36" />
+    <path d="M8 44 L18 44" />
+  </svg>
+);
+
 /* a background star detonating: hot dot, cross flare, two shock rings */
 const NovaStar = () => (
   <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true">
@@ -506,6 +532,21 @@ export function Landing() {
         const desktop = Boolean(ctx.conditions?.desktop);
         const q = gsap.utils.selector(el);
 
+        /* boot gate: no scrolling until every scene is built. Building pins
+           under a live scroll inserts spacers above the viewport and turns
+           the page into a treadmill — input eaten, content stuck. The gate
+           holds ~300-650ms; a failsafe releases it no matter what. */
+        let booted = false;
+        const releaseBoot = () => {
+          if (booted) return;
+          booted = true;
+          document.documentElement.classList.remove("lv-boot");
+          if (lenis) lenis.start();
+        };
+        document.documentElement.classList.add("lv-boot");
+        if (lenis) lenis.stop();
+        window.setTimeout(releaseBoot, 2500);
+
         // Every drawn stroke dashes in TRUE user units (getTotalLength),
         // never the pathLength="1" normalization trick: normalized dash
         // intervals get scaled by ~1/length and land exactly where
@@ -770,66 +811,81 @@ export function Landing() {
                silence precedes the blast. Impact frames enter as .call
                pops, so they blink in real time in BOTH directions. */
             const boomTL = gsap.timeline({ paused: true });
+            /* nothing sits at t=0: boomST's onLeaveBack parks at pause(0),
+               which must render the untouched pre-blast sky — a set placed
+               AT zero would render already-fired and strand its prop
+               (the implosion ring did exactly that) */
             boomTL
-              .set(q(".lv-boom__implode"), { opacity: 1 }, 0)
-              .fromTo(q(".lv-boom__implode"), { scale: 1.7 }, { scale: 0.12, duration: 0.22, ease: "power2.in" }, 0)
-              .set(q(".lv-boom__implode"), { opacity: 0 }, 0.24)
-              .to(bhWrap, { scale: 0.85, duration: 0.12, ease: "power2.in" }, 0.1)
+              /* Act 0 — the visitor: a saucer drifts in, spaghettifies
+                 across the event horizon and is swallowed as the implosion
+                 begins */
+              .set(q(".lv-boom__ufo"), { opacity: 1, x: 560, y: -210, scaleX: 1, scaleY: 1, rotation: -10, skewX: 0 }, 0.02)
+              .to(q(".lv-boom__ufo"), { x: 150, y: -60, rotation: 6, duration: 0.6, ease: "sine.in" }, 0.02)
+              .to(q(".lv-boom__ufo"), { x: 10, y: -4, scaleX: 2.7, scaleY: 0.18, skewX: -16, rotation: 24, duration: 0.3, ease: "power3.in" }, 0.62)
+              .to(q(".lv-boom__ufo"), { opacity: 0, duration: 0.07 }, 0.86)
+              .set(q(".lv-boom__implode"), { opacity: 1 }, 0.55)
+              .fromTo(q(".lv-boom__implode"), { scale: 1.7 }, { scale: 0.12, duration: 0.28, ease: "power2.in" }, 0.55)
+              .set(q(".lv-boom__implode"), { opacity: 0 }, 0.85)
+              .to(bhWrap, { scale: 0.85, duration: 0.14, ease: "power2.in" }, 0.72)
               /* hit 1: strobe -> speed lines */
-              .set(flash, { opacity: 1 }, 0.24)
-              .to(bhWrap, { opacity: 0, scale: 1.22, duration: 0.04, ease: "none" }, 0.26)
-              .set(flash, { opacity: 0 }, 0.29)
-              .set(black, { opacity: 1 }, 0.29)
-              .set(black, { opacity: 0 }, 0.34)
-              .set(flash, { opacity: 1 }, 0.34)
-              .set(flash, { opacity: 0 }, 0.38)
-              .call(() => popFrame(0, 0.08), undefined, 0.38)
-              .set(black, { opacity: 1 }, 0.46)
-              .set(black, { opacity: 0 }, 0.52)
+              .set(flash, { opacity: 1 }, 0.92)
+              .to(bhWrap, { opacity: 0, scale: 1.22, duration: 0.04, ease: "none" }, 0.94)
+              .set(flash, { opacity: 0 }, 0.97)
+              .set(black, { opacity: 1 }, 0.97)
+              .set(black, { opacity: 0 }, 1.02)
+              .set(flash, { opacity: 1 }, 1.02)
+              .set(flash, { opacity: 0 }, 1.06)
+              .call(() => popFrame(0, 0.08), undefined, 1.06)
+              .set(black, { opacity: 1 }, 1.14)
+              .set(black, { opacity: 0 }, 1.2)
               /* beat: a far star detonates, snappy */
-              .set(q(".lv-boom__star--a"), { opacity: 1 }, 0.62)
-              .fromTo(q(".lv-boom__star--a"), { scale: 0.15 }, { scale: 1.5, duration: 0.18, ease: "power4.out" }, 0.62)
-              .to(q(".lv-boom__star--a"), { opacity: 0, duration: 0.08 }, 0.84)
+              .set(q(".lv-boom__star--a"), { opacity: 1 }, 1.3)
+              .fromTo(q(".lv-boom__star--a"), { scale: 0.15 }, { scale: 1.5, duration: 0.18, ease: "power4.out" }, 1.3)
+              .to(q(".lv-boom__star--a"), { opacity: 0, duration: 0.08 }, 1.52)
               /* hit 2: strobe -> About You in negative */
-              .set(flash, { opacity: 1 }, 0.98)
-              .set(flash, { opacity: 0 }, 1.02)
-              .set(black, { opacity: 1 }, 1.02)
-              .set(black, { opacity: 0 }, 1.06)
-              .call(() => popFrame(1, 0.09), undefined, 1.06)
-              .set(black, { opacity: 1 }, 1.15)
-              .set(black, { opacity: 0 }, 1.21)
+              .set(flash, { opacity: 1 }, 1.66)
+              .set(flash, { opacity: 0 }, 1.7)
+              .set(black, { opacity: 1 }, 1.7)
+              .set(black, { opacity: 0 }, 1.74)
+              .call(() => popFrame(1, 0.09), undefined, 1.74)
+              .set(black, { opacity: 1 }, 1.83)
+              .set(black, { opacity: 0 }, 1.89)
               /* the white silence */
-              .set(flash, { opacity: 1 }, 1.21)
-              .to(flash, { opacity: 0, duration: 0.12, ease: "none" }, 1.5)
-              /* SHOCKWAVE — the blast blooms straight out of the white */
-              .set(q(".lv-boom__nova"), { opacity: 1 }, 1.52)
-              .fromTo(q(".lv-boom__nova"), { scale: 0.12 }, { scale: 3.2, duration: 0.5, ease: "power3.out" }, 1.52)
-              .to(q(".lv-boom__nova"), { opacity: 0, duration: 0.28 }, 1.85)
-              .set(q(".lv-boom__rays"), { opacity: 1 }, 1.54)
-              .fromTo(q(".lv-boom__rays"), { scale: 0.55 }, { scale: 1.55, duration: 0.6, ease: "power2.out" }, 1.54)
-              .fromTo(q(".lv-boom__rays .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, stagger: 0.008, ease: "none" }, 1.54)
-              .to(q(".lv-boom__rays"), { opacity: 0, duration: 0.25 }, 2.05)
-              .set(q(".lv-boom__ring--a"), { opacity: 1 }, 1.52)
-              .fromTo(q(".lv-boom__ring--a"), { scale: 0.15 }, { scale: 1.9, duration: 0.5, ease: "power2.out" }, 1.52)
-              .to(q(".lv-boom__ring--a"), { opacity: 0, duration: 0.25 }, 1.74)
-              .set(q(".lv-boom__ring--b"), { opacity: 0.8 }, 1.58)
-              .fromTo(q(".lv-boom__ring--b"), { scale: 0.1 }, { scale: 2.6, duration: 0.7, ease: "power2.out" }, 1.58)
-              .to(q(".lv-boom__ring--b"), { opacity: 0, duration: 0.3 }, 1.92)
-              .set(q(".lv-boom__ring--c"), { opacity: 0.9 }, 1.66)
-              .fromTo(q(".lv-boom__ring--c"), { scale: 0.1 }, { scale: 3.4, duration: 0.85, ease: "power1.out" }, 1.66)
-              .to(q(".lv-boom__ring--c"), { opacity: 0, duration: 0.3 }, 2.35)
-              .set(q(".lv-boom__fw--a"), { opacity: 1 }, 1.52)
-              .fromTo(q(".lv-boom__fw--a"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 1.52)
-              .fromTo(q(".lv-boom__fw--a .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.42, stagger: 0.012, ease: "none" }, 1.52)
-              .set(q(".lv-boom__fw--b"), { opacity: 1 }, 1.68)
-              .fromTo(q(".lv-boom__fw--b"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 1.68)
-              .fromTo(q(".lv-boom__fw--b .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 1.68)
-              .set(q(".lv-boom__fw--c"), { opacity: 1 }, 1.78)
-              .fromTo(q(".lv-boom__fw--c"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 1.78)
-              .fromTo(q(".lv-boom__fw--c .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 1.78)
-              .set(q(".lv-boom__fw--d"), { opacity: 1 }, 1.9)
-              .fromTo(q(".lv-boom__fw--d"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 1.9)
-              .fromTo(q(".lv-boom__fw--d .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 1.9)
+              .set(flash, { opacity: 1 }, 1.89)
+              .to(flash, { opacity: 0, duration: 0.12, ease: "none" }, 2.18)
+              /* SHOCKWAVE — the blast blooms straight out of the white,
+                 and the saucer is spat back out AT the camera */
+              .set(q(".lv-boom__nova"), { opacity: 1 }, 2.2)
+              .fromTo(q(".lv-boom__nova"), { scale: 0.12 }, { scale: 3.2, duration: 0.5, ease: "power3.out" }, 2.2)
+              .to(q(".lv-boom__nova"), { opacity: 0, duration: 0.28 }, 2.53)
+              .set(q(".lv-boom__rays"), { opacity: 1 }, 2.22)
+              .fromTo(q(".lv-boom__rays"), { scale: 0.55 }, { scale: 1.55, duration: 0.6, ease: "power2.out" }, 2.22)
+              .fromTo(q(".lv-boom__rays .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, stagger: 0.008, ease: "none" }, 2.22)
+              .to(q(".lv-boom__rays"), { opacity: 0, duration: 0.25 }, 2.73)
+              .set(q(".lv-boom__ring--a"), { opacity: 1 }, 2.2)
+              .fromTo(q(".lv-boom__ring--a"), { scale: 0.15 }, { scale: 1.9, duration: 0.5, ease: "power2.out" }, 2.2)
+              .to(q(".lv-boom__ring--a"), { opacity: 0, duration: 0.25 }, 2.42)
+              .set(q(".lv-boom__ring--b"), { opacity: 0.8 }, 2.26)
+              .fromTo(q(".lv-boom__ring--b"), { scale: 0.1 }, { scale: 2.6, duration: 0.7, ease: "power2.out" }, 2.26)
+              .to(q(".lv-boom__ring--b"), { opacity: 0, duration: 0.3 }, 2.6)
+              .set(q(".lv-boom__ring--c"), { opacity: 0.9 }, 2.34)
+              .fromTo(q(".lv-boom__ring--c"), { scale: 0.1 }, { scale: 3.4, duration: 0.85, ease: "power1.out" }, 2.34)
+              .to(q(".lv-boom__ring--c"), { opacity: 0, duration: 0.3 }, 3.03)
+              .set(q(".lv-boom__ufo"), { opacity: 1, x: 0, y: 0, scaleX: 0.14, scaleY: 0.14, rotation: 0, skewX: 0 }, 2.3)
+              .to(q(".lv-boom__ufo"), { scaleX: 7, scaleY: 7, x: -430, y: 320, rotation: -520, duration: 0.55, ease: "power2.in" }, 2.32)
+              .to(q(".lv-boom__ufo"), { opacity: 0, duration: 0.1 }, 2.82)
+              .set(q(".lv-boom__fw--a"), { opacity: 1 }, 2.2)
+              .fromTo(q(".lv-boom__fw--a"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.2)
+              .fromTo(q(".lv-boom__fw--a .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.42, stagger: 0.012, ease: "none" }, 2.2)
+              .set(q(".lv-boom__fw--b"), { opacity: 1 }, 2.36)
+              .fromTo(q(".lv-boom__fw--b"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.36)
+              .fromTo(q(".lv-boom__fw--b .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 2.36)
+              .set(q(".lv-boom__fw--c"), { opacity: 1 }, 2.46)
+              .fromTo(q(".lv-boom__fw--c"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.46)
+              .fromTo(q(".lv-boom__fw--c .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 2.46)
+              .set(q(".lv-boom__fw--d"), { opacity: 1 }, 2.58)
+              .fromTo(q(".lv-boom__fw--d"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 2.58)
+              .fromTo(q(".lv-boom__fw--d .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 2.58)
               .fromTo(
                 q(".lv-boom__spark"),
                 {
@@ -847,12 +903,12 @@ export function Landing() {
                   stagger: 0.05,
                   ease: "power2.out"
                 },
-                1.54
+                2.22
               )
-              .fromTo(q(".lv-boom__spark .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, stagger: 0.02, ease: "none" }, 1.58)
-              .fromTo(q(".lv-boom__remnant"), { opacity: 0, scale: 0.55 }, { opacity: 0.75, scale: 1.2, duration: 0.5, ease: "power1.out" }, 1.8)
-              .to(q(".lv-boom__fw, .lv-boom__spark"), { opacity: 0, duration: 0.3, stagger: 0.04 }, 2.42)
-              .to(q(".lv-boom__remnant"), { opacity: 0, scale: 1.45, duration: 0.5 }, 2.6);
+              .fromTo(q(".lv-boom__spark .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, stagger: 0.02, ease: "none" }, 2.26)
+              .fromTo(q(".lv-boom__remnant"), { opacity: 0, scale: 0.55 }, { opacity: 0.75, scale: 1.2, duration: 0.5, ease: "power1.out" }, 2.48)
+              .to(q(".lv-boom__fw, .lv-boom__spark"), { opacity: 0, duration: 0.3, stagger: 0.04 }, 3.1)
+              .to(q(".lv-boom__remnant"), { opacity: 0, scale: 1.45, duration: 0.5 }, 3.28);
 
             let cineActive = false;
             const fireForward = () => {
@@ -976,6 +1032,7 @@ export function Landing() {
               },
               onLeaveBack() {
                 boomTL.pause(0);
+                gsap.set(q(".lv-boom__implode, .lv-boom__ufo"), { opacity: 0 });
               }
             });
           } else {
@@ -1031,9 +1088,14 @@ export function Landing() {
           if (!next) {
             refreshState.introDone = true;
             refreshState.queued = false;
+            releaseBoot();
             return;
           }
-          ctx.add(next);
+          try {
+            ctx.add(next);
+          } catch {
+            /* one broken scene must not hold the boot gate */
+          }
           // breathing room between slices so input and paint stay responsive
           window.setTimeout(runBuilders, 40);
         };
@@ -1041,6 +1103,7 @@ export function Landing() {
 
         return () => {
           intro.kill();
+          releaseBoot();
           (q(".lv-about")[0] as HTMLElement)?.classList.remove("lv-about--live");
         };
       }
@@ -1382,6 +1445,10 @@ export function Landing() {
           {/* distant stars that go supernova between the frames */}
           <span className="lv-boom__star lv-boom__star--a">
             <NovaStar />
+          </span>
+          {/* last child on purpose: the ejected saucer flies OVER the blast */}
+          <span className="lv-boom__ufo">
+            <UfoDoodle />
           </span>
           {/* supernova props */}
           <span className="lv-boom__implode">

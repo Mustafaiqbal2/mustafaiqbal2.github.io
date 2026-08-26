@@ -36,6 +36,14 @@
    GSAP's per-frame inline-style writes. Without JS the class never
    lands and the footer shows — a fine fallback. */
 
+html.lv-page {
+  /* keep the scrollbar gutter while lv-boot hides overflow, or every pin
+     measured during boot is a scrollbar-width wider than the final page */
+  scrollbar-gutter: stable;
+}
+html.lv-boot {
+  overflow: hidden;
+}
 html.lv-page body {
   background: var(--lv-bone, #f2f2ee);
 }
@@ -1174,6 +1182,17 @@ html.lv-page .site-footer {
 .lv-boom__star--a {
   left: 16%;
   top: 20%;
+}
+.lv-boom__ufo {
+  left: calc(50% - 70px);
+  top: calc(50% - 32px);
+  width: 140px;
+  color: var(--lv-bone);
+}
+.lv-boom__ufo svg {
+  width: 100%;
+  height: auto;
+  display: block;
 }
 /* ---- supernova ---- */
 .lv-boom__implode {

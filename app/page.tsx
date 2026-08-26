@@ -12,6 +12,11 @@ try {
   if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
     document.documentElement.classList.add("lv-intro");
     window.setTimeout(function () { document.documentElement.classList.remove("lv-intro"); }, 1800);
+    /* scroll stays gated from FIRST PAINT until the scenes are built
+       (Landing releases it): scrolling before hydration used to race the
+       pin construction. The timeout is the no-hydration failsafe. */
+    document.documentElement.classList.add("lv-boot");
+    window.setTimeout(function () { document.documentElement.classList.remove("lv-boot"); }, 3000);
   }
 } catch (e) {}
 `;

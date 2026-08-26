@@ -210,23 +210,64 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     basectx.fill();
     basectx.restore();
 
-    // starfield baked into the ambient layer: pinpricks everywhere except a
-    // clearance ring around the shadow, a few hero stars with cross glints
+    // starfield baked into the ambient layer: pinpricks everywhere, bent by
+    // gravitational lensing near the shadow, a few hero stars with cross glints
     const srnd = mulberry32(4242);
     basectx.save();
     for (let i = 0; i < 170; i++) {
-      const x = srnd() * W;
-      const y = srnd() * H;
+      let x = srnd() * W;
+      let y = srnd() * H;
       const dx = x - cx;
       const dy = y - cy;
-      if (Math.sqrt(dx * dx + dy * dy) < R * 1.35 && Math.abs(dy) < R * 0.9) continue;
+      const d = Math.sqrt(dx * dx + dy * dy);
+      // lensing deflection: stars near the hole slide radially outward, so the
+      // sky visibly bends around the shadow and a clean avoidance zone hugs
+      // the photon ring instead of stars being culled outright
+      if (d < R * 2.2 && d > 1e-4) {
+        const nd = Math.max(d + (R * 0.55 * R) / d, R * 1.12);
+        x = cx + (dx / d) * nd;
+        y = cy + (dy / d) * nd;
+      }
       const r = (0.35 + srnd() * 0.9) * (W / 900);
       const warm = srnd();
+      const a = 0.14 + srnd() * 0.5;
+      // deflected stars must not clip the square canvas edge
+      if (x < r || x > W - r || y < r || y > H - r) continue;
       basectx.fillStyle = warm < 0.55 ? "#ffffff" : warm < 0.8 ? "#ffe9d2" : "#cfd8ff";
-      basectx.globalAlpha = 0.14 + srnd() * 0.5;
+      basectx.globalAlpha = a;
       basectx.beginPath();
       basectx.arc(x, y, r, 0, TWO);
       basectx.fill();
+    }
+    // lensed star smears: background stars stretched into thin tangential
+    // arclets just outside the photon ring — brighter and thinner the closer
+    // they ride to the shadow. Max radius R*1.55 ≈ 0.375*W stays well inside
+    // the square canvas edge (cx = W/2).
+    const lrnd = mulberry32(777);
+    const smearCols = ["#FFFFFF", "#FFF5E9", "#F3DFC6"];
+    const nSmears = 12 + ((lrnd() * 5) | 0);
+    basectx.lineCap = "round";
+    for (let i = 0; i < nSmears; i++) {
+      const t = lrnd(); // 0 = hugging the ring, 1 = outer edge of the lens
+      const rr = R * (1.08 + 0.47 * t);
+      const a0 = lrnd() * TWO;
+      const span = 0.05 + lrnd() * 0.2;
+      const lw = R * (0.004 + 0.005 * t);
+      const sa = 0.1 + 0.25 * (1 - t);
+      basectx.strokeStyle = smearCols[(lrnd() * smearCols.length) | 0];
+      basectx.globalAlpha = sa;
+      basectx.lineWidth = lw;
+      basectx.beginPath();
+      basectx.arc(cx, cy, rr, a0, a0 + span);
+      basectx.stroke();
+      // a few arclets get a soft glow pass
+      if (i < 3) {
+        basectx.globalAlpha = sa * 0.3;
+        basectx.lineWidth = lw * 2.5;
+        basectx.beginPath();
+        basectx.arc(cx, cy, rr, a0, a0 + span);
+        basectx.stroke();
+      }
     }
     // hero stars: brighter core + four-point glint
     for (let i = 0; i < 5; i++) {
@@ -926,14 +967,28 @@ export function BlackHole({ className }: { className?: string }) {
       else stop();
     };
 
+    // Pre-rasterize the full stroke+bloom pipeline once, off-screen, during
+    // boot — otherwise the first on-screen frame pays a ~200ms cold raster
+    // right in the middle of the About scroll. Deferred to an idle slot so
+    // mount itself never blocks the main thread; a scheduled flag keeps a
+    // second resize from stacking another callback.
+    let warmScheduled = false;
+    const scheduleWarmRaster = (): void => {
+      if (warmScheduled) return;
+      warmScheduled = true;
+      const warm = (): void => {
+        warmScheduled = false;
+        engine.drawFrame(0, 0.35);
+      };
+      if (typeof requestIdleCallback !== "undefined") requestIdleCallback(warm);
+      else window.setTimeout(warm, 120);
+    };
+
     const ro = new ResizeObserver((entries) => {
       const w = entries[0]?.contentRect.width ?? root.clientWidth;
       if (w > 0) {
         engine.resize(w);
-        // Pre-rasterize the full stroke+bloom pipeline once, off-screen,
-        // during boot — otherwise the first on-screen frame pays a
-        // ~200ms cold raster right in the middle of the About scroll.
-        engine.drawFrame(0, 0.35);
+        scheduleWarmRaster();
       }
     });
     ro.observe(root);
