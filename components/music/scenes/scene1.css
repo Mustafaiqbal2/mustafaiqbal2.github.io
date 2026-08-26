@@ -41,6 +41,7 @@
 
 /* stickman groups: figure on the line, nametag under it */
 .mu-s1-left,
+.mu-s1-saad,
 .mu-s1-right {
   position: absolute;
   bottom: calc(26% - 34px);
@@ -52,6 +53,9 @@
 }
 .mu-s1-left {
   left: calc(50% - 330px);
+}
+.mu-s1-saad {
+  left: calc(50% - 70px);
 }
 .mu-s1-right {
   left: calc(50% + 190px);
@@ -95,6 +99,9 @@
 /* the cast pops off the faint campus: filled, colored heads */
 .mu-s1-left .mu-s1-man path:first-of-type {
   fill: var(--lv-cyan);
+}
+.mu-s1-saad .mu-s1-man path:first-of-type {
+  fill: var(--lv-pink);
 }
 .mu-s1-right .mu-s1-man path:first-of-type {
   fill: var(--lv-accent-bright);
@@ -199,7 +206,7 @@
 }
 
 /* ---------- mobile: static skit that simply reads well ---------- */
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .mu-s1-anger,
   .mu-s1-rage,
   .mu-s1-cracks,
@@ -212,16 +219,20 @@
     width: 92vw;
   }
   .mu-s1-left,
+  .mu-s1-saad,
   .mu-s1-right {
     width: 88px;
     bottom: calc(26% - 30px);
   }
   .mu-s1-left {
-    left: 8vw;
+    left: 3vw;
+  }
+  .mu-s1-saad {
+    left: calc(50% - 44px);
   }
   .mu-s1-right {
     left: auto;
-    right: 10vw;
+    right: 3vw;
   }
   .mu-s1-man,
   .mu-s1-swap {

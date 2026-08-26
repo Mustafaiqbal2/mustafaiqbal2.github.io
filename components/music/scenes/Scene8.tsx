@@ -106,6 +106,10 @@ export function Scene8() {
         <StickMan pose="float" />
         <NameTag className="mu-s8-tag">hassaan</NameTag>
       </div>
+      <div className="mu-s8-man mu-s8-man--saad">
+        <StickMan pose="float" />
+        <NameTag className="mu-s8-tag">saad</NameTag>
+      </div>
       <div className="mu-s8-man mu-s8-man--me">
         <StickMan pose="float" />
         <NameTag className="mu-s8-tag">me</NameTag>
@@ -203,6 +207,7 @@ export function buildScene8(ctx: SceneCtx): void {
     .from(ctx.q(".mu-s8-tag"), { opacity: 0, y: 8, duration: 0.15, stagger: 0.05 }, 1.72)
     /* gentle scrubbed drift instead of an infinite loop */
     .to(ctx.q(".mu-s8-man--hassaan"), { y: -14, duration: 2.7, ease: "sine.inOut" }, 1.3)
+    .to(ctx.q(".mu-s8-man--saad"), { y: 8, duration: 2.7, ease: "sine.inOut" }, 1.3)
     .to(ctx.q(".mu-s8-man--me"), { y: 12, duration: 2.7, ease: "sine.inOut" }, 1.3);
 
   /* 2.0 → 2.5 : the old question, asked again */

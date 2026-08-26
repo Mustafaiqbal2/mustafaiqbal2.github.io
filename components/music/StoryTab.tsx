@@ -45,8 +45,8 @@ export function StoryTab({ onBuilt }: { onBuilt: () => void }) {
     const mm = gsap.matchMedia(el);
     mm.add(
       {
-        desktop: "(min-width: 768px) and (prefers-reduced-motion: no-preference)",
-        mobile: "(max-width: 767px) and (prefers-reduced-motion: no-preference)",
+        desktop: "(min-width: 1024px) and (prefers-reduced-motion: no-preference)",
+        mobile: "(max-width: 1023px) and (prefers-reduced-motion: no-preference)",
         reduced: "(prefers-reduced-motion: reduce)"
       },
       (mmCtx) => {

@@ -42,11 +42,15 @@
   display: block;
 }
 .mu-s8-man--hassaan {
-  left: 29%;
+  left: 25%;
   top: 44%;
 }
+.mu-s8-man--saad {
+  left: 43%;
+  top: 48%;
+}
 .mu-s8-man--me {
-  left: 57%;
+  left: 61%;
   top: 50%;
 }
 .mu-s8-tag {
@@ -96,30 +100,34 @@
 }
 
 /* ---------- mobile: static field (capped), simple stack ---------- */
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .mu-s8-dot:nth-child(n + 91) {
     display: none;
   }
   .mu-s8-man {
-    width: 80px;
+    width: 70px;
   }
   .mu-s8-bubbleA {
-    left: 4%;
-    top: 11%;
+    left: 3%;
+    top: 9%;
   }
   .mu-s8-man--hassaan {
-    left: 12%;
-    top: 24%;
+    left: 5%;
+    top: 58%;
+  }
+  .mu-s8-man--saad {
+    left: calc(50% - 40px);
+    top: 58%;
   }
   .mu-s8-bubbleB {
     left: auto;
-    right: 6%;
-    top: 47%;
+    right: 3%;
+    top: 29%;
   }
   .mu-s8-man--me {
     left: auto;
-    right: 14%;
-    top: 56%;
+    right: 5%;
+    top: 58%;
   }
   .mu-s8-cta {
     bottom: 6%;

@@ -177,6 +177,11 @@ export function Scene1() {
             <NameTag className="mu-s1-tag">hassaan</NameTag>
           </div>
 
+          <div className="mu-s1-saad">
+            <StickMan pose="idle" className="mu-s1-man" />
+            <NameTag className="mu-s1-tag">saad</NameTag>
+          </div>
+
           <div className="mu-s1-right">
             <SpeechBubble tail="left" className="mu-s1-bubbleB">
               no.
@@ -234,6 +239,7 @@ export function buildScene1(ctx: SceneCtx): void {
     const entrances: Array<{ sel: string; y: number }> = [
       { sel: ".mu-s1-campus", y: 30 },
       { sel: ".mu-s1-left", y: 36 },
+      { sel: ".mu-s1-saad", y: 36 },
       { sel: ".mu-s1-right", y: 36 },
       { sel: ".mu-s1-bubbleA", y: 24 },
       { sel: ".mu-s1-caption", y: 20 },
@@ -282,7 +288,7 @@ export function buildScene1(ctx: SceneCtx): void {
     )
     .from(q(".mu-s1-campus-label"), { opacity: 0, duration: 0.14 }, 0.56)
     .fromTo(
-      q(".mu-s1-left .mu-draw, .mu-s1-idle .mu-draw"),
+      q(".mu-s1-left .mu-draw, .mu-s1-saad .mu-draw, .mu-s1-idle .mu-draw"),
       ctx.drawFrom(),
       { strokeDashoffset: 0, duration: 0.42, stagger: 0.02, ease: "none" },
       0.3
@@ -291,7 +297,7 @@ export function buildScene1(ctx: SceneCtx): void {
 
   /* 0.62 – 0.78 : the heads get colored in */
   tl.fromTo(
-    q(".mu-s1-left .mu-s1-man path:first-of-type, .mu-s1-right .mu-s1-man path:first-of-type"),
+    q(".mu-s1-left .mu-s1-man path:first-of-type, .mu-s1-saad .mu-s1-man path:first-of-type, .mu-s1-right .mu-s1-man path:first-of-type"),
     { fillOpacity: 0 },
     { fillOpacity: 1, duration: 0.14, stagger: 0.05 },
     0.62
@@ -375,6 +381,7 @@ export function buildScene1(ctx: SceneCtx): void {
     { sel: ".mu-s1-campus-c", x: 40, y: -620, r: 26 },
     { sel: ".mu-s1-campus-r", x: 700, y: -400, r: 72 },
     { sel: ".mu-s1-left", x: -520, y: -340, r: -38 },
+    { sel: ".mu-s1-saad", x: -80, y: -420, r: 12 },
     { sel: ".mu-s1-right", x: 560, y: -300, r: 42 },
     { sel: ".mu-s1-bubbleA", x: -640, y: -460, r: -24 },
     { sel: ".mu-s1-bubbleB", x: 620, y: -420, r: 30 },

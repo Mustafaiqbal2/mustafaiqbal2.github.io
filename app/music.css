@@ -144,8 +144,8 @@ html.mu-overlay-open {
   display: grid;
   grid-template-rows: 0fr;
   opacity: 0;
-  margin-top: 0;
-  transition: grid-template-rows 0.16s ease, opacity 0.12s ease, margin-top 0.16s ease;
+  transform: translateY(-8px);
+  transition: grid-template-rows 0.16s ease, opacity 0.12s ease, transform 0.16s ease;
 }
 .mu-tab__inner {
   min-height: 0;
@@ -184,9 +184,9 @@ html.mu-overlay-open {
   .mu-tab:hover .mu-tab__more {
     grid-template-rows: 1fr;
     opacity: 1;
-    margin-top: 10px;
+    transform: translateY(0);
     transition: grid-template-rows 0.34s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease 0.06s,
-      margin-top 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+      transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
   }
   /* motifs wake only while hovered */
   .mu-tab:hover .mu-motif-stick {
@@ -317,7 +317,7 @@ html.mu-overlay-open {
   height: 900px;
   transform: translate(-50%, -50%) scale(min(calc(100vw / 1440px), calc(100vh / 900px)));
 }
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .mu-stage {
     position: absolute;
     inset: 0;
@@ -361,6 +361,16 @@ html.mu-overlay-open {
   max-width: 560px;
   line-height: 1.8;
   color: #c9ccd8;
+  /* captions own their ground: scene art can never strike through text */
+  background: rgba(7, 8, 13, 0.78);
+  padding: 12px 16px;
+  border-radius: 10px;
+}
+/* scene 1's caption sits in empty space and keeps its blend trick */
+.mu-s1-caption.mu-caption {
+  background: none;
+  padding: 0;
+  border-radius: 0;
 }
 .mu-h {
   /* design-space size: the stage scales it; vw here would drift per screen */
@@ -372,17 +382,29 @@ html.mu-overlay-open {
 }
 
 /* short viewports: only the (unstaged) hero needs height-aware type */
-@media (min-width: 768px) and (max-height: 820px) {
+@media (min-width: 1024px) and (max-height: 820px) {
   .mu-hero__title {
     font-size: clamp(40px, 13vh, 100px);
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .mu-tabs {
-    flex-direction: column;
-    position: static;
+    position: sticky;
+    top: 8px;
+    height: auto;
+    max-width: none;
+    margin: 0 0 6vh;
+    padding: 0 max(16px, env(safe-area-inset-left)) 8px;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+    gap: 8px;
+    -webkit-overflow-scrolling: touch;
   }
+  .mu-tabs::-webkit-scrollbar { display: none; }
+  .mu-tab { flex: 1 1 0; min-width: 0; min-height: 46px; padding: 14px 8px; text-align: center; }
+  .mu-tab__label { font-size: 11px; white-space: nowrap; }
   .mu-tab__more {
     display: none;
   }
@@ -391,7 +413,7 @@ html.mu-overlay-open {
   }
 }
 
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .mu-h {
     font-size: clamp(30px, 8.6vw, 44px);
   }

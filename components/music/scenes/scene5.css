@@ -209,7 +209,7 @@
 
 /* narrower desktops: shrink the whole cluster as one drawing so the
    pipeline never wraps (transform only; child tweens scale with it) */
-@media (min-width: 768px) and (max-width: 1279px) {
+@media (min-width: 1024px) and (max-width: 1279px) {
   .mu-s5-pipe {
     transform: scale(0.78);
     transform-origin: 50% 50%;
@@ -219,7 +219,7 @@
 /* ============================================================
    mobile: a quiet vertical stack, no pin, everything static
    ============================================================ */
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .mu-s5-inner {
     padding-top: 14vh;
     padding-bottom: 12vh;

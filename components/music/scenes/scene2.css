@@ -178,7 +178,7 @@
 }
 
 /* ---------- mobile: simple stacked read ---------- */
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .mu-s2 {
     display: flex;
     flex-direction: column;
@@ -228,7 +228,7 @@
 
 /* mobile: the cards note joins the flow between the cards and the cap
    (appended last so it wins the cascade over the absolute rule above) */
-@media (max-width: 767px) {
+@media (max-width: 1023px) {
   .mu-s2-cardsnote {
     position: static;
     max-width: 100%;
