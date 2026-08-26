@@ -1,8 +1,11 @@
 import type { Metadata } from "next";
-import { MusicPage } from "@/components/music/MusicPage";
-import { siteUrl } from "@/data/portfolio";
+// CSS first: bundle order decides equal-specificity ties, and the scene
+// styles (imported through MusicPage) must come AFTER the base sheets to
+// override kit defaults like .mu-bubble geometry
 import "@/app/landing.css";
 import "@/app/music.css";
+import { MusicPage } from "@/components/music/MusicPage";
+import { siteUrl } from "@/data/portfolio";
 
 export const metadata: Metadata = {
   title: "Music",

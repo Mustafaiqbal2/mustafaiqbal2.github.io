@@ -225,3 +225,13 @@
   color: var(--lv-grey-light);
   text-transform: none;
 }
+
+/* mobile: the cards note joins the flow between the cards and the cap
+   (appended last so it wins the cascade over the absolute rule above) */
+@media (max-width: 767px) {
+  .mu-s2-cardsnote {
+    position: static;
+    max-width: 100%;
+    order: 5;
+  }
+}
