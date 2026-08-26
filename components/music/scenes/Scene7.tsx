@@ -312,6 +312,6 @@ export function buildScene7(ctx: SceneCtx): void {
     q(".mu-s7-cap"),
     { opacity: 0, y: 20 },
     { opacity: 1, y: 0, duration: 0.35, ease: "power2.out" },
-    3.55
+    tl.duration() * 0.68
   );
 }

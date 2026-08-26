@@ -317,5 +317,5 @@ export function buildScene4(ctx: SceneCtx): void {
     .to(throwMan, { opacity: 1, duration: 0.12 }, 3.24)
 
     /* 3.4 – 4.0 : the verdict */
-    .from(ctx.q(".mu-s4-cap"), { opacity: 0, y: 26, duration: 0.4 }, 3.5);
+    .from(ctx.q(".mu-s4-cap"), { opacity: 0, y: 26, duration: 0.4 }, tl.duration() * 0.68);
 }

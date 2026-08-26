@@ -206,9 +206,10 @@ export function buildScene6(ctx: SceneCtx): void {
   );
 
   /* 2.9 – 3.5 : heading dims, caption lands */
-  tl.to(q(".mu-s6-head"), { opacity: 0.25, duration: 0.3 }, 2.95).from(
+  const dTotal = tl.duration();
+  tl.to(q(".mu-s6-head"), { opacity: 0.25, duration: 0.3 }, dTotal * 0.66).from(
     q(".mu-s6-caption"),
     { opacity: 0, y: 26, duration: 0.4 },
-    3.05
+    dTotal * 0.7
   );
 }

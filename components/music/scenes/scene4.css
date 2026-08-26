@@ -29,6 +29,8 @@
 }
 .mu-s4-word {
   position: absolute;
+  /* labels sit up-right of their dots instead of across them */
+  transform: translate(9px, -15px);
   font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: lowercase;

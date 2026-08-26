@@ -153,5 +153,5 @@ export function buildScene3(ctx: SceneCtx): void {
     .from(q(".mu-s3-dist--long"), { opacity: 0, duration: 0.2 }, 2.95)
     .to(q(".mu-s3-w-birthday"), { x: -10, duration: 0.08, repeat: 3, yoyo: true, ease: "power1.inOut" }, 2.95)
     .to(q(".mu-s3-h"), { opacity: 0.6, duration: 0.35 }, 3.3)
-    .from(q(".mu-s3-cap"), { y: 26, opacity: 0, duration: 0.45, ease: "power2.out" }, 3.45);
+    .from(q(".mu-s3-cap"), { y: 26, opacity: 0, duration: 0.45, ease: "power2.out" }, tl.duration() * 0.68);
 }

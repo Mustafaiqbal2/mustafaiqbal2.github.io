@@ -7,7 +7,7 @@
 
 .mu-s6-head {
   position: absolute;
-  top: clamp(28px, 6vh, 64px);
+  top: clamp(78px, 11vh, 104px);
   left: 0;
   right: 0;
   z-index: 2;
