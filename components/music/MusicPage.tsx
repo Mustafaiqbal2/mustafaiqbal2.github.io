@@ -68,6 +68,16 @@ export function MusicPage() {
   const pick = (id: TabId) => {
     setActive(id);
     history.replaceState(null, "", id === "story" ? "#story" : `#${id}`);
+    /* the story is scroll-driven: choosing it answers with motion — the
+       page glides to the first scene so the mechanic explains itself */
+    if (id === "story") {
+      const el = document.querySelector<HTMLElement>("[data-scene='1']");
+      if (el) {
+        const y = (el.closest(".pin-spacer") || el).getBoundingClientRect().top + window.scrollY + 4;
+        if (lenisRef.current) lenisRef.current.scrollTo(y, { duration: 1.2 });
+        else window.scrollTo({ top: y, behavior: "smooth" });
+      }
+    }
   };
 
   /* the stub overlays own the viewport while open */
@@ -96,6 +106,9 @@ export function MusicPage() {
           Got any good songs<b>?</b>
         </h1>
         <p className="mu-hero__sub lv-mono">a story about one bad answer</p>
+        <p className="mu-scrollcue lv-mono" aria-hidden="true">
+          scroll <span className="mu-scrollcue__arrow">↓</span>
+        </p>
       </header>
 
       {/* ---------- the three doors ---------- */}

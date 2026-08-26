@@ -110,8 +110,11 @@ export function Scene2() {
       <div className="mu-s2-gag">
         <div className="mu-s2-searchcol">
           <div className="mu-s2-search">
+            {/* the box outline stretches with the container as it grows */}
             <svg
+              className="mu-s2-box"
               viewBox="0 0 260 44"
+              preserveAspectRatio="none"
               fill="none"
               stroke="currentColor"
               strokeWidth={2.2}
@@ -119,6 +122,16 @@ export function Scene2() {
               aria-hidden="true"
             >
               <path className="mu-draw" d={SEARCH_RECT} />
+            </svg>
+            <svg
+              className="mu-s2-lens"
+              viewBox="220 6 30 30"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={2.2}
+              strokeLinecap="round"
+              aria-hidden="true"
+            >
               <path className="mu-draw" d={SEARCH_LENS} />
             </svg>
             <span className="mu-s2-query lv-mono" aria-label="songs for crying in the car outside the airport">
@@ -165,8 +178,6 @@ export function buildScene2(ctx: SceneCtx): void {
   const bigA = q(".mu-s2-big--a")[0];
   const bigB = q(".mu-s2-big--b")[0];
   const idleMan = q(".mu-s2-man-idle")[0];
-  const query = q(".mu-s2-query")[0];
-  const search = q(".mu-s2-search")[0];
 
   /* center-to-center offset so the big cards genuinely split out of the sad tag */
   const delta = (from: HTMLElement | undefined, to: HTMLElement | undefined): { x: number; y: number } => {
@@ -180,10 +191,6 @@ export function buildScene2(ctx: SceneCtx): void {
   };
   const dA = delta(sadTag, bigA);
   const dB = delta(sadTag, bigB);
-
-  /* how far the pre-authored query overhangs the visible slot of the box */
-  const overflow =
-    query && search ? Math.max(0, query.scrollWidth - (search.clientWidth - 66)) : 0;
 
   /* markup's final state hides the idle pose (the "no" pose won); on desktop
      the idle pose carries the first half, so wake it before the timeline */
@@ -268,10 +275,15 @@ export function buildScene2(ctx: SceneCtx): void {
       { strokeDashoffset: 0, duration: 0.35, stagger: 0.03, ease: "none" },
       1.55
     )
-    .fromTo(q(".mu-s2-chunk"), { opacity: 0 }, { opacity: 1, duration: 0.02, stagger: 0.055, ease: "none" }, 1.8);
-  if (query && overflow > 0) {
-    tl.fromTo(query, { x: 0 }, { x: -overflow, duration: 0.4, ease: "none" }, 1.85);
-  }
+    .fromTo(q(".mu-s2-chunk"), { opacity: 0 }, { opacity: 1, duration: 0.02, stagger: 0.055, ease: "none" }, 1.8)
+    /* the box grows a line at a time as the situation refuses to fit */
+    .fromTo(
+      q(".mu-s2-search"),
+      { height: 44 },
+      { height: 72, duration: 0.1, ease: "power1.inOut" },
+      1.95
+    )
+    .to(q(".mu-s2-search"), { height: 100, duration: 0.1, ease: "power1.inOut" }, 2.12);
   tl.to(q(".mu-s2-search"), { scale: 1.06, duration: 0.05, ease: "none" }, 2.28)
     .to(q(".mu-s2-search"), { scale: 1, duration: 0.07, ease: "none" }, 2.33)
     .from(q(".mu-s2-result"), { opacity: 0, y: 8, duration: 0.15 }, 2.36)

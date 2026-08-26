@@ -75,14 +75,31 @@
   inset: 0;
 }
 
-/* crash-out scribble above the right stickman's head */
-.mu-s1-scribble {
+/* anime anger overlay: flush + brows + throbbing vein, over the head */
+.mu-s1-anger {
   position: absolute;
-  top: -54px;
-  left: 50%;
-  width: 96px;
-  height: auto;
-  transform: translateX(-38%);
+  inset: 0;
+  pointer-events: none;
+}
+.mu-s1-flush {
+  fill: #e5484d;
+  opacity: 0.55;
+}
+.mu-s1-brow {
+  stroke: #b3222b;
+  stroke-width: 4;
+}
+.mu-s1-vein path {
+  stroke: #d92d36;
+  stroke-width: 3.4;
+}
+
+/* the cast pops off the faint campus: filled, colored heads */
+.mu-s1-left .mu-s1-man path:first-of-type {
+  fill: var(--lv-cyan);
+}
+.mu-s1-right .mu-s1-man path:first-of-type {
+  fill: var(--lv-accent-bright);
 }
 
 /* the university, standing behind the whole conversation */
@@ -109,7 +126,16 @@
   opacity: 0.85;
 }
 
-/* speech bubbles — anchored to their speakers, floating above the heads */
+/* speech bubbles — comic style: ink fill, bone outline and text */
+.mu-s1 .mu-bubble svg path {
+  fill: var(--lv-ink);
+  stroke: var(--lv-bone);
+}
+.mu-s1 .mu-bubble__txt {
+  color: var(--lv-bone);
+}
+
+/* anchored to their speakers, floating above the heads */
 .mu-s1-bubbleA {
   position: absolute;
   top: -146px;
@@ -176,7 +202,7 @@
 
 /* ---------- mobile: static skit that simply reads well ---------- */
 @media (max-width: 767px) {
-  .mu-s1-scribble,
+  .mu-s1-anger,
   .mu-s1-rage,
   .mu-s1-cracks,
   .mu-s1-shards,

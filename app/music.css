@@ -73,6 +73,31 @@ html.mu-overlay-open {
 .mu-hero__sub {
   color: var(--lv-grey-light);
 }
+.mu-scrollcue {
+  margin-top: 26px;
+  color: var(--lv-grey-light);
+  display: inline-flex;
+  justify-content: center;
+  gap: 8px;
+}
+.mu-scrollcue__arrow {
+  display: inline-block;
+  animation: mu-bob 1.4s ease-in-out infinite;
+}
+@keyframes mu-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(6px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mu-scrollcue__arrow {
+    animation: none;
+  }
+}
 
 /* ---------- the three doors ---------- */
 .mu-tabs {
@@ -109,14 +134,30 @@ html.mu-overlay-open {
   display: block;
   font-size: 13px;
 }
+/* the hover card OVERLAYS content: constant tab height, zero layout
+   shift, quick out so moving between tabs never feels sticky */
 .mu-tab__more {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  right: 0;
   display: flex;
   align-items: center;
   gap: 14px;
-  max-height: 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(242, 242, 238, 0.35);
+  border-radius: 12px;
+  background: rgba(7, 8, 13, 0.82);
   opacity: 0;
-  overflow: hidden;
-  transition: max-height 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.3s 0.08s;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+@supports (backdrop-filter: blur(8px)) {
+  .mu-tab__more {
+    background: rgba(7, 8, 13, 0.68);
+    backdrop-filter: blur(8px);
+  }
 }
 .mu-tab__desc {
   font-size: 13px;
@@ -137,15 +178,18 @@ html.mu-overlay-open {
   display: block;
 }
 @media (hover: hover) {
+  .mu-tab {
+    transition: flex-grow 0.32s cubic-bezier(0.3, 1.1, 0.4, 1), background 0.25s, border-color 0.25s;
+  }
   .mu-tab:hover {
-    flex-grow: 2.2;
+    flex-grow: 1.7;
     background: rgba(242, 242, 238, 0.08);
     border-color: rgba(242, 242, 238, 0.5);
   }
   .mu-tab:hover .mu-tab__more {
-    max-height: 70px;
     opacity: 1;
-    margin-top: 10px;
+    transform: translateY(0);
+    transition: opacity 0.2s ease 0.05s, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1) 0.05s;
   }
   /* motifs wake only while hovered */
   .mu-tab:hover .mu-motif-stick {

@@ -11,12 +11,27 @@ import "./scene1.css";
 import gsap from "gsap";
 import {
   StickMan,
-  RageScribble,
   SpeechBubble,
   NameTag,
   MuCaption,
   type SceneCtx
 } from "../sceneKit";
+
+/* anime anger, the proper grammar: the face flushes red, the eyebrows
+   slam into a V, and the crossed vein pops and throbs at the temple */
+const AngerFace = () => (
+  <svg className="mu-s1-anger" viewBox="0 0 120 190" fill="none" strokeLinecap="round" aria-hidden="true">
+    <circle className="mu-s1-flush" cx="60" cy="34" r="20" />
+    <path className="mu-s1-brow" d="M44 26 L57 34" />
+    <path className="mu-s1-brow" d="M76 26 L63 34" />
+    <g className="mu-s1-vein">
+      <path d="M84 6 Q90 0 96 6" />
+      <path d="M84 20 Q90 26 96 20" />
+      <path d="M80 8 Q74 13 80 18" />
+      <path d="M100 8 Q106 13 100 18" />
+    </g>
+  </svg>
+);
 
 type Shard = {
   left: string;
@@ -163,13 +178,13 @@ export function Scene1() {
           </div>
 
           <div className="mu-s1-right">
-            <RageScribble className="mu-s1-scribble" />
             <SpeechBubble tail="left" className="mu-s1-bubbleB">
               no.
             </SpeechBubble>
             <div className="mu-s1-swap">
               <StickMan pose="idle" className="mu-s1-man mu-s1-idle" />
               <StickMan pose="rage" className="mu-s1-man mu-s1-rage" />
+              <AngerFace />
             </div>
             <NameTag className="mu-s1-tag">me</NameTag>
           </div>
@@ -275,13 +290,24 @@ export function buildScene1(ctx: SceneCtx): void {
     )
     .from(q(".mu-s1-tag"), { opacity: 0, duration: 0.12, stagger: 0.05 }, 0.62);
 
-  /* 0.8 – 1.3 : bubble a — the question */
+  /* 0.62 – 0.78 : the heads get colored in */
   tl.fromTo(
-    q(".mu-s1-bubbleA .mu-draw"),
-    ctx.drawFrom(),
-    { strokeDashoffset: 0, duration: 0.32, ease: "none" },
-    0.8
-  ).from(q(".mu-s1-bubbleA .mu-bubble__txt"), { opacity: 0, duration: 0.22 }, 1.06);
+    q(".mu-s1-left .mu-s1-man path:first-of-type, .mu-s1-right .mu-s1-man path:first-of-type"),
+    { fillOpacity: 0 },
+    { fillOpacity: 1, duration: 0.14, stagger: 0.05 },
+    0.62
+  );
+
+  /* 0.8 – 1.3 : bubble a — the question (ink-filled, so the wrapper fades
+     in while the bone outline draws around it) */
+  tl.from(q(".mu-s1-bubbleA"), { opacity: 0, duration: 0.14 }, 0.8)
+    .fromTo(
+      q(".mu-s1-bubbleA .mu-draw"),
+      ctx.drawFrom(),
+      { strokeDashoffset: 0, duration: 0.32, ease: "none" },
+      0.82
+    )
+    .from(q(".mu-s1-bubbleA .mu-bubble__txt"), { opacity: 0, duration: 0.22 }, 1.06);
 
   /* 1.7 – 2.0 : bubble b pops — the bad answer */
   tl.from(
@@ -295,15 +321,24 @@ export function buildScene1(ctx: SceneCtx): void {
     .to(q(".mu-s1-swap"), { x: 3, duration: 0.05, repeat: 11, yoyo: true, ease: "none" }, 2.0)
     .set(q(".mu-s1-swap"), { x: 0 }, 2.62);
 
-  /* 2.6 – 3.1 : crash-out — crossfade to rage, scribble, stage shake */
+  /* 2.6 – 3.1 : crash-out — rage pose, red flush, V brows, popped vein */
   tl.to(q(".mu-s1-idle"), { opacity: 0, duration: 0.12 }, 2.6)
     .from(q(".mu-s1-rage"), { opacity: 0, duration: 0.12 }, 2.6)
+    .from(q(".mu-s1-anger"), { opacity: 0, duration: 0.08 }, 2.62)
     .fromTo(
-      q(".mu-s1-scribble .mu-draw"),
-      ctx.drawFrom(),
-      { strokeDashoffset: 0, duration: 0.24, stagger: 0.03, ease: "none" },
-      2.66
+      q(".mu-s1-flush"),
+      { scale: 0.35, transformOrigin: "50% 50%" },
+      { scale: 1, duration: 0.16, ease: "back.out(2.4)" },
+      2.62
     )
+    .from(q(".mu-s1-brow"), { opacity: 0, y: -5, duration: 0.1, stagger: 0.04 }, 2.7)
+    .fromTo(
+      q(".mu-s1-vein"),
+      { scale: 0.3, transformOrigin: "50% 50%", opacity: 0 },
+      { scale: 1.15, opacity: 1, duration: 0.12, ease: "back.out(3)" },
+      2.76
+    )
+    .to(q(".mu-s1-vein"), { scale: 0.95, duration: 0.07, repeat: 4, yoyo: true, ease: "none" }, 2.88)
     .to(q(".mu-s1-stage"), { x: 4, y: -3, duration: 0.04, repeat: 11, yoyo: true, ease: "none" }, 2.62)
     .set(q(".mu-s1-stage"), { x: 0, y: 0 }, 3.12);
 

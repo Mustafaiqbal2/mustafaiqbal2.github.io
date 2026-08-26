@@ -110,29 +110,38 @@
 .mu-s2-searchcol {
   padding-bottom: 34px;
 }
+/* a real search box: authored at its FINAL grown height (three wrapped
+   lines); the builder starts it at one line and grows it as the typing
+   fills — the outline svg stretches along */
 .mu-s2-search {
   position: relative;
   width: 260px;
-  height: 44px;
+  height: 100px;
   overflow: hidden;
   color: var(--lv-bone);
   transform-origin: 50% 50%;
 }
-.mu-s2-search svg {
+.mu-s2-box {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
 }
+.mu-s2-lens {
+  position: absolute;
+  top: 9px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+}
 .mu-s2-query {
   position: absolute;
   left: 16px;
-  top: 0;
-  height: 100%;
-  width: max-content;
-  display: flex;
-  align-items: center;
-  white-space: pre;
+  right: 52px;
+  top: 10px;
+  display: block;
+  white-space: normal;
+  line-height: 1.85;
   font-size: 12px;
   letter-spacing: 0.02em;
 }
