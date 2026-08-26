@@ -32,6 +32,7 @@ type Arc = {
 };
 type Lane = { rx: number; ry: number; lw: number; a: number; speed: number; ph: number; span: number };
 type Flare = { rx: number; ry: number; th: number; sp: number; born: number; life: number; s: number };
+type Twinkler = { x: number; y: number; s: number; ph: number; fq: number };
 type Paint = string | CanvasGradient;
 
 type Engine = {
@@ -62,7 +63,12 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
   const basectx = baseLayer.getContext("2d");
   const flareSprite = document.createElement("canvas");
   const fctx = flareSprite.getContext("2d");
-  if (!ctx || !sctx || !actx || !bctx || !basectx || !fctx) return null;
+  // pre-baked fine-grain disk texture: hundreds of hairline arcs in circular
+  // space, rotated rigidly per frame inside the band's flatten transform —
+  // the movie's dense streak-river at the cost of two drawImage calls
+  const streakRing = document.createElement("canvas");
+  const srctx = streakRing.getContext("2d");
+  if (!ctx || !sctx || !actx || !bctx || !basectx || !fctx || !srctx) return null;
 
   let W = 0;
   let H = 0;
@@ -88,12 +94,16 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
   let botArcs: Arc[] = [];
   let coreArcs: Arc[] = [];
   let dustLanes: Lane[] = [];
+  let twinklers: Twinkler[] = [];
+  let streakExtent = 0;
+  let gradJet: Paint = "#fff";
+  let gradVeil: Paint = "#000";
   const flares: Flare[] = [];
   let lastT = -1;
   let rotT = 0;
 
   function buildStatic(): void {
-    if (!sctx || !basectx || !fctx) return;
+    if (!sctx || !basectx || !fctx || !srctx) return;
 
     // linear doppler gradients for filament strokes (left = approaching = hotter)
     const gDisk = sctx.createLinearGradient(cx - RBAND, 0, cx + RBAND, 0);
@@ -157,8 +167,10 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     gBot.addColorStop(1.0, "rgba(255,196,132,0)");
     gradBotHug = gBot;
 
-    // doppler beaming glows (band-scaled space)
-    const gBeam = sctx.createRadialGradient(-R * 1.3, 0, 0, -R * 1.3, 0, R * 0.95);
+    // doppler beaming glows (band-scaled space). Extents stay inside the
+    // square canvas: center*|x| + radius must be < W/2 or the glow clips
+    // into a hard vertical edge at the canvas boundary.
+    const gBeam = sctx.createRadialGradient(-R * 1.1, 0, 0, -R * 1.1, 0, R * 0.75);
     gBeam.addColorStop(0.0, "rgba(255,250,240,0.60)");
     gBeam.addColorStop(0.45, "rgba(255,222,168,0.24)");
     gBeam.addColorStop(1.0, "rgba(255,210,150,0)");
@@ -196,6 +208,109 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     basectx.arc(0, 0, RBAND * 1.15, 0, TWO);
     basectx.fill();
     basectx.restore();
+
+    // starfield baked into the ambient layer: pinpricks everywhere except a
+    // clearance ring around the shadow, a few hero stars with cross glints
+    const srnd = mulberry32(4242);
+    basectx.save();
+    for (let i = 0; i < 170; i++) {
+      const x = srnd() * W;
+      const y = srnd() * H;
+      const dx = x - cx;
+      const dy = y - cy;
+      if (Math.sqrt(dx * dx + dy * dy) < R * 1.35 && Math.abs(dy) < R * 0.9) continue;
+      const r = (0.35 + srnd() * 0.9) * (W / 900);
+      const warm = srnd();
+      basectx.fillStyle = warm < 0.55 ? "#ffffff" : warm < 0.8 ? "#ffe9d2" : "#cfd8ff";
+      basectx.globalAlpha = 0.14 + srnd() * 0.5;
+      basectx.beginPath();
+      basectx.arc(x, y, r, 0, TWO);
+      basectx.fill();
+    }
+    // hero stars: brighter core + four-point glint
+    for (let i = 0; i < 5; i++) {
+      const th = srnd() * TWO;
+      const rr = R * (1.9 + srnd() * 1.4);
+      const x = cx + rr * Math.cos(th);
+      const y = cy + rr * Math.sin(th) * 0.9;
+      if (x < 6 || x > W - 6 || y < 6 || y > H - 6) continue;
+      const s = (2.2 + srnd() * 2.4) * (W / 900);
+      basectx.globalAlpha = 0.75;
+      basectx.fillStyle = "#ffffff";
+      basectx.beginPath();
+      basectx.arc(x, y, s * 0.42, 0, TWO);
+      basectx.fill();
+      basectx.globalAlpha = 0.4;
+      basectx.strokeStyle = "#ffffff";
+      basectx.lineWidth = Math.max(0.6, s * 0.16);
+      basectx.beginPath();
+      basectx.moveTo(x - s * 3.2, y);
+      basectx.lineTo(x + s * 3.2, y);
+      basectx.moveTo(x, y - s * 3.2);
+      basectx.lineTo(x, y + s * 3.2);
+      basectx.stroke();
+    }
+    basectx.restore();
+
+    // twinklers: a handful of stars whose glow breathes per frame
+    twinklers = [];
+    const trnd = mulberry32(808);
+    for (let i = 0; i < 7; i++) {
+      const th = trnd() * TWO;
+      const rr = R * (1.8 + trnd() * 1.5);
+      const x = cx + rr * Math.cos(th);
+      const y = cy + rr * Math.sin(th) * 0.85;
+      if (x < 8 || x > W - 8 || y < 8 || y > H - 8) continue;
+      twinklers.push({ x, y, s: R * (0.035 + trnd() * 0.05), ph: trnd() * TWO, fq: 0.5 + trnd() * 1.4 });
+    }
+
+    // streak-ring texture: the disk's fine grain, baked once in circular
+    // space at HALF resolution — the upscale's bilinear soften reads as
+    // haze and the per-frame blit costs a quarter of full res
+    const B = Math.ceil(RBAND + R * 0.06);
+    streakExtent = B;
+    streakRing.width = B;
+    streakRing.height = B;
+    srctx.setTransform(0.5, 0, 0, 0.5, 0, 0);
+    srctx.clearRect(0, 0, B * 2, B * 2);
+    srctx.lineCap = "round";
+    srctx.globalCompositeOperation = "lighter";
+    const grnd = mulberry32(20141107);
+    for (let i = 0; i < 560; i++) {
+      const t = Math.pow(grnd(), 1.25);
+      const r = R * 1.015 + (RBAND - R * 1.015) * t;
+      const span = 0.12 + grnd() * 1.3;
+      const a0 = grnd() * TWO;
+      srctx.strokeStyle = t < 0.14 ? "#FFFFFF" : t < 0.38 ? "#FFEFD2" : t < 0.68 ? "#FFD9A0" : "#D89B5A";
+      srctx.globalAlpha = (0.09 + 0.4 * Math.pow(1 - t, 1.35)) * (0.5 + grnd() * 0.8);
+      srctx.lineWidth = R * (0.0035 + grnd() * 0.008);
+      srctx.beginPath();
+      srctx.arc(B, B, r, a0, a0 + span);
+      srctx.stroke();
+    }
+    // razor-bright inner rim of the disk texture
+    srctx.strokeStyle = "#FFFFFF";
+    srctx.globalAlpha = 0.5;
+    srctx.lineWidth = R * 0.02;
+    srctx.beginPath();
+    srctx.arc(B, B, R * 1.04, 0, TWO);
+    srctx.stroke();
+    srctx.setTransform(1, 0, 0, 1, 0, 0);
+
+    // polar jet: blue-shifted plasma column, drawn behind everything
+    const gJet = sctx.createLinearGradient(0, 0, 0, R * 2.4);
+    gJet.addColorStop(0.0, "rgba(205,222,255,0.55)");
+    gJet.addColorStop(0.35, "rgba(180,205,255,0.28)");
+    gJet.addColorStop(0.75, "rgba(160,190,255,0.10)");
+    gJet.addColorStop(1.0, "rgba(150,180,255,0)");
+    gradJet = gJet;
+
+    // screen-space doppler veil: the receding side sinks into dusk
+    const gVeil = sctx.createLinearGradient(cx + R * 0.1, 0, W, 0);
+    gVeil.addColorStop(0.0, "rgba(7,8,13,0)");
+    gVeil.addColorStop(0.45, "rgba(7,8,13,0.22)");
+    gVeil.addColorStop(1.0, "rgba(7,8,13,0.48)");
+    gradVeil = gVeil;
 
     // flare sprite
     flareSprite.width = 128;
@@ -352,8 +467,10 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     baseLayer.height = H;
     cx = W / 2;
     cy = H / 2;
-    R = W * 0.28;
-    RBAND = R * 1.7;
+    // RBAND must clear the square canvas edge (plus bloom) or the band's
+    // left tip cuts off in a hard vertical line
+    R = W * 0.263;
+    RBAND = R * 1.78;
     buildStatic();
     buildArcs();
   }
@@ -506,6 +623,66 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     }
   }
 
+  // rotate the baked grain texture inside the band's flatten transform;
+  // clip picks the far (behind the hole) or near (in front) half
+  function drawStreakHalf(far: boolean, alpha: number): void {
+    if (!sctx) return;
+    const B = streakExtent;
+    sctx.save();
+    sctx.translate(cx, cy);
+    sctx.scale(1, FY);
+    sctx.beginPath();
+    if (far) sctx.rect(-B, -B, B * 2, B);
+    else sctx.rect(-B, 0, B * 2, B);
+    sctx.clip();
+    sctx.rotate(rotT * 0.24);
+    sctx.globalAlpha = Math.min(1, alpha);
+    sctx.drawImage(streakRing, -B, -B, B * 2, B * 2);
+    sctx.restore();
+  }
+
+  function drawJet(I: number): void {
+    if (!sctx) return;
+    const flick = 0.85 + 0.15 * Math.sin(rotT * 1.9);
+    const a = (0.10 + 0.16 * I) * flick;
+    const len = R * (2.3 + 0.3 * I);
+    for (let d = 0; d < 2; d++) {
+      sctx.save();
+      sctx.translate(cx, cy);
+      // gradient runs 0 -> +y; flip user space so the same tapered path
+      // serves both poles (d=0 up, d=1 down) with the fade running outward
+      sctx.scale(1, d === 0 ? -1 : 1);
+      sctx.globalAlpha = a;
+      sctx.fillStyle = gradJet;
+      sctx.beginPath();
+      sctx.moveTo(-R * 0.08, 0);
+      sctx.lineTo(-R * 0.24, len);
+      sctx.lineTo(R * 0.24, len);
+      sctx.lineTo(R * 0.08, 0);
+      sctx.closePath();
+      sctx.fill();
+      // hot spine
+      sctx.globalAlpha = a * 0.7;
+      sctx.strokeStyle = "rgba(225,236,255,0.8)";
+      sctx.lineWidth = R * 0.022;
+      sctx.beginPath();
+      sctx.moveTo(0, R * 0.75);
+      sctx.lineTo(0, len * 0.86);
+      sctx.stroke();
+      sctx.restore();
+    }
+  }
+
+  function drawTwinklers(): void {
+    if (!sctx) return;
+    for (let i = 0; i < twinklers.length; i++) {
+      const t = twinklers[i];
+      const a = 0.1 + 0.3 * Math.abs(Math.sin(rotT * t.fq + t.ph));
+      sctx.globalAlpha = a;
+      sctx.drawImage(flareSprite, t.x - t.s, t.y - t.s, t.s * 2, t.s * 2);
+    }
+  }
+
   function ringCircle(r: number, lw: number, a: number): void {
     if (!sctx) return;
     sctx.globalAlpha = Math.min(1, a);
@@ -535,9 +712,13 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     sctx.lineCap = "round";
     sctx.globalCompositeOperation = "lighter";
 
+    // ---- polar jet (deepest layer: everything else stacks over it) ----
+    drawJet(I);
+
     // ---- FAR side (behind the hole) ----
     fillBandHalf(true, gradBandAnnulus, 0.62 * briGain);
     fillBandHalf(true, gradBandBoost, 0.35 * briGain);
+    drawStreakHalf(true, 0.62 * briGain);
     strokeArcSet(bandArcs, gradDisk, PI - 0.05, TWO + 0.05, briGain * 0.8, turb);
     strokeArcSet(coreArcs, gradDisk, PI - 0.05, TWO + 0.05, briGain * 0.7, turb);
 
@@ -569,7 +750,7 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     sctx.globalAlpha = Math.min(1, (0.55 + 0.45 * I) * (0.9 + 0.1 * Math.sin(rotT * 0.9)));
     sctx.fillStyle = gradBeam;
     sctx.beginPath();
-    sctx.arc(-R * 1.3, 0, R * 0.95, 0, TWO);
+    sctx.arc(-R * 1.1, 0, R * 0.75, 0, TWO);
     sctx.fill();
     sctx.globalAlpha = Math.min(1, 0.5 + 0.5 * I);
     sctx.fillStyle = gradBeamHot;
@@ -614,6 +795,7 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     // ---- NEAR side (in front of the hole) ----
     fillBandHalf(false, gradBandAnnulus, 1.0 * briGain);
     fillBandHalf(false, gradBandBoost, 0.85 * briGain);
+    drawStreakHalf(false, 1.05 * briGain);
     drawDustLanes(1);
     strokeArcSet(bandArcs, gradDisk, -0.05, PI + 0.05, briGain, turb);
     strokeArcSet(coreArcs, gradDisk, -0.05, PI + 0.05, briGain, turb);
@@ -630,6 +812,16 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     sctx.restore();
 
     updateFlares(dt, I);
+    drawTwinklers();
+
+    // ---- doppler veil: the receding half sinks into dusk (screen space,
+    // after all additive light so the ring and band dim together like the
+    // movie's right limb) ----
+    sctx.globalCompositeOperation = "source-over";
+    sctx.globalAlpha = 1;
+    sctx.fillStyle = gradVeil;
+    sctx.fillRect(cx + R * 0.1, 0, W - cx - R * 0.1, H);
+    sctx.globalCompositeOperation = "lighter";
 
     // ---- bloom composite ----
     actx.clearRect(0, 0, blurA.width, blurA.height);
