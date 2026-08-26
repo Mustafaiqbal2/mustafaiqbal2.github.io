@@ -1138,9 +1138,14 @@ export function Landing() {
         <div className="lv-hero__top">
           <div className="lv-topbar lv-mono">
             <TypedBrand />
-            <a className="lv-topbar__link" href="/work/">
-              Work <ArrowUpRight />
-            </a>
+            <span className="lv-topbar__links">
+              <a className="lv-topbar__link" href="/music/">
+                Music <ArrowUpRight />
+              </a>
+              <a className="lv-topbar__link" href="/work/">
+                Work <ArrowUpRight />
+              </a>
+            </span>
           </div>
           <div className="lv-hero__status lv-mono">
             <span>Software engineer &amp; founder</span>

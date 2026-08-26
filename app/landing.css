@@ -259,6 +259,10 @@ html.lv-page .site-footer {
     opacity: 0;
   }
 }
+.lv-topbar__links {
+  display: inline-flex;
+  gap: 22px;
+}
 .lv-topbar__link {
   display: inline-flex;
   align-items: center;

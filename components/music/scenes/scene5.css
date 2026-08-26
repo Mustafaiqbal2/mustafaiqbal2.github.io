@@ -1,0 +1,257 @@
+/* ============================================================
+   Scene 5 — "teach the machine to listen"
+   The drawn pipeline diagram. Everything here is prefixed mu-s5-.
+   Final visible state is authored here; GSAP only reveals it.
+   ============================================================ */
+
+.mu-s5 {
+  color: var(--lv-bone);
+}
+
+.mu-s5-inner {
+  min-height: 100vh;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 11vh clamp(20px, 3vw, 48px) 8vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.mu-s5-h {
+  text-align: center;
+  font-size: clamp(28px, 3.6vw, 52px);
+}
+
+/* the middle band holds the pipeline; the blob floats above its right end */
+.mu-s5-mid {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mu-s5-pipe {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+/* ---- pieces, left to right ---- */
+
+.mu-s5-wave {
+  flex: 0 0 140px;
+  width: 140px;
+  height: auto;
+  color: var(--lv-bone);
+}
+
+.mu-s5-arrow {
+  flex: 0 0 40px;
+  width: 40px;
+  height: 36px;
+  color: var(--lv-bone);
+  opacity: 0.9;
+}
+
+.mu-s5-box {
+  position: relative;
+  flex: 0 0 auto;
+}
+.mu-s5-clap {
+  width: 170px;
+  height: 90px;
+}
+.mu-s5-ad {
+  width: 190px;
+  height: 100px;
+}
+.mu-s5-box > svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.mu-s5-box__txt {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  text-align: center;
+}
+.mu-s5-box__txt b {
+  font-weight: 400;
+  font-size: 14px;
+  letter-spacing: 0.06em;
+  text-transform: lowercase;
+}
+.mu-s5-box__txt small {
+  font-size: 10.5px;
+  letter-spacing: 0.05em;
+  color: var(--lv-grey-light);
+  text-transform: lowercase;
+}
+.mu-s5-under {
+  width: 118px;
+  height: 8px;
+  margin: 1px auto 0;
+  color: var(--lv-accent-bright);
+  display: block;
+}
+
+/* the ticker of numbers */
+.mu-s5-nums {
+  flex: 0 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 9.5px;
+  letter-spacing: 0.02em;
+  color: var(--lv-grey-light);
+  white-space: nowrap;
+}
+.mu-s5-nums span {
+  display: inline-block;
+}
+
+/* ---- adapter wrapper anchors the arc + blob cluster ---- */
+.mu-s5-adwrap {
+  position: relative;
+  flex: 0 0 190px;
+}
+
+.mu-s5-arc {
+  position: absolute;
+  left: 40px;
+  top: -180px;
+  width: 200px;
+  height: 190px;
+  color: var(--lv-bone);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.mu-s5-blob {
+  position: absolute;
+  left: 120px;
+  top: -235px;
+  width: 170px;
+  height: 130px;
+  color: var(--lv-bone);
+}
+.mu-s5-blob > svg:first-child {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.mu-s5-word {
+  position: absolute;
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: var(--lv-grey-light);
+  text-transform: lowercase;
+  white-space: nowrap;
+}
+.mu-s5-word::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--lv-bone);
+  opacity: 0.9;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+/* the delivered dot: final resting spot among the words */
+.mu-s5-dot {
+  position: absolute;
+  left: 38%;
+  top: 60%;
+  width: 11px;
+  height: 11px;
+  margin: -5px 0 0 -5px;
+  border-radius: 50%;
+  background: var(--lv-accent-bright);
+}
+
+/* landing ring pulse: hidden at rest, flashes once mid-timeline */
+.mu-s5-ring {
+  position: absolute;
+  left: 38%;
+  top: 60%;
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
+  color: var(--lv-accent-bright);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.mu-s5-tag {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 6px;
+  white-space: nowrap;
+  color: var(--lv-grey-light);
+}
+
+.mu-s5-cap {
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* narrower desktops: shrink the whole cluster as one drawing so the
+   pipeline never wraps (transform only; child tweens scale with it) */
+@media (min-width: 768px) and (max-width: 1279px) {
+  .mu-s5-pipe {
+    transform: scale(0.78);
+    transform-origin: 50% 50%;
+  }
+}
+
+/* ============================================================
+   mobile: a quiet vertical stack, no pin, everything static
+   ============================================================ */
+@media (max-width: 767px) {
+  .mu-s5-inner {
+    padding-top: 14vh;
+    padding-bottom: 12vh;
+    gap: 40px;
+  }
+  .mu-s5-pipe {
+    flex-direction: column;
+    gap: 22px;
+  }
+  .mu-s5-arrow {
+    transform: rotate(90deg);
+  }
+  .mu-s5-nums {
+    flex-wrap: wrap;
+    justify-content: center;
+    max-width: 240px;
+    row-gap: 6px;
+  }
+  .mu-s5-adwrap {
+    flex-basis: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+  }
+  .mu-s5-arc {
+    display: none;
+  }
+  .mu-s5-blob {
+    position: relative;
+    left: auto;
+    top: auto;
+    margin-bottom: 20px;
+  }
+}

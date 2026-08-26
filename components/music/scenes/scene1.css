@@ -1,0 +1,199 @@
+/* ============================================================
+   Scene 1 — "the skit". Paper world, two stickmen, the bad
+   answer, the detonation. Everything here is prefixed mu-s1-.
+   Layout is designed for 1440x900 first; art centers around a
+   ground line at bottom 26%.
+   ============================================================ */
+
+.mu-s1 {
+  min-height: 100vh;
+}
+
+/* inner wrapper the builder shakes (never ctx.root) */
+.mu-s1-stage {
+  position: absolute;
+  inset: 0;
+  will-change: transform;
+}
+
+/* full-bleed paper with a subtle dot grid */
+.mu-s1-paper {
+  position: absolute;
+  inset: 0;
+  background-color: var(--lv-bone);
+  background-image: radial-gradient(rgba(11, 12, 18, 0.1) 1.3px, transparent 1.4px);
+  background-size: 22px 22px;
+}
+
+/* all ink-colored art lives here */
+.mu-s1-art {
+  position: absolute;
+  inset: 0;
+  color: var(--lv-ink);
+}
+
+/* hand-drawn ground squiggle */
+.mu-s1-ground {
+  position: absolute;
+  left: calc(50% - 430px);
+  bottom: 26%;
+  width: 860px;
+  height: 38px;
+}
+
+/* stickman groups: figure on the line, nametag under it */
+.mu-s1-left,
+.mu-s1-right {
+  position: absolute;
+  bottom: calc(26% - 34px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 116px;
+}
+.mu-s1-left {
+  left: calc(50% - 330px);
+}
+.mu-s1-right {
+  left: calc(50% + 190px);
+}
+
+.mu-s1-man {
+  width: 116px;
+  height: auto;
+  display: block;
+}
+
+/* idle + rage stacked in one wrapper; the builder crossfades them */
+.mu-s1-swap {
+  position: relative;
+  width: 116px;
+}
+.mu-s1-rage {
+  position: absolute;
+  inset: 0;
+}
+
+/* crash-out scribble above the right stickman's head */
+.mu-s1-scribble {
+  position: absolute;
+  top: -54px;
+  left: 50%;
+  width: 96px;
+  height: auto;
+  transform: translateX(-38%);
+}
+
+/* speech bubbles — anchored to their speakers, floating above the heads */
+.mu-s1-bubbleA {
+  position: absolute;
+  top: -104px;
+  left: -46px;
+}
+.mu-s1-bubbleB {
+  position: absolute;
+  top: -128px;
+  left: 58px;
+  width: 150px;
+  height: 52px;
+}
+.mu-s1-bubbleB .mu-bubble__txt {
+  inset: 6px 12px 12px;
+}
+
+/* jagged cracks radiating from the right stickman */
+.mu-s1-cracks {
+  position: absolute;
+  left: calc(50% + 8px);
+  bottom: calc(26% - 120px);
+  width: 480px;
+  height: 440px;
+}
+
+/* paper shards — decorative one-shots, authored hidden by design */
+.mu-s1-shards {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.mu-s1-shard {
+  position: absolute;
+  display: block;
+  background: var(--lv-bone);
+  opacity: 0;
+  will-change: transform, opacity;
+}
+
+/* the detonation flash */
+.mu-s1-flash {
+  position: absolute;
+  inset: 0;
+  background: var(--lv-bone);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* final caption. mix-blend-mode: difference keeps the bone text
+   readable over both the paper (no-JS / mobile) and dark space. */
+.mu-s1-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12%;
+  margin: 0 auto;
+  max-width: 560px;
+  text-align: center;
+  color: var(--lv-bone);
+  mix-blend-mode: difference;
+  font-size: 15px;
+  letter-spacing: 0.06em;
+}
+
+/* ---------- mobile: static skit that simply reads well ---------- */
+@media (max-width: 767px) {
+  .mu-s1-scribble,
+  .mu-s1-rage,
+  .mu-s1-cracks,
+  .mu-s1-shards,
+  .mu-s1-flash {
+    display: none;
+  }
+  .mu-s1-ground {
+    left: 4vw;
+    width: 92vw;
+  }
+  .mu-s1-left,
+  .mu-s1-right {
+    width: 88px;
+    bottom: calc(26% - 30px);
+  }
+  .mu-s1-left {
+    left: 8vw;
+  }
+  .mu-s1-right {
+    left: auto;
+    right: 10vw;
+  }
+  .mu-s1-man,
+  .mu-s1-swap {
+    width: 88px;
+  }
+  .mu-s1-bubbleA {
+    left: 5vw;
+    bottom: calc(26% + 160px);
+    width: 176px;
+    height: 60px;
+  }
+  .mu-s1-bubbleB {
+    left: auto;
+    right: 6vw;
+    bottom: calc(26% + 175px);
+    width: 132px;
+    height: 46px;
+  }
+  .mu-s1-caption {
+    bottom: 7%;
+    padding: 0 20px;
+  }
+}

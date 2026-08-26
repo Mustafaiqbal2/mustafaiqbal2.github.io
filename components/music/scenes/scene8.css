@@ -1,0 +1,127 @@
+/* ============================================================
+   Scene 8 — "full circle"
+   A galaxy of song-dots, the two stickmen floating center-low,
+   the opening question and its new answer, and the cta pill
+   that opens melodymind. Designed at 1440x900; the section is
+   the pinned viewport on desktop.
+   ============================================================ */
+
+/* ---------- the dot field ---------- */
+.mu-s8-dots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.mu-s8-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--lv-bone);
+}
+.mu-s8-dot--accent {
+  background: var(--lv-accent-bright);
+}
+.mu-s8-dot--pink {
+  background: var(--lv-pink);
+}
+.mu-s8-dot--cyan {
+  background: var(--lv-cyan);
+}
+
+/* ---------- the two stickmen, center-low ---------- */
+.mu-s8-man {
+  position: absolute;
+  width: 112px;
+  color: var(--lv-bone);
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+.mu-s8-man svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.mu-s8-man--hassaan {
+  left: 29%;
+  top: 44%;
+}
+.mu-s8-man--me {
+  left: 57%;
+  top: 50%;
+}
+.mu-s8-tag {
+  text-align: center;
+}
+
+/* ---------- the bubbles ---------- */
+.mu-s8 .mu-s8-bubbleA,
+.mu-s8 .mu-s8-bubbleB {
+  position: absolute;
+}
+.mu-s8-bubbleA {
+  left: 13%;
+  top: 26%;
+}
+.mu-s8-bubbleB {
+  left: 62%;
+  top: 29%;
+}
+
+/* ---------- the cta pill ---------- */
+.mu-s8-cta {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 9%;
+  margin-inline: auto;
+  width: max-content;
+  padding: 13px 28px;
+  border: 1.6px solid var(--lv-accent-bright);
+  /* uneven radii so the pill reads hand-drawn, not stamped */
+  border-radius: 24px 28px 22px 30px / 30px 22px 28px 24px;
+  color: var(--lv-accent-bright);
+  background: rgba(7, 8, 13, 0.55);
+  text-decoration: none;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: lowercase;
+}
+.mu-s8-cta:hover {
+  color: var(--lv-bone);
+  background: rgba(183, 156, 255, 0.14);
+}
+.mu-s8-cta:focus-visible {
+  outline: 2px solid var(--lv-cyan);
+  outline-offset: 3px;
+}
+
+/* ---------- mobile: static field (capped), simple stack ---------- */
+@media (max-width: 767px) {
+  .mu-s8-dot:nth-child(n + 91) {
+    display: none;
+  }
+  .mu-s8-man {
+    width: 80px;
+  }
+  .mu-s8-bubbleA {
+    left: 4%;
+    top: 11%;
+  }
+  .mu-s8-man--hassaan {
+    left: 12%;
+    top: 24%;
+  }
+  .mu-s8-bubbleB {
+    left: auto;
+    right: 4%;
+    top: 44%;
+  }
+  .mu-s8-man--me {
+    left: auto;
+    right: 16%;
+    top: 57%;
+  }
+  .mu-s8-cta {
+    bottom: 6%;
+  }
+}

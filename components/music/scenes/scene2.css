@@ -1,0 +1,198 @@
+/* ============================================================
+   Scene 2 — "mood is too coarse". Dark space bg comes from the
+   page; everything here is bone line-art. Desktop composes on an
+   absolute 100vh stage (designed at 1440x900); mobile falls back
+   to a simple flow. All classes prefixed mu-s2-.
+   ============================================================ */
+
+/* ---------- heading ---------- */
+.mu-s2-head {
+  position: absolute;
+  left: 7%;
+  top: 8%;
+  max-width: 640px;
+}
+.mu-s2-head b {
+  color: var(--lv-accent-bright);
+  font-weight: inherit;
+}
+
+/* ---------- the three coarse tag cards ---------- */
+.mu-s2-tags {
+  position: absolute;
+  left: 7%;
+  top: 33%;
+  display: flex;
+  gap: 16px;
+}
+.mu-s2-tag {
+  position: relative;
+  width: 170px;
+  height: 64px;
+  color: var(--lv-bone);
+}
+.mu-s2-tag svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.mu-s2-hi {
+  stroke: var(--lv-accent-bright);
+}
+.mu-s2-taglabel {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+
+/* ---------- the two situation cards ---------- */
+.mu-s2-big {
+  position: absolute;
+  width: 240px;
+  height: 150px;
+  color: var(--lv-bone);
+}
+.mu-s2-big--a {
+  left: 13%;
+  top: 52%;
+}
+.mu-s2-big--b {
+  left: 38%;
+  top: 57%;
+}
+.mu-s2-bigframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.mu-s2-biglabel {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 22px;
+  text-align: center;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+}
+.mu-s2-wave {
+  position: absolute;
+  left: 50%;
+  top: 76px;
+  width: 168px;
+  margin-left: -84px;
+}
+.mu-s2-big--a .mu-s2-wave {
+  color: var(--lv-pink);
+}
+.mu-s2-big--b .mu-s2-wave {
+  color: var(--lv-cyan);
+}
+.mu-s2-waveSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* ---------- the search gag ---------- */
+.mu-s2-gag {
+  position: absolute;
+  right: 5%;
+  top: 36%;
+  display: flex;
+  align-items: flex-end;
+  gap: 14px;
+}
+.mu-s2-searchcol {
+  padding-bottom: 34px;
+}
+.mu-s2-search {
+  position: relative;
+  width: 260px;
+  height: 44px;
+  overflow: hidden;
+  color: var(--lv-bone);
+  transform-origin: 50% 50%;
+}
+.mu-s2-search svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+.mu-s2-query {
+  position: absolute;
+  left: 16px;
+  top: 0;
+  height: 100%;
+  width: max-content;
+  display: flex;
+  align-items: center;
+  white-space: pre;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+.mu-s2-result {
+  margin: 10px 4px 0;
+  font-size: 12px;
+  color: var(--lv-accent-bright);
+}
+.mu-s2-man {
+  position: relative;
+  width: 96px;
+  height: 152px;
+  color: var(--lv-bone);
+}
+.mu-s2-man svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+/* final composed state: the "no" pose won; desktop wakes idle via JS */
+.mu-s2-man-idle {
+  opacity: 0;
+}
+
+/* ---------- closing caption ---------- */
+.mu-s2-cap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6%;
+  margin: 0 auto;
+  text-align: center;
+}
+
+/* ---------- mobile: simple stacked read ---------- */
+@media (max-width: 767px) {
+  .mu-s2 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+    padding: 12vh var(--lv-pad) 14vh;
+  }
+  .mu-s2-head,
+  .mu-s2-big,
+  .mu-s2-gag,
+  .mu-s2-cap {
+    position: static;
+  }
+  .mu-s2-tags {
+    display: none;
+  }
+  .mu-s2-head {
+    max-width: 100%;
+  }
+  .mu-s2-gag {
+    align-items: flex-end;
+  }
+  .mu-s2-cap {
+    margin: 0 auto;
+  }
+}

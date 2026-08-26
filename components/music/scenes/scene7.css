@@ -1,0 +1,144 @@
+/* ============================================================
+   Scene 7 — "ask the songs themselves" (the two-hop search).
+   Authored values below are the SETTLED final state, so the scene
+   reads complete with JS off or reduced motion; the timeline only
+   overshoots these and lands back on them.
+   ============================================================ */
+
+.mu-s7 {
+  min-height: 100vh;
+}
+
+/* the canyon stage fills the pinned viewport */
+.mu-s7-stage {
+  position: absolute;
+  inset: 0;
+}
+.mu-s7-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+/* ---------- world: terrain + populations ---------- */
+.mu-s7-terrain {
+  stroke: var(--lv-bone);
+  opacity: 0.9;
+}
+.mu-s7-hatch {
+  opacity: 0.45;
+}
+.mu-s7-worddots {
+  stroke: var(--lv-bone);
+  opacity: 0.6;
+}
+.mu-s7-song {
+  stroke: var(--lv-bone);
+  opacity: 0.85;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* ---------- the huddle, its rings, its elected center ---------- */
+.mu-s7-lines {
+  stroke: rgba(183, 156, 255, 0.6);
+  opacity: 0.5;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.mu-s7-ring1 {
+  stroke: var(--lv-accent-bright);
+  opacity: 0.6;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.mu-s7-ring2 {
+  stroke: var(--lv-accent-bright);
+  opacity: 0.6;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.mu-s7-centroid {
+  fill: var(--lv-bone);
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.mu-s7-crown {
+  stroke: var(--lv-accent-bright);
+  opacity: 0.85;
+}
+
+/* ---------- the two probes ---------- */
+.mu-s7-probe {
+  fill: var(--lv-accent-bright);
+  opacity: 0.75;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+
+/* ---------- the stickman on the left plateau ---------- */
+.mu-s7-man {
+  position: absolute;
+  left: 6.5%;
+  bottom: 36.4%;
+  height: 17.2%;
+  aspect-ratio: 120 / 190;
+  color: var(--lv-bone);
+}
+.mu-s7-man svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ---------- the small mono score over the lit region ---------- */
+.mu-s7-score {
+  position: absolute;
+  left: 69%;
+  top: 30%;
+  font-size: clamp(18px, 1.6vw, 26px);
+  letter-spacing: 0.06em;
+  color: var(--lv-accent-bright);
+}
+
+/* ---------- copy: top-left, clear of all art ---------- */
+.mu-s7-copy {
+  position: absolute;
+  left: 6.5%;
+  top: 11%;
+  z-index: 2;
+  display: grid;
+  gap: 18px;
+  max-width: 640px;
+}
+.mu-s7-h {
+  font-size: clamp(30px, 3.6vw, 54px);
+}
+.mu-s7-cap {
+  max-width: 520px;
+}
+
+/* ---------- mobile: copy on top, the lit tableau below ---------- */
+@media (max-width: 767px) {
+  .mu-s7-stage {
+    top: auto;
+    height: 58%;
+  }
+  .mu-s7-copy {
+    position: static;
+    max-width: none;
+    padding: 9vh 7vw 0;
+  }
+  .mu-s7-cap {
+    max-width: 480px;
+  }
+  .mu-s7-man {
+    height: 15%;
+    bottom: 37%;
+  }
+  .mu-s7-score {
+    font-size: 15px;
+  }
+}

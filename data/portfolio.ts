@@ -54,7 +54,10 @@ export const profile = {
     "Software engineer and founder. Building ArchPHI — the operating system for architectural drawings — with production agents and a factory website that ranks on Google behind it."
 };
 
-export const navigation = [{ label: "Work", href: "/work/" }];
+export const navigation = [
+  { label: "Work", href: "/work/" },
+  { label: "Music", href: "/music/" }
+];
 
 const mediaForSlug: Record<string, MediaItem[]> = {
   "recruitment-rag-platform": [
@@ -100,6 +103,7 @@ export function projectMedia(slug: string): MediaItem[] {
 export const pageRoutes = [
   "/",
   "/work/",
+  "/music/",
   ...featuredProjects.map((project) => `/work/${project.slug}/`)
 ];
 
