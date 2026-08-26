@@ -348,6 +348,30 @@ html.mu-overlay-open {
   margin: 0;
 }
 
+/* short viewports: 768px laptops and zoomed 1080p displays. Scene layouts
+   are height-relative while headings were width-relative — at low heights
+   they collided. Headings scale with height here, and the two captions
+   that sat closest to art get lifted clear. */
+@media (min-width: 768px) and (max-height: 820px) {
+  .mu-h {
+    font-size: clamp(26px, 6vh, 50px);
+  }
+  .mu-hero__title {
+    font-size: clamp(40px, 13vh, 100px);
+  }
+  .mu-caption {
+    font-size: 12px;
+    line-height: 1.65;
+  }
+  .mu-s6-caption {
+    top: 22%;
+  }
+  .mu-s7-cap {
+    margin-top: -56px;
+    max-width: 460px;
+  }
+}
+
 @media (max-width: 767px) {
   .mu-tabs {
     flex-direction: column;
