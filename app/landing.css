@@ -934,10 +934,12 @@ html.lv-page .site-footer {
   aspect-ratio: 1;
 }
 /* feather the canvas edge so the ambient glow never shows a square
-   boundary against the starfield */
+   boundary against the starfield; the slight roll is the movie camera —
+   a dead-level disk reads as an icon, a tilted one as a shot */
 .lv-bh2 canvas {
   -webkit-mask-image: radial-gradient(circle at 50% 50%, #000 58%, transparent 74%);
   mask-image: radial-gradient(circle at 50% 50%, #000 58%, transparent 74%);
+  transform: rotate(-5deg);
 }
 .lv-about__love {
   position: absolute;
@@ -1142,10 +1144,6 @@ html.lv-page .site-footer {
   background: #07080d;
   color: var(--lv-bone);
 }
-.lv-boom__tag--b {
-  background: var(--lv-bone);
-  color: var(--lv-ink);
-}
 .lv-boom__tag svg {
   width: 100%;
   height: 100%;
@@ -1167,6 +1165,15 @@ html.lv-page .site-footer {
   stroke: currentColor;
   stroke-width: 2.5;
   opacity: 0.45;
+}
+.lv-tag__over {
+  font-family: var(--font-sans), "Helvetica Neue", Arial, sans-serif;
+  font-size: 132px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  fill: none;
+  stroke: var(--lv-accent-bright);
+  stroke-width: 3.5;
 }
 .lv-tag__swash {
   stroke: currentColor;
@@ -1191,26 +1198,39 @@ html.lv-page .site-footer {
   place-items: center;
 }
 .lv-boom__cover-art {
-  position: relative;
-  width: min(56vh, 60vw);
+  width: min(62vh, 62vw);
   aspect-ratio: 1 / 1;
-  border: 3px solid var(--lv-bone);
-  color: var(--lv-bone);
-  display: grid;
-  place-items: center;
-  padding: 3vh;
+  outline: 1px solid rgba(242, 242, 238, 0.35);
 }
-.lv-boom__cover-art svg {
-  width: auto;
+.lv-boom__cover-art img {
+  width: 100%;
   height: 100%;
+  object-fit: cover;
   display: block;
 }
-.lv-boom__cover-art i {
-  position: absolute;
-  left: 14px;
-  bottom: 10px;
-  font-style: normal;
+.lv-boom__star {
+  width: 110px;
   color: var(--lv-bone);
+}
+.lv-boom__star svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+.lv-boom__star--a {
+  left: 16%;
+  top: 20%;
+}
+.lv-boom__star--b {
+  right: 14%;
+  top: 30%;
+  width: 150px;
+  color: var(--lv-accent-bright);
+}
+.lv-boom__star--c {
+  left: 26%;
+  bottom: 22%;
+  width: 130px;
 }
 /* ---- supernova ---- */
 .lv-boom__implode {

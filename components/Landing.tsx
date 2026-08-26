@@ -166,48 +166,56 @@ const SparkStreak = () => (
   </svg>
 );
 
-/* impact-frame easter egg: a sprayed tag — solid text over a stroked echo,
-   a fat swash underneath, drips, and speckle. Deterministic coords only
-   (this renders on the server too). */
-const GraffitiTag = ({ lines }: { lines: string[] }) => {
-  const baseY = lines.length === 1 ? 512 : 396;
-  return (
-    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      <g transform="rotate(-7 720 450)">
-        {lines.map((ln, i) => (
-          <text key={`${ln}-echo`} className="lv-tag__echo" x="731" y={baseY + i * 214 + 10} textAnchor="middle">
-            {ln}
-          </text>
-        ))}
-        {lines.map((ln, i) => (
-          <text key={ln} className="lv-tag__txt" x="720" y={baseY + i * 214} textAnchor="middle">
-            {ln}
-          </text>
-        ))}
-        <path className="lv-tag__swash" d={lines.length === 1 ? "M250 600 Q720 676 1195 584" : "M250 700 Q720 776 1195 684"} />
-        <path
-          className="lv-tag__drip"
-          d={
-            lines.length === 1
-              ? "M430 610 l7 92 M712 632 l-4 120 M968 606 l9 74 M575 624 l2 58 M852 628 l-3 98"
-              : "M430 710 l7 92 M712 732 l-4 120 M968 706 l9 74 M575 724 l2 58 M852 728 l-3 98"
-          }
+/* impact-frame easter egg: one graffiti wall — IMPOSTER SYNDROME sprayed
+   big, CATHARSIS tagged over it in violet outline, like layered writers on
+   the same wall. Deterministic coords only (this renders on the server too). */
+const GraffitiWall = () => (
+  <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
+    <g transform="rotate(-7 720 450)">
+      <text className="lv-tag__echo" x="731" y="346" textAnchor="middle">
+        IMPOSTER
+      </text>
+      <text className="lv-tag__echo" x="731" y="560" textAnchor="middle">
+        SYNDROME
+      </text>
+      <text className="lv-tag__txt" x="720" y="336" textAnchor="middle">
+        IMPOSTER
+      </text>
+      <text className="lv-tag__txt" x="720" y="550" textAnchor="middle">
+        SYNDROME
+      </text>
+      <path className="lv-tag__swash" d="M250 622 Q720 690 1195 600" />
+      <path className="lv-tag__drip" d="M430 636 l7 84 M712 656 l-4 104 M968 630 l9 68 M575 648 l2 52" />
+    </g>
+    <g transform="rotate(6 720 640)">
+      <text className="lv-tag__over" x="712" y="812" textAnchor="middle">
+        CATHARSIS
+      </text>
+    </g>
+    <g className="lv-tag__spray">
+      {Array.from({ length: 30 }).map((_, i) => (
+        <circle
+          key={i}
+          cx={175 + ((i * 467) % 1090)}
+          cy={205 + ((i * 641) % 490)}
+          r={0.9 + (i % 4) * 0.8}
+          opacity={0.18 + ((i * 7) % 5) * 0.09}
         />
-      </g>
-      <g className="lv-tag__spray">
-        {Array.from({ length: 30 }).map((_, i) => (
-          <circle
-            key={i}
-            cx={175 + ((i * 467) % 1090)}
-            cy={205 + ((i * 641) % 490)}
-            r={0.9 + (i % 4) * 0.8}
-            opacity={0.18 + ((i * 7) % 5) * 0.09}
-          />
-        ))}
-      </g>
-    </svg>
-  );
-};
+      ))}
+    </g>
+  </svg>
+);
+
+/* a background star detonating: hot dot, cross flare, two shock rings */
+const NovaStar = () => (
+  <svg viewBox="0 0 120 120" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true">
+    <circle cx="60" cy="60" r="3.5" fill="currentColor" stroke="none" />
+    <path d="M60 14 L60 42 M60 78 L60 106 M14 60 L42 60 M78 60 L106 60" strokeWidth="2" />
+    <path d="M31 31 L45 45 M75 75 L89 89 M89 31 L75 45 M45 75 L31 89" strokeWidth="1.3" />
+    <circle cx="60" cy="60" r="26" strokeWidth="1.4" />
+    <circle cx="60" cy="60" r="44" strokeWidth="0.8" opacity="0.6" />
+  </svg>
+);
 
 /* supernova ray burst: every spoke dash-draws outward from the core */
 const NovaRays = () => (
@@ -749,8 +757,23 @@ export function Landing() {
           if (desktop) {
             section.classList.add("lv-about--live");
             const tl = gsap.timeline({
-              scrollTrigger: { trigger: section, start: "top top", end: "+=730%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true, invalidateOnRefresh: true }
+              scrollTrigger: { trigger: section, start: "top top", end: "+=770%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true, invalidateOnRefresh: true }
             });
+            /* impact frames pop in REAL time: a fixed hold, then gone. A
+               stopped scroll can never freeze on one (only the plain flash
+               is scrubbed); crossing a trigger backwards just re-blinks it */
+            const popEls = [".lv-boom__frame", ".lv-boom__tag", ".lv-boom__cover"].map(
+              (s) => q(s)[0] as HTMLElement | undefined
+            );
+            let popHide: gsap.core.Tween | null = null;
+            const popFrame = (i: number, hold: number) => {
+              popEls.forEach((el) => el && gsap.set(el, { opacity: 0 }));
+              if (popHide) popHide.kill();
+              const el = popEls[i];
+              if (!el) return;
+              gsap.set(el, { opacity: 1 });
+              popHide = gsap.delayedCall(hold, () => gsap.set(el, { opacity: 0 }));
+            };
             tl.fromTo(q(".lv-about__title"), { opacity: 0, y: 60 }, { opacity: 1, y: 0, duration: 0.4 }, 0)
               .to(q(".lv-about__title"), { opacity: 0, y: -40, scale: 0.96, duration: 0.3 }, 0.55)
               .fromTo(bhWrap, { opacity: 0, scale: 0.85 }, { opacity: 1, scale: 1, duration: 0.45 }, 0.7);
@@ -769,64 +792,67 @@ export function Landing() {
               .fromTo(q(".lv-boom__implode"), { scale: 1.7 }, { scale: 0.12, duration: 0.15, ease: "power2.in" }, 2.24)
               .set(q(".lv-boom__implode"), { opacity: 0 }, 2.4)
               .to(bhWrap, { scale: 0.85, duration: 0.1, ease: "power2.in" }, 2.3)
-              /* impact-frame strobe: flash -> speed lines -> flash -> graffiti
-                 IMPOSTER SYNDROME -> flash -> the About-me cover in negative ->
-                 flash -> CATHARSIS -> flash -> detonation */
+              /* three acts, each separated by something HAPPENING in the
+                 scene: flash -> speed lines / a far star goes supernova /
+                 flash -> graffiti wall / two closer stars detonate /
+                 flash -> About You in negative / flash -> DETONATION */
               .set(q(".lv-boom__flash"), { opacity: 1 }, 2.42)
               .to(bhWrap, { opacity: 0, scale: 1.22, duration: 0.08, ease: "none" }, 2.44)
               .set(q(".lv-boom__flash"), { opacity: 0 }, 2.48)
-              .set(q(".lv-boom__frame"), { opacity: 1 }, 2.48)
-              .set(q(".lv-boom__frame"), { opacity: 0 }, 2.58)
-              .set(q(".lv-boom__flash"), { opacity: 1 }, 2.58)
-              .set(q(".lv-boom__flash"), { opacity: 0 }, 2.62)
-              .set(q(".lv-boom__tag--a"), { opacity: 1 }, 2.62)
-              .set(q(".lv-boom__tag--a"), { opacity: 0 }, 2.78)
-              .set(q(".lv-boom__flash"), { opacity: 1 }, 2.78)
-              .set(q(".lv-boom__flash"), { opacity: 0 }, 2.82)
-              .set(q(".lv-boom__cover"), { opacity: 1 }, 2.82)
-              .set(q(".lv-boom__cover"), { opacity: 0 }, 2.98)
-              .set(q(".lv-boom__flash"), { opacity: 1 }, 2.98)
-              .set(q(".lv-boom__flash"), { opacity: 0 }, 3.02)
-              .set(q(".lv-boom__tag--b"), { opacity: 1 }, 3.02)
-              .set(q(".lv-boom__tag--b"), { opacity: 0 }, 3.18)
-              .set(q(".lv-boom__flash"), { opacity: 1 }, 3.18)
-              .set(q(".lv-boom__flash"), { opacity: 0 }, 3.22)
+              .call(() => popFrame(0, 0.15), undefined, 2.48)
+              .set(q(".lv-boom__star--a"), { opacity: 1 }, 2.56)
+              .fromTo(q(".lv-boom__star--a"), { scale: 0.15 }, { scale: 1.5, duration: 0.24, ease: "power2.out" }, 2.56)
+              .to(q(".lv-boom__star--a"), { opacity: 0, duration: 0.08 }, 2.82)
+              .set(q(".lv-boom__flash"), { opacity: 1 }, 2.92)
+              .set(q(".lv-boom__flash"), { opacity: 0 }, 2.96)
+              .call(() => popFrame(1, 0.22), undefined, 2.96)
+              .set(q(".lv-boom__star--b"), { opacity: 1 }, 3.06)
+              .fromTo(q(".lv-boom__star--b"), { scale: 0.15 }, { scale: 1.9, duration: 0.26, ease: "power2.out" }, 3.06)
+              .to(q(".lv-boom__star--b"), { opacity: 0, duration: 0.08 }, 3.34)
+              .set(q(".lv-boom__star--c"), { opacity: 1 }, 3.18)
+              .fromTo(q(".lv-boom__star--c"), { scale: 0.15 }, { scale: 1.6, duration: 0.24, ease: "power2.out" }, 3.18)
+              .to(q(".lv-boom__star--c"), { opacity: 0, duration: 0.08 }, 3.44)
+              .set(q(".lv-boom__flash"), { opacity: 1 }, 3.5)
+              .set(q(".lv-boom__flash"), { opacity: 0 }, 3.54)
+              .call(() => popFrame(2, 0.22), undefined, 3.54)
+              .set(q(".lv-boom__flash"), { opacity: 1 }, 3.62)
+              .set(q(".lv-boom__flash"), { opacity: 0 }, 3.66)
               /* SUPERNOVA — core burst, ray spokes, three shockwaves.
                  opacity flips on via set() AT detonation: a from-state of
                  opacity 1 would immediateRender at build time and preload
                  the prop over the title beat */
-              .set(q(".lv-boom__nova"), { opacity: 1 }, 3.22)
-              .fromTo(q(".lv-boom__nova"), { scale: 0.12 }, { scale: 3.2, duration: 0.5, ease: "power3.out" }, 3.22)
-              .to(q(".lv-boom__nova"), { opacity: 0, duration: 0.28 }, 3.55)
-              .set(q(".lv-boom__rays"), { opacity: 1 }, 3.24)
-              .fromTo(q(".lv-boom__rays"), { scale: 0.55 }, { scale: 1.55, duration: 0.6, ease: "power2.out" }, 3.24)
-              .fromTo(q(".lv-boom__rays .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, stagger: 0.008, ease: "none" }, 3.24)
-              .to(q(".lv-boom__rays"), { opacity: 0, duration: 0.25 }, 3.75)
-              .set(q(".lv-boom__ring--a"), { opacity: 1 }, 3.22)
-              .fromTo(q(".lv-boom__ring--a"), { scale: 0.15 }, { scale: 1.9, duration: 0.5, ease: "power2.out" }, 3.22)
-              .to(q(".lv-boom__ring--a"), { opacity: 0, duration: 0.25 }, 3.44)
-              .set(q(".lv-boom__ring--b"), { opacity: 0.8 }, 3.28)
-              .fromTo(q(".lv-boom__ring--b"), { scale: 0.1 }, { scale: 2.6, duration: 0.7, ease: "power2.out" }, 3.28)
-              .to(q(".lv-boom__ring--b"), { opacity: 0, duration: 0.3 }, 3.62)
-              .set(q(".lv-boom__ring--c"), { opacity: 0.9 }, 3.36)
-              .fromTo(q(".lv-boom__ring--c"), { scale: 0.1 }, { scale: 3.4, duration: 0.85, ease: "power1.out" }, 3.36)
-              .to(q(".lv-boom__ring--c"), { opacity: 0, duration: 0.3 }, 4.05)
+              .set(q(".lv-boom__nova"), { opacity: 1 }, 3.66)
+              .fromTo(q(".lv-boom__nova"), { scale: 0.12 }, { scale: 3.2, duration: 0.5, ease: "power3.out" }, 3.66)
+              .to(q(".lv-boom__nova"), { opacity: 0, duration: 0.28 }, 3.99)
+              .set(q(".lv-boom__rays"), { opacity: 1 }, 3.68)
+              .fromTo(q(".lv-boom__rays"), { scale: 0.55 }, { scale: 1.55, duration: 0.6, ease: "power2.out" }, 3.68)
+              .fromTo(q(".lv-boom__rays .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, stagger: 0.008, ease: "none" }, 3.68)
+              .to(q(".lv-boom__rays"), { opacity: 0, duration: 0.25 }, 4.19)
+              .set(q(".lv-boom__ring--a"), { opacity: 1 }, 3.66)
+              .fromTo(q(".lv-boom__ring--a"), { scale: 0.15 }, { scale: 1.9, duration: 0.5, ease: "power2.out" }, 3.66)
+              .to(q(".lv-boom__ring--a"), { opacity: 0, duration: 0.25 }, 3.88)
+              .set(q(".lv-boom__ring--b"), { opacity: 0.8 }, 3.72)
+              .fromTo(q(".lv-boom__ring--b"), { scale: 0.1 }, { scale: 2.6, duration: 0.7, ease: "power2.out" }, 3.72)
+              .to(q(".lv-boom__ring--b"), { opacity: 0, duration: 0.3 }, 4.06)
+              .set(q(".lv-boom__ring--c"), { opacity: 0.9 }, 3.8)
+              .fromTo(q(".lv-boom__ring--c"), { scale: 0.1 }, { scale: 3.4, duration: 0.85, ease: "power1.out" }, 3.8)
+              .to(q(".lv-boom__ring--c"), { opacity: 0, duration: 0.3 }, 4.49)
               /* hanabi bursts: every ray draws stroke-by-stroke, then dies out */
-              .set(q(".lv-boom__fw--a"), { opacity: 1 }, 3.22)
-              .fromTo(q(".lv-boom__fw--a"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 3.22)
-              .fromTo(q(".lv-boom__fw--a .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.42, stagger: 0.012, ease: "none" }, 3.22)
-              .set(q(".lv-boom__fw--b"), { opacity: 1 }, 3.38)
-              .fromTo(q(".lv-boom__fw--b"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 3.38)
-              .fromTo(q(".lv-boom__fw--b .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 3.38)
-              .set(q(".lv-boom__fw--c"), { opacity: 1 }, 3.48)
-              .fromTo(q(".lv-boom__fw--c"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 3.48)
-              .fromTo(q(".lv-boom__fw--c .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 3.48)
-              .set(q(".lv-boom__fw--d"), { opacity: 1 }, 3.6)
-              .fromTo(q(".lv-boom__fw--d"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 3.6)
-              .fromTo(q(".lv-boom__fw--d .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 3.6)
+              .set(q(".lv-boom__fw--a"), { opacity: 1 }, 3.66)
+              .fromTo(q(".lv-boom__fw--a"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 3.66)
+              .fromTo(q(".lv-boom__fw--a .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.42, stagger: 0.012, ease: "none" }, 3.66)
+              .set(q(".lv-boom__fw--b"), { opacity: 1 }, 3.82)
+              .fromTo(q(".lv-boom__fw--b"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 3.82)
+              .fromTo(q(".lv-boom__fw--b .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 3.82)
+              .set(q(".lv-boom__fw--c"), { opacity: 1 }, 3.92)
+              .fromTo(q(".lv-boom__fw--c"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 3.92)
+              .fromTo(q(".lv-boom__fw--c .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 3.92)
+              .set(q(".lv-boom__fw--d"), { opacity: 1 }, 4.04)
+              .fromTo(q(".lv-boom__fw--d"), { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "power1.out" }, 4.04)
+              .fromTo(q(".lv-boom__fw--d .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, stagger: 0.012, ease: "none" }, 4.04)
               /* the wreckage cools into a little nebula before the sky clears */
-              .fromTo(q(".lv-boom__remnant"), { opacity: 0, scale: 0.55 }, { opacity: 0.75, scale: 1.2, duration: 0.5, ease: "power1.out" }, 3.5)
-              .to(q(".lv-boom__remnant"), { opacity: 0, scale: 1.45, duration: 0.5 }, 4.3)
+              .fromTo(q(".lv-boom__remnant"), { opacity: 0, scale: 0.55 }, { opacity: 0.75, scale: 1.2, duration: 0.5, ease: "power1.out" }, 3.94)
+              .to(q(".lv-boom__remnant"), { opacity: 0, scale: 1.45, duration: 0.5 }, 4.74)
               /* stray sparks thrown from the blast */
               .fromTo(
                 q(".lv-boom__spark"),
@@ -845,20 +871,20 @@ export function Landing() {
                   stagger: 0.05,
                   ease: "power2.out"
                 },
-                3.24
+                3.68
               )
-              .fromTo(q(".lv-boom__spark .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, stagger: 0.02, ease: "none" }, 3.28)
+              .fromTo(q(".lv-boom__spark .lv-boom__draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, stagger: 0.02, ease: "none" }, 3.72)
               /* the embers die and the sky clears onto sketchbook paper */
-              .to(q(".lv-boom__fw, .lv-boom__spark"), { opacity: 0, duration: 0.3, stagger: 0.04 }, 4.12)
-              .fromTo(q(".lv-about__paper"), { opacity: 0 }, { opacity: 1, duration: 0.4 }, 4.42)
-              .fromTo(q(".lv-about__sketch"), { opacity: 0 }, { opacity: 1, duration: 0.25 }, 4.65)
+              .to(q(".lv-boom__fw, .lv-boom__spark"), { opacity: 0, duration: 0.3, stagger: 0.04 }, 4.56)
+              .fromTo(q(".lv-about__paper"), { opacity: 0 }, { opacity: 1, duration: 0.4 }, 4.86)
+              .fromTo(q(".lv-about__sketch"), { opacity: 0 }, { opacity: 1, duration: 0.25 }, 5.09)
               .fromTo(
                 q(".lv-about__sketch .sk-draw"),
                 drawFrom(),
                 { strokeDashoffset: 0, stagger: 0.011, duration: 0.9, ease: "none" },
-                4.7
+                5.14
               )
-              .from(q(".lv-about__list li"), { y: 30, opacity: 0, stagger: 0.12, duration: 0.35 }, 5.45);
+              .from(q(".lv-about__list li"), { y: 30, opacity: 0, stagger: 0.12, duration: 0.35 }, 5.89);
             /* the asteroid act: fly in (stepped, storyboard) -> impact -> the
                funny sketch scatters as pencil strokes -> the real one draws */
             tl.fromTo(
@@ -871,14 +897,14 @@ export function Landing() {
                   ease: "steps(11)",
                   duration: 0.6
                 },
-                5.85
+                6.29
               )
-              .to(q(".lv-ast"), { scaleX: 0.68, scaleY: 1.14, transformOrigin: "88% 50%", duration: 0.05, ease: "none" }, 6.41)
-              .to(q(".lv-ast"), { opacity: 0, duration: 0.04 }, 6.46)
-              .fromTo(q(".lv-impact"), { scale: 0.2, opacity: 0 }, { scale: 1, opacity: 1, ease: "back.out(2)", duration: 0.12 }, 6.43)
-              .to(q(".lv-impact"), { opacity: 0, scale: 1.3, duration: 0.25 }, 6.7)
-              .to(q(".lv-about__sketch"), { x: 5, y: -4, duration: 0.03, repeat: 9, yoyo: true, ease: "none" }, 6.45)
-              .set(q(".lv-about__sketch"), { x: 0, y: 0 }, 6.8)
+              .to(q(".lv-ast"), { scaleX: 0.68, scaleY: 1.14, transformOrigin: "88% 50%", duration: 0.05, ease: "none" }, 6.85)
+              .to(q(".lv-ast"), { opacity: 0, duration: 0.04 }, 6.9)
+              .fromTo(q(".lv-impact"), { scale: 0.2, opacity: 0 }, { scale: 1, opacity: 1, ease: "back.out(2)", duration: 0.12 }, 6.87)
+              .to(q(".lv-impact"), { opacity: 0, scale: 1.3, duration: 0.25 }, 7.14)
+              .to(q(".lv-about__sketch"), { x: 5, y: -4, duration: 0.03, repeat: 9, yoyo: true, ease: "none" }, 6.89)
+              .set(q(".lv-about__sketch"), { x: 0, y: 0 }, 7.24)
               .to(
                 q(".lv-about__me .sk-draw"),
                 {
@@ -890,9 +916,9 @@ export function Landing() {
                   stagger: 0.0015,
                   ease: "power2.out"
                 },
-                6.47
+                6.91
               )
-              .fromTo(q(".lv-debris span"), { x: 0, y: 0, opacity: 0, rotation: 0 }, { opacity: 1, duration: 0.04, stagger: 0.008 }, 6.45)
+              .fromTo(q(".lv-debris span"), { x: 0, y: 0, opacity: 0, rotation: 0 }, { opacity: 1, duration: 0.04, stagger: 0.008 }, 6.89)
               .to(
                 q(".lv-debris span"),
                 {
@@ -903,7 +929,7 @@ export function Landing() {
                   duration: 0.6,
                   ease: "power1.out"
                 },
-                6.51
+                6.95
               )
               .to(
                 q(".lv-about__list"),
@@ -917,7 +943,7 @@ export function Landing() {
                   duration: 0.45,
                   ease: "power2.inOut"
                 },
-                6.85
+                7.29
               );
           } else {
             gsap.from(q(".lv-about__title"), {
@@ -1309,18 +1335,25 @@ export function Landing() {
           <span className="lv-boom__frame">
             <ImpactLines />
           </span>
-          {/* impact-frame easter eggs: blink and you miss them */}
-          <span className="lv-boom__tag lv-boom__tag--a">
-            <GraffitiTag lines={["IMPOSTER", "SYNDROME"]} />
+          {/* impact-frame easter eggs: real-time pops (popFrame), never
+              scroll-frozen — only the plain flash is scrubbed */}
+          <span className="lv-boom__tag">
+            <GraffitiWall />
           </span>
           <span className="lv-boom__cover">
             <span className="lv-boom__cover-art">
-              <SketchPortrait />
-              <i className="lv-mono">ABOUT ME</i>
+              <img src="/images/about-you-negative.webp" alt="" width={600} height={600} loading="lazy" decoding="async" />
             </span>
           </span>
-          <span className="lv-boom__tag lv-boom__tag--b">
-            <GraffitiTag lines={["CATHARSIS"]} />
+          {/* distant stars that go supernova between the frames */}
+          <span className="lv-boom__star lv-boom__star--a">
+            <NovaStar />
+          </span>
+          <span className="lv-boom__star lv-boom__star--b">
+            <NovaStar />
+          </span>
+          <span className="lv-boom__star lv-boom__star--c">
+            <NovaStar />
           </span>
           {/* supernova props */}
           <span className="lv-boom__implode">
