@@ -16,7 +16,7 @@ const TWO = Math.PI * 2;
 const PI = Math.PI;
 const DPR_CAP = 1.75;
 const MAX_RENDER_PX = 1600;
-const FY = 0.2; // accretion-band flatten factor
+const FY = 0.16; // accretion-band flatten factor
 
 type Seg = { span: number; ph: number; fq: number; fph: number; a: number };
 type Arc = {
@@ -108,35 +108,35 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     // linear doppler gradients for filament strokes (left = approaching = hotter)
     const gDisk = sctx.createLinearGradient(cx - RBAND, 0, cx + RBAND, 0);
     gDisk.addColorStop(0.0, "#FFFFFF");
-    gDisk.addColorStop(0.12, "#FFF7EA");
-    gDisk.addColorStop(0.34, "#FFE8C4");
-    gDisk.addColorStop(0.52, "#FFD9A0");
-    gDisk.addColorStop(0.74, "#E9A961");
-    gDisk.addColorStop(1.0, "#B96A2B");
+    gDisk.addColorStop(0.12, "#FFF9F2");
+    gDisk.addColorStop(0.34, "#FDEEDF");
+    gDisk.addColorStop(0.52, "#F6E0C9");
+    gDisk.addColorStop(0.74, "#DFC1A3");
+    gDisk.addColorStop(1.0, "#A2846B");
     gradDisk = gDisk;
 
     const gHalo = sctx.createLinearGradient(cx - 1.5 * R, 0, cx + 1.5 * R, 0);
-    gHalo.addColorStop(0.0, "#FFEFC8");
-    gHalo.addColorStop(0.35, "#FFDFA8");
-    gHalo.addColorStop(0.6, "#FFD9A0");
-    gHalo.addColorStop(1.0, "#D2853F");
+    gHalo.addColorStop(0.0, "#FFF7E8");
+    gHalo.addColorStop(0.35, "#FBE9D2");
+    gHalo.addColorStop(0.6, "#F4DDC2");
+    gHalo.addColorStop(1.0, "#BC9C7C");
     gradHalo = gHalo;
 
     const gRing = sctx.createLinearGradient(cx - R, 0, cx + R, 0);
     gRing.addColorStop(0.0, "#FFFFFF");
-    gRing.addColorStop(0.55, "#FFF3DC");
-    gRing.addColorStop(1.0, "#FFDFAE");
+    gRing.addColorStop(0.55, "#FFF8EC");
+    gRing.addColorStop(1.0, "#F6E6CE");
     gradRing = gRing;
 
     // radial annulus gradient for the band base (in band-scaled space, centered 0,0)
     const gBand = sctx.createRadialGradient(0, 0, R * 1.01, 0, 0, RBAND);
-    gBand.addColorStop(0.0, "rgba(255,247,234,0.92)");
-    gBand.addColorStop(0.1, "rgba(255,233,200,0.72)");
-    gBand.addColorStop(0.3, "rgba(255,217,160,0.46)");
-    gBand.addColorStop(0.58, "rgba(226,160,92,0.26)");
-    gBand.addColorStop(0.82, "rgba(185,106,43,0.09)");
-    gBand.addColorStop(0.94, "rgba(185,106,43,0.025)");
-    gBand.addColorStop(1.0, "rgba(185,106,43,0)");
+    gBand.addColorStop(0.0, "rgba(255,250,242,0.9)");
+    gBand.addColorStop(0.1, "rgba(255,242,228,0.66)");
+    gBand.addColorStop(0.3, "rgba(250,230,208,0.4)");
+    gBand.addColorStop(0.58, "rgba(224,198,168,0.22)");
+    gBand.addColorStop(0.82, "rgba(178,150,124,0.08)");
+    gBand.addColorStop(0.94, "rgba(178,150,124,0.02)");
+    gBand.addColorStop(1.0, "rgba(178,150,124,0)");
     gradBandAnnulus = gBand;
 
     // left brightening boost for the band (doppler), in band-scaled space
@@ -147,34 +147,34 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     gradBandBoost = gBoost;
 
     // top halo: circular hug annulus
-    const gHug = sctx.createRadialGradient(cx, cy, R * 1.005, cx, cy, R * 1.26);
-    gHug.addColorStop(0.0, "rgba(255,240,208,0.72)");
-    gHug.addColorStop(0.35, "rgba(255,222,170,0.34)");
-    gHug.addColorStop(1.0, "rgba(255,200,140,0)");
+    const gHug = sctx.createRadialGradient(cx, cy, R * 1.005, cx, cy, R * 1.17);
+    gHug.addColorStop(0.0, "rgba(255,246,230,0.85)");
+    gHug.addColorStop(0.35, "rgba(252,234,210,0.34)");
+    gHug.addColorStop(1.0, "rgba(240,214,180,0)");
     gradHaloHug = gHug;
 
     // top halo: taller faint annulus (in halo-scaled space, centered 0,0) —
     // the lensed dome arcs high over the shadow like the movie's
-    const gTall = sctx.createRadialGradient(0, 0, R * 1.02, 0, 0, R * 1.72);
-    gTall.addColorStop(0.0, "rgba(255,238,204,0.36)");
-    gTall.addColorStop(0.4, "rgba(255,210,150,0.17)");
-    gTall.addColorStop(1.0, "rgba(255,190,120,0)");
+    const gTall = sctx.createRadialGradient(0, 0, R * 1.02, 0, 0, R * 1.6);
+    gTall.addColorStop(0.0, "rgba(255,244,224,0.2)");
+    gTall.addColorStop(0.4, "rgba(246,224,194,0.09)");
+    gTall.addColorStop(1.0, "rgba(236,208,172,0)");
     gradHaloTall = gTall;
 
     // bottom lensed arc hug
     const gBot = sctx.createRadialGradient(cx, cy, R * 1.005, cx, cy, R * 1.16);
-    gBot.addColorStop(0.0, "rgba(255,240,212,0.30)");
-    gBot.addColorStop(0.4, "rgba(255,216,160,0.12)");
-    gBot.addColorStop(1.0, "rgba(255,196,132,0)");
+    gBot.addColorStop(0.0, "rgba(255,246,226,0.30)");
+    gBot.addColorStop(0.4, "rgba(250,230,202,0.12)");
+    gBot.addColorStop(1.0, "rgba(240,212,176,0)");
     gradBotHug = gBot;
 
     // doppler beaming glows (band-scaled space). Extents stay inside the
     // square canvas: center*|x| + radius must be < W/2 or the glow clips
     // into a hard vertical edge at the canvas boundary.
     const gBeam = sctx.createRadialGradient(-R * 1.1, 0, 0, -R * 1.1, 0, R * 0.75);
-    gBeam.addColorStop(0.0, "rgba(255,250,240,0.60)");
-    gBeam.addColorStop(0.45, "rgba(255,222,168,0.24)");
-    gBeam.addColorStop(1.0, "rgba(255,210,150,0)");
+    gBeam.addColorStop(0.0, "rgba(255,252,246,0.6)");
+    gBeam.addColorStop(0.45, "rgba(252,238,218,0.22)");
+    gBeam.addColorStop(1.0, "rgba(246,228,202,0)");
     gradBeam = gBeam;
 
     const gHot = sctx.createRadialGradient(-R * 1.04, 0, 0, -R * 1.04, 0, R * 0.42);
@@ -192,18 +192,18 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     // static ambient layer
     basectx.clearRect(0, 0, W, H);
     const g1 = basectx.createRadialGradient(cx, cy, R * 0.5, cx, cy, W * 0.72);
-    g1.addColorStop(0, "rgba(255,176,102,0.13)");
-    g1.addColorStop(0.5, "rgba(255,150,80,0.05)");
-    g1.addColorStop(1, "rgba(255,150,80,0)");
+    g1.addColorStop(0, "rgba(244,206,168,0.08)");
+    g1.addColorStop(0.5, "rgba(238,196,156,0.03)");
+    g1.addColorStop(1, "rgba(238,196,156,0)");
     basectx.fillStyle = g1;
     basectx.fillRect(0, 0, W, H);
     basectx.save();
     basectx.translate(cx, cy);
     basectx.scale(1, 0.3);
     const g2 = basectx.createRadialGradient(0, 0, R * 0.4, 0, 0, RBAND * 1.12);
-    g2.addColorStop(0, "rgba(255,196,128,0.22)");
-    g2.addColorStop(0.55, "rgba(255,176,104,0.10)");
-    g2.addColorStop(1, "rgba(255,160,90,0)");
+    g2.addColorStop(0, "rgba(250,222,190,0.18)");
+    g2.addColorStop(0.55, "rgba(244,208,170,0.08)");
+    g2.addColorStop(1, "rgba(238,198,158,0)");
     basectx.fillStyle = g2;
     basectx.beginPath();
     basectx.arc(0, 0, RBAND * 1.15, 0, TWO);
@@ -266,37 +266,35 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     }
 
     // streak-ring texture: the disk's fine grain, baked once in circular
-    // space at HALF resolution — the upscale's bilinear soften reads as
-    // haze and the per-frame blit costs a quarter of full res
+    // space at FULL resolution — crispness lives here; every filament is a
+    // hairline and the half-res upscale that softened it is gone
     const B = Math.ceil(RBAND + R * 0.06);
     streakExtent = B;
-    streakRing.width = B;
-    streakRing.height = B;
-    srctx.setTransform(0.5, 0, 0, 0.5, 0, 0);
+    streakRing.width = B * 2;
+    streakRing.height = B * 2;
     srctx.clearRect(0, 0, B * 2, B * 2);
     srctx.lineCap = "round";
     srctx.globalCompositeOperation = "lighter";
     const grnd = mulberry32(20141107);
-    for (let i = 0; i < 560; i++) {
+    for (let i = 0; i < 850; i++) {
       const t = Math.pow(grnd(), 1.25);
       const r = R * 1.015 + (RBAND - R * 1.015) * t;
-      const span = 0.12 + grnd() * 1.3;
+      const span = 0.3 + grnd() * 2.3;
       const a0 = grnd() * TWO;
-      srctx.strokeStyle = t < 0.14 ? "#FFFFFF" : t < 0.38 ? "#FFEFD2" : t < 0.68 ? "#FFD9A0" : "#D89B5A";
-      srctx.globalAlpha = (0.09 + 0.4 * Math.pow(1 - t, 1.35)) * (0.5 + grnd() * 0.8);
-      srctx.lineWidth = R * (0.0035 + grnd() * 0.008);
+      srctx.strokeStyle = t < 0.14 ? "#FFFFFF" : t < 0.38 ? "#FFF5E9" : t < 0.68 ? "#F3DFC6" : "#C4A585";
+      srctx.globalAlpha = (0.1 + 0.5 * Math.pow(1 - t, 1.5)) * (0.45 + grnd() * 0.8);
+      srctx.lineWidth = R * (0.0022 + grnd() * 0.0055);
       srctx.beginPath();
       srctx.arc(B, B, r, a0, a0 + span);
       srctx.stroke();
     }
     // razor-bright inner rim of the disk texture
     srctx.strokeStyle = "#FFFFFF";
-    srctx.globalAlpha = 0.5;
-    srctx.lineWidth = R * 0.02;
+    srctx.globalAlpha = 0.65;
+    srctx.lineWidth = R * 0.014;
     srctx.beginPath();
-    srctx.arc(B, B, R * 1.04, 0, TWO);
+    srctx.arc(B, B, R * 1.035, 0, TWO);
     srctx.stroke();
-    srctx.setTransform(1, 0, 0, 1, 0, 0);
 
     // polar jet: blue-shifted plasma column, drawn behind everything
     const gJet = sctx.createLinearGradient(0, 0, 0, R * 2.4);
@@ -309,8 +307,8 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     // screen-space doppler veil: the receding side sinks into dusk
     const gVeil = sctx.createLinearGradient(cx + R * 0.1, 0, W, 0);
     gVeil.addColorStop(0.0, "rgba(7,8,13,0)");
-    gVeil.addColorStop(0.45, "rgba(7,8,13,0.22)");
-    gVeil.addColorStop(1.0, "rgba(7,8,13,0.48)");
+    gVeil.addColorStop(0.45, "rgba(7,8,13,0.16)");
+    gVeil.addColorStop(1.0, "rgba(7,8,13,0.36)");
     gradVeil = gVeil;
 
     // flare sprite
@@ -319,9 +317,9 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     fctx.clearRect(0, 0, 128, 128);
     const fg = fctx.createRadialGradient(64, 64, 0, 64, 64, 64);
     fg.addColorStop(0, "rgba(255,255,255,1)");
-    fg.addColorStop(0.22, "rgba(255,241,214,0.85)");
-    fg.addColorStop(0.55, "rgba(255,192,120,0.30)");
-    fg.addColorStop(1, "rgba(255,170,90,0)");
+    fg.addColorStop(0.22, "rgba(255,246,232,0.85)");
+    fg.addColorStop(0.55, "rgba(250,224,192,0.28)");
+    fg.addColorStop(1, "rgba(244,210,172,0)");
     fctx.fillStyle = fg;
     fctx.fillRect(0, 0, 128, 128);
   }
@@ -330,7 +328,7 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     const rnd = mulberry32(1337);
 
     bandArcs = [];
-    const NB = 42;
+    const NB = 60;
     for (let i = 0; i < NB; i++) {
       const t = i / (NB - 1);
       const rx = R * (1.03 + (RBAND / R - 1.06) * Math.pow(t, 1.1)) * (0.996 + rnd() * 0.014);
@@ -349,7 +347,7 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
       bandArcs.push({
         rx,
         ry: rx * fy,
-        lw: R * (0.014 + rnd() * 0.026) * (1 - 0.3 * t),
+        lw: R * (0.007 + rnd() * 0.014) * (1 - 0.3 * t),
         a: (0.03 + 0.11 * Math.pow(1 - t, 1.4)) * (0.75 + rnd() * 0.5),
         speed: 0.07 + 0.24 * Math.pow(R / rx, 1.5),
         dir: 1,
@@ -470,8 +468,8 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     cy = H / 2;
     // RBAND must clear the square canvas edge (plus bloom) or the band's
     // left tip cuts off in a hard vertical line
-    R = W * 0.263;
-    RBAND = R * 1.78;
+    R = W * 0.242;
+    RBAND = R * 1.96;
     buildStatic();
     buildArcs();
   }
@@ -749,16 +747,16 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     drawJet(I);
 
     // ---- FAR side (behind the hole) ----
-    fillBandHalf(true, gradBandAnnulus, 0.62 * briGain);
-    fillBandHalf(true, gradBandBoost, 0.35 * briGain);
-    drawStreakHalf(true, 0.62 * briGain);
-    drawStreakHalf(true, 0.2 * briGain, 1.45);
+    fillBandHalf(true, gradBandAnnulus, 0.5 * briGain);
+    fillBandHalf(true, gradBandBoost, 0.3 * briGain);
+    drawStreakHalf(true, 0.68 * briGain);
+    drawStreakHalf(true, 0.12 * briGain, 1.32);
     strokeArcSet(bandArcs, gradDisk, PI - 0.05, TWO + 0.05, briGain * 0.8, turb);
     strokeArcSet(coreArcs, gradDisk, PI - 0.05, TWO + 0.05, briGain * 0.7, turb);
 
     // top halo (lensed far side)
     fillHaloHalf(true, 1.0, gradHaloHug, 1.0 * briGain, R * 1.26);
-    fillHaloHalf(true, 1.28, gradHaloTall, 0.85 * briGain, R * 1.74);
+    fillHaloHalf(true, 1.26, gradHaloTall, 0.6 * briGain, R * 1.58);
     // bright crown hugging the top of the shadow
     sctx.strokeStyle = gradHalo;
     sctx.globalAlpha = Math.min(1, 0.26 * briGain);
@@ -827,10 +825,10 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     sctx.stroke();
 
     // ---- NEAR side (in front of the hole) ----
-    fillBandHalf(false, gradBandAnnulus, 1.0 * briGain);
-    fillBandHalf(false, gradBandBoost, 0.85 * briGain);
-    drawStreakHalf(false, 1.05 * briGain);
-    drawStreakHalf(false, 0.3 * briGain, 1.45);
+    fillBandHalf(false, gradBandAnnulus, 0.85 * briGain);
+    fillBandHalf(false, gradBandBoost, 0.7 * briGain);
+    drawStreakHalf(false, 1.1 * briGain);
+    drawStreakHalf(false, 0.18 * briGain, 1.32);
     drawDustLanes(1);
     strokeArcSet(bandArcs, gradDisk, -0.05, PI + 0.05, briGain, turb);
     strokeArcSet(coreArcs, gradDisk, -0.05, PI + 0.05, briGain, turb);
@@ -868,10 +866,12 @@ function createGargantua(canvas: HTMLCanvasElement): Engine | null {
     ctx.clearRect(0, 0, W, H);
     ctx.drawImage(scene, 0, 0);
     ctx.globalCompositeOperation = "lighter";
-    const bloom = 0.36 + 0.56 * I;
-    ctx.globalAlpha = bloom * 0.85;
+    // tight bloom: the quarter-res pass carries the glow, the eighth-res
+    // fog is nearly off — the movie glows hot but stays SHARP
+    const bloom = 0.26 + 0.38 * I;
+    ctx.globalAlpha = bloom * 0.9;
     ctx.drawImage(blurA, 0, 0, W, H);
-    ctx.globalAlpha = bloom * 0.65;
+    ctx.globalAlpha = bloom * 0.35;
     ctx.drawImage(blurB, 0, 0, W, H);
     ctx.globalAlpha = 1;
     ctx.globalCompositeOperation = "source-over";
