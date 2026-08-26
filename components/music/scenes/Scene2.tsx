@@ -92,6 +92,7 @@ function BigCard({ mod, label, jagged }: { mod: string; label: string; jagged: b
 export function Scene2() {
   return (
     <section className="mu-scene mu-s2" data-scene="2" aria-label="Scene 2: mood is too coarse">
+      <div className="mu-stage">
       <div className="mu-s2-head">
         <MuHeading>
           Music apps file everything under a <b>mood</b> tag.
@@ -156,6 +157,7 @@ export function Scene2() {
         them apart
       </p>
       <MuCaption className="mu-s2-cap">That gap is where MelodyMind started: find songs that fit the whole situation.</MuCaption>
+      </div>
     </section>
   );
 }

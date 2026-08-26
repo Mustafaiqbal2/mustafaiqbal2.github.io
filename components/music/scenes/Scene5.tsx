@@ -40,7 +40,7 @@ function PipeArrow({ className }: { className?: string }) {
 export function Scene5() {
   return (
     <section className="mu-scene mu-s5" data-scene="5" aria-label="teach the machine to listen">
-      <div className="mu-s5-inner">
+      <div className="mu-s5-inner mu-stage">
         <MuHeading className="mu-s5-h">So we trained a model to listen.</MuHeading>
 
         <div className="mu-s5-mid">

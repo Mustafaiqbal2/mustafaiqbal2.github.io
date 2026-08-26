@@ -37,6 +37,7 @@ const WORDS: readonly WordSpec[] = [
 export function Scene3() {
   return (
     <section className="mu-scene mu-s3" data-scene="3" aria-label="Words plotted as points in space, where distance means similarity">
+      <div className="mu-stage">
       <MuHeading className="mu-s3-h">First we turned sentences into points.</MuHeading>
 
       <div className="mu-s3-map" aria-hidden="true">
@@ -76,6 +77,7 @@ export function Scene3() {
         Sentences with similar meaning land close together. Once text is a point, finding similar text is just
         measuring distance.
       </MuCaption>
+      </div>
     </section>
   );
 }

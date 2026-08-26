@@ -25,10 +25,8 @@
   background-size: 22px 22px;
 }
 
-/* all ink-colored art lives here */
+/* all ink-colored art lives here — this IS the design stage */
 .mu-s1-art {
-  position: absolute;
-  inset: 0;
   color: var(--lv-ink);
 }
 

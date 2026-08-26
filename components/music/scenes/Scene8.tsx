@@ -91,6 +91,7 @@ export function Scene8() {
       data-scene="8"
       aria-label="full circle: the space fills with songs and the old question finally has an answer"
     >
+      <div className="mu-stage">
       <div className="mu-s8-dots" aria-hidden="true">
         {DOTS.map((d, i) => (
           <span
@@ -116,6 +117,7 @@ export function Scene8() {
       <a className="mu-s8-cta lv-mono" href="#melodymind">
         open melodymind
       </a>
+      </div>
     </section>
   );
 }

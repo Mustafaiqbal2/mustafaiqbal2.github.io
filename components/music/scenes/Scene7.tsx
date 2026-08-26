@@ -98,7 +98,7 @@ const HOP2_FROM = { x: CENTROID.x - HOP2.x, y: CENTROID.y - HOP2.y } as const;
 export function Scene7() {
   return (
     <section className="mu-scene mu-s7" data-scene="7" aria-label="The two-hop search: ask the songs themselves">
-      <div className="mu-s7-stage" aria-hidden="true">
+      <div className="mu-s7-stage mu-stage" aria-hidden="true">
         <svg
           className="mu-s7-canvas"
           viewBox="0 0 1440 900"

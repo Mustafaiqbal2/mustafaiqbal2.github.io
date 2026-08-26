@@ -11,8 +11,6 @@
 
 /* the canyon stage fills the pinned viewport */
 .mu-s7-stage {
-  position: absolute;
-  inset: 0;
 }
 .mu-s7-canvas {
   position: absolute;
@@ -98,7 +96,7 @@
   position: absolute;
   left: 69%;
   top: 30%;
-  font-size: clamp(18px, 1.6vw, 26px);
+  font-size: 23px;
   letter-spacing: 0.06em;
   color: var(--lv-accent-bright);
 }
@@ -114,7 +112,7 @@
   max-width: 640px;
 }
 .mu-s7-h {
-  font-size: clamp(30px, 3.6vw, 54px);
+  font-size: 52px;
 }
 .mu-s7-cap {
   max-width: 520px;

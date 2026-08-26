@@ -36,6 +36,7 @@ const DOTS: readonly number[] = [1, 2, 3, 4, 5];
 export function Scene6() {
   return (
     <section className="mu-scene mu-s6" data-scene="6" aria-label="The canyon: text and audio land on far shores of the same space">
+      <div className="mu-stage">
       <div className="mu-s6-head">
         <MuHeading>It almost worked.</MuHeading>
       </div>
@@ -108,6 +109,7 @@ export function Scene6() {
 
         {/* carved into the gap's far wall */}
         <span className="mu-s6-carve lv-mono">cosine = 0.3</span>
+      </div>
       </div>
     </section>
   );

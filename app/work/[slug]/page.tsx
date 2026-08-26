@@ -126,9 +126,14 @@ export default async function ProjectPage({ params }: Props) {
         <div className="wk-top wk-top--dark">
           <div className="lv-topbar lv-mono">
             <TypedBrand />
-            <a className="lv-topbar__link" href="/work/">
-              All work <ArrowUpRight />
-            </a>
+            <span className="lv-topbar__links">
+              <a className="lv-topbar__link" href="/music/">
+                Music <ArrowUpRight />
+              </a>
+              <a className="lv-topbar__link" href="/work/">
+                All work <ArrowUpRight />
+              </a>
+            </span>
           </div>
         </div>
         <div className="wrap">

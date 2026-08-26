@@ -19,9 +19,14 @@ export default function WorkPage() {
       <div className="wk-top">
         <div className="lv-topbar lv-mono">
           <TypedBrand />
-          <a className="lv-topbar__link" href={`mailto:${profile.email}`}>
-            Talk to me <ArrowUpRight />
-          </a>
+          <span className="lv-topbar__links">
+            <a className="lv-topbar__link" href="/music/">
+              Music <ArrowUpRight />
+            </a>
+            <a className="lv-topbar__link" href={`mailto:${profile.email}`}>
+              Talk to me <ArrowUpRight />
+            </a>
+          </span>
         </div>
       </div>
 

@@ -36,7 +36,7 @@ const ARC_DASHES: string[] = [
 export function Scene4() {
   return (
     <section className="mu-scene mu-s4" data-scene="4" aria-label="Songs can't read: the audio refuses to enter the word space">
-      <div className="mu-s4-stage">
+      <div className="mu-s4-stage mu-stage">
         {/* LEFT — the word space: wobbly boundary blob + five dots + labels */}
         <div className="mu-s4-wordspace">
           <svg className="mu-s4-blob" viewBox="0 0 340 380" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden="true">
