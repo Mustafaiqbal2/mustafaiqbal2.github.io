@@ -37,12 +37,12 @@ export function Scene6() {
   return (
     <section className="mu-scene mu-s6" data-scene="6" aria-label="The canyon: text and audio land on far shores of the same space">
       <div className="mu-s6-head">
-        <MuHeading>One space. Two shores.</MuHeading>
+        <MuHeading>It almost worked.</MuHeading>
       </div>
 
       <MuCaption className="mu-s6-caption">
-        Text lands on one side. Audio lands on the other. A straight shout barely carries. The score for a
-        perfect match reads 0.3 when it should read 0.9.
+        Text and audio settled on two separate sides of the space. The gap has a name: the modality gap. Queries
+        could reach the songs, but a perfect match scored around 0.3 when song-to-song matches score near 0.9.
       </MuCaption>
 
       <div className="mu-s6-land" aria-hidden="true">

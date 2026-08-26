@@ -222,7 +222,6 @@ export function Scene1() {
         <div className="mu-s1-flash" aria-hidden="true" />
       </div>
 
-      <MuCaption className="mu-s1-caption">so. that happened.</MuCaption>
     </section>
   );
 }
@@ -237,7 +236,6 @@ export function buildScene1(ctx: SceneCtx): void {
       { sel: ".mu-s1-left", y: 36 },
       { sel: ".mu-s1-right", y: 36 },
       { sel: ".mu-s1-bubbleA", y: 24 },
-      { sel: ".mu-s1-caption", y: 20 }
     ];
     entrances.forEach(({ sel, y }) => {
       const el = q(sel)[0];
@@ -386,7 +384,6 @@ export function buildScene1(ctx: SceneCtx): void {
     tl.to(q(sel), { x, y, rotation: r, opacity: 0, duration: 0.6, ease: "power2.out" }, 3.56);
   });
 
-  /* 4.4 – 5.0 : quiet space; the caption lands, then settles */
-  tl.from(q(".mu-s1-caption"), { opacity: 0, y: 14, duration: 0.3 }, 4.4)
-    .to(q(".mu-s1-caption"), { opacity: 0.7, duration: 0.25 }, 4.75);
+  /* 4.4 – 5.0 : quiet space — the silence after is the punchline */
+  tl.to({}, { duration: 0.6 }, 4.4);
 }

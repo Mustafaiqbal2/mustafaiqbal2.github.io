@@ -14,9 +14,9 @@ gsap.registerPlugin(ScrollTrigger);
 type TabId = "story" | "melodymind" | "rotation";
 
 const TABS: { id: TabId; label: string; desc: string }[] = [
-  { id: "story", label: "The story", desc: "How one bad answer became a thesis. Scroll it." },
-  { id: "melodymind", label: "MelodyMind", desc: "Type the situation, get the songs that live there." },
-  { id: "rotation", label: "On rotation", desc: "What I actually listen to, straight from Spotify." }
+  { id: "story", label: "The story", desc: "How MelodyMind started, scene by scene." },
+  { id: "melodymind", label: "MelodyMind", desc: "Type a situation, get songs that fit it." },
+  { id: "rotation", label: "On rotation", desc: "What I listen to, updated from Spotify." }
 ];
 
 export function MusicPage() {
@@ -105,7 +105,7 @@ export function MusicPage() {
         <h1 className="mu-hero__title">
           Got any good songs<b>?</b>
         </h1>
-        <p className="mu-hero__sub lv-mono">a story about one bad answer</p>
+        <p className="mu-hero__sub lv-mono">how melodymind happened</p>
         <p className="mu-scrollcue lv-mono" aria-hidden="true">
           scroll <span className="mu-scrollcue__arrow">↓</span>
         </p>
@@ -123,6 +123,7 @@ export function MusicPage() {
           >
             <span className="mu-tab__label lv-mono">{t.label}</span>
             <span className="mu-tab__more" aria-hidden="true">
+              <span className="mu-tab__inner">
               <span className="mu-tab__motif">
                 {t.id === "story" && <StickMan pose="happy" className="mu-motif-stick" />}
                 {t.id === "melodymind" && (
@@ -144,6 +145,7 @@ export function MusicPage() {
                 )}
               </span>
               <span className="mu-tab__desc">{t.desc}</span>
+              </span>
             </span>
           </button>
         ))}
@@ -157,8 +159,8 @@ export function MusicPage() {
         <div className="mu-stub" role="dialog" aria-label="MelodyMind">
           <div className="mu-stub__card">
             <p className="lv-mono mu-stub__eyebrow">MelodyMind</p>
-            <h2>The machine goes here.</h2>
-            <p>Type a situation, get the songs that live there. It&apos;s being wired in now.</p>
+            <h2>MelodyMind search</h2>
+            <p>You&apos;ll type a situation and get songs that fit it. This tab is being built now.</p>
             <button type="button" className="mu-stub__back lv-mono" onClick={() => pick("story")}>
               back to the story
             </button>
@@ -169,8 +171,8 @@ export function MusicPage() {
         <div className="mu-stub" role="dialog" aria-label="On rotation">
           <div className="mu-stub__card">
             <p className="lv-mono mu-stub__eyebrow">On rotation</p>
-            <h2>Live from Spotify.</h2>
-            <p>Top artists, playlists, what&apos;s on repeat — wired straight to the account, updating itself. Soon.</p>
+            <h2>On rotation</h2>
+            <p>Top artists and playlists pulled from my Spotify, updating on their own. Being built.</p>
             <button type="button" className="mu-stub__back lv-mono" onClick={() => pick("story")}>
               back to the story
             </button>

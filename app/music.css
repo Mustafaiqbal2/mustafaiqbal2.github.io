@@ -105,7 +105,9 @@ html.mu-overlay-open {
   top: 14px;
   z-index: 40;
   display: flex;
+  align-items: flex-start;
   gap: 10px;
+  height: 50px;
   padding: 0 var(--lv-pad);
   max-width: 1180px;
   margin: 0 auto 8vh;
@@ -134,30 +136,23 @@ html.mu-overlay-open {
   display: block;
   font-size: 13px;
 }
-/* the hover card OVERLAYS content: constant tab height, zero layout
-   shift, quick out so moving between tabs never feels sticky */
+/* the original look: the description lives INSIDE the tab card and the
+   card itself swells. The clunk fix is structural — the bar keeps a fixed
+   height, so a growing tab overlays the page instead of reflowing it, and
+   the reveal animates real content height via grid-template-rows */
 .mu-tab__more {
-  position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  right: 0;
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  margin-top: 0;
+  transition: grid-template-rows 0.16s ease, opacity 0.12s ease, margin-top 0.16s ease;
+}
+.mu-tab__inner {
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 14px;
-  padding: 12px 14px;
-  border: 1px solid rgba(242, 242, 238, 0.35);
-  border-radius: 12px;
-  background: rgba(7, 8, 13, 0.82);
-  opacity: 0;
-  transform: translateY(-6px);
-  pointer-events: none;
-  transition: opacity 0.15s ease, transform 0.15s ease;
-}
-@supports (backdrop-filter: blur(8px)) {
-  .mu-tab__more {
-    background: rgba(7, 8, 13, 0.68);
-    backdrop-filter: blur(8px);
-  }
 }
 .mu-tab__desc {
   font-size: 13px;
@@ -179,17 +174,19 @@ html.mu-overlay-open {
 }
 @media (hover: hover) {
   .mu-tab {
-    transition: flex-grow 0.32s cubic-bezier(0.3, 1.1, 0.4, 1), background 0.25s, border-color 0.25s;
+    transition: flex-grow 0.4s cubic-bezier(0.22, 1, 0.36, 1), background 0.25s, border-color 0.25s;
   }
   .mu-tab:hover {
-    flex-grow: 1.7;
-    background: rgba(242, 242, 238, 0.08);
+    flex-grow: 2.1;
+    background: rgba(7, 8, 13, 0.78);
     border-color: rgba(242, 242, 238, 0.5);
   }
   .mu-tab:hover .mu-tab__more {
+    grid-template-rows: 1fr;
     opacity: 1;
-    transform: translateY(0);
-    transition: opacity 0.2s ease 0.05s, transform 0.28s cubic-bezier(0.22, 1, 0.36, 1) 0.05s;
+    margin-top: 10px;
+    transition: grid-template-rows 0.34s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.22s ease 0.06s,
+      margin-top 0.34s cubic-bezier(0.22, 1, 0.36, 1);
   }
   /* motifs wake only while hovered */
   .mu-tab:hover .mu-motif-stick {

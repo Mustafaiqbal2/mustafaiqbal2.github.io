@@ -37,7 +37,7 @@ const WORDS: readonly WordSpec[] = [
 export function Scene3() {
   return (
     <section className="mu-scene mu-s3" data-scene="3" aria-label="Words plotted as points in space, where distance means similarity">
-      <MuHeading className="mu-s3-h">Turn the sentence into a point.</MuHeading>
+      <MuHeading className="mu-s3-h">First we turned sentences into points.</MuHeading>
 
       <div className="mu-s3-map" aria-hidden="true">
         <svg className="mu-s3-svg" viewBox="0 0 1440 900" preserveAspectRatio="none" fill="none" strokeLinecap="round" strokeLinejoin="round">
@@ -71,7 +71,11 @@ export function Scene3() {
         </span>
       </div>
 
-      <MuCaption className="mu-s3-cap">Now distance means something. Near is similar. Far is different.</MuCaption>
+      <MuCaption className="mu-s3-cap">
+        An embedding model reads text and returns coordinates: a position in a space with hundreds of dimensions.
+        Sentences with similar meaning land close together. Once text is a point, finding similar text is just
+        measuring distance.
+      </MuCaption>
     </section>
   );
 }

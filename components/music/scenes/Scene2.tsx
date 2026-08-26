@@ -94,7 +94,7 @@ export function Scene2() {
     <section className="mu-scene mu-s2" data-scene="2" aria-label="Scene 2: mood is too coarse">
       <div className="mu-s2-head">
         <MuHeading>
-          Every app files music under <b>mood</b>.
+          Music apps file everything under a <b>mood</b> tag.
         </MuHeading>
       </div>
 
@@ -104,8 +104,8 @@ export function Scene2() {
         <TagCard label="chill" mod="chill" />
       </div>
 
-      <BigCard mod="a" label="sad — breakup" jagged />
-      <BigCard mod="b" label="sad — funeral" jagged={false} />
+      <BigCard mod="a" label="sad (breakup)" jagged />
+      <BigCard mod="b" label="sad (funeral)" jagged={false} />
 
       <div className="mu-s2-gag">
         <div className="mu-s2-searchcol">
@@ -143,6 +143,7 @@ export function Scene2() {
             </span>
           </div>
           <p className="mu-s2-result lv-mono">sad playlist #47</p>
+          <p className="mu-s2-gagnote mu-caption lv-mono">it matched the word crying and ignored the rest of the sentence</p>
         </div>
         <div className="mu-s2-man" aria-hidden="true">
           <StickMan pose="idle" className="mu-s2-man-idle" />
@@ -150,7 +151,11 @@ export function Scene2() {
         </div>
       </div>
 
-      <MuCaption className="mu-s2-cap">The mood is not the situation.</MuCaption>
+      <p className="mu-s2-cardsnote mu-caption lv-mono">
+        both waveforms carry the same tag. a breakup and a funeral are different situations, and the tag cannot tell
+        them apart
+      </p>
+      <MuCaption className="mu-s2-cap">That gap is where MelodyMind started: find songs that fit the whole situation.</MuCaption>
     </section>
   );
 }
@@ -287,13 +292,15 @@ export function buildScene2(ctx: SceneCtx): void {
   tl.to(q(".mu-s2-search"), { scale: 1.06, duration: 0.05, ease: "none" }, 2.28)
     .to(q(".mu-s2-search"), { scale: 1, duration: 0.07, ease: "none" }, 2.33)
     .from(q(".mu-s2-result"), { opacity: 0, y: 8, duration: 0.15 }, 2.36)
+    .from(q(".mu-s2-gagnote"), { opacity: 0, duration: 0.2 }, 2.52)
     .to(q(".mu-s2-man-idle"), { opacity: 0, duration: 0.12 }, 2.5)
     .fromTo(q(".mu-s2-man-no"), { opacity: 0 }, { opacity: 1, duration: 0.15 }, 2.5);
 
   /* 2.3 – 3.0 : the big cards drift further apart, caption lands */
   tl.to(q(".mu-s2-big--a"), { x: -36, y: 10, rotation: -2, duration: 0.5, ease: "none" }, 2.4)
     .to(q(".mu-s2-big--b"), { x: 36, y: -8, rotation: 2, duration: 0.5, ease: "none" }, 2.45)
-    .from(q(".mu-s2-cap"), { opacity: 0, y: 16, duration: 0.3 }, 2.75);
+    .from(q(".mu-s2-cardsnote"), { opacity: 0, y: 10, duration: 0.25 }, 2.2)
+    .from(q(".mu-s2-cap"), { opacity: 0, y: 16, duration: 0.3 }, 2.8);
 
   /* 3.0 – 3.5 : hold the composed frame */
   tl.to({}, { duration: 0.45 }, 3.05);

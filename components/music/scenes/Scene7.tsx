@@ -171,10 +171,11 @@ export function Scene7() {
       </div>
 
       <div className="mu-s7-copy">
-        <MuHeading className="mu-s7-h">Ask the songs themselves.</MuHeading>
+        <MuHeading className="mu-s7-h">The fix went in two hops.</MuHeading>
         <MuCaption className="mu-s7-cap">
-          The first hop only finds anchors. The anchors agree with each other. Their center asks again and the whole
-          neighborhood answers at 0.8.
+          The first search only picks anchors: a handful of songs near the query. We keep the ones that agree with
+          each other, average them into one point, and search again from that point. Song-to-song similarity is
+          strong, so the second hop comes back at 0.8. This is the main trick in the thesis.
         </MuCaption>
       </div>
     </section>

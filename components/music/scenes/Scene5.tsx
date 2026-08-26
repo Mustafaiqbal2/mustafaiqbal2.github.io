@@ -41,7 +41,7 @@ export function Scene5() {
   return (
     <section className="mu-scene mu-s5" data-scene="5" aria-label="teach the machine to listen">
       <div className="mu-s5-inner">
-        <MuHeading className="mu-s5-h">So we taught a machine to listen.</MuHeading>
+        <MuHeading className="mu-s5-h">So we trained a model to listen.</MuHeading>
 
         <div className="mu-s5-mid">
           <div className="mu-s5-pipe">
@@ -153,7 +153,9 @@ export function Scene5() {
         </div>
 
         <MuCaption className="mu-s5-cap">
-          A frozen ear hears the song. A small adapter we trained on ten thousand songs aims it into the word space.
+          CLAP is an existing model that turns audio into numbers. We froze it and trained a small adapter network on
+          top, using about ten thousand songs, so that each song lands where a description of it would land. After
+          that, songs and sentences share one space.
         </MuCaption>
       </div>
     </section>

@@ -112,7 +112,8 @@ export function Scene4() {
         </div>
 
         <MuCaption className="mu-s4-cap">
-          Songs aren&apos;t sentences. Saad split them into pieces. The pieces aren&apos;t sentences either.
+          The text model can only place text, and a song file means nothing to it. Saad&apos;s stem separation can
+          split a track into drums, vocals and bass, and every piece is still audio. We needed another way in.
         </MuCaption>
       </div>
     </section>

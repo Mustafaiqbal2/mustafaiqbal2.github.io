@@ -205,3 +205,23 @@
     margin: 0 auto;
   }
 }
+
+/* explanatory notes: the point of each illustration, spelled out */
+.mu-s2-cardsnote {
+  position: absolute;
+  left: 13%;
+  top: 76%;
+  max-width: 470px;
+  font-size: 12px;
+  line-height: 1.8;
+  color: #c9ccd8;
+  text-transform: none;
+}
+.mu-s2-gagnote {
+  margin: 8px 4px 0;
+  max-width: 260px;
+  font-size: 11px;
+  line-height: 1.7;
+  color: var(--lv-grey-light);
+  text-transform: none;
+}
