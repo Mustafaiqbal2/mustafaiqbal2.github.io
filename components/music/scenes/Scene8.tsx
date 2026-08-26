@@ -132,46 +132,31 @@ export function Scene8() {
 
 export function buildScene8(ctx: SceneCtx): void {
   if (!ctx.desktop) {
-    /* mobile: no pin. Dot field is pre-rendered static (css caps it at 90).
-       Four simple scrubbed entrances so the scene just reads well. */
-    const [hass] = ctx.q(".mu-s8-man--hassaan");
-    const [bubbleA] = ctx.q(".mu-s8-bubbleA");
-    const [bubbleB] = ctx.q(".mu-s8-bubbleB");
-    const [cta] = ctx.q(".mu-s8-cta");
-
-    if (hass) {
-      gsap.from(ctx.q(".mu-s8-man"), {
-        y: 34,
-        opacity: 0,
-        ease: "none",
-        stagger: 0.1,
-        scrollTrigger: { trigger: hass, start: "top 78%", end: "top 35%", scrub: 0.8 }
-      });
-    }
-    if (bubbleA) {
-      gsap.from(bubbleA, {
-        y: 28,
-        opacity: 0,
-        ease: "none",
-        scrollTrigger: { trigger: bubbleA, start: "top 78%", end: "top 35%", scrub: 0.8 }
-      });
-    }
-    if (bubbleB) {
-      gsap.from(bubbleB, {
-        y: 28,
-        opacity: 0,
-        ease: "none",
-        scrollTrigger: { trigger: bubbleB, start: "top 78%", end: "top 35%", scrub: 0.8 }
-      });
-    }
-    if (cta) {
-      gsap.from(cta, {
-        y: 22,
-        opacity: 0,
-        ease: "none",
-        scrollTrigger: { trigger: cta, start: "top 88%", end: "top 45%", scrub: 0.8 }
-      });
-    }
+    /* Mobile has one explicit ending timeline. Individual absolute children
+       cannot be independent triggers: they all sit in the first viewport. */
+    const cast = ctx.q(".mu-s8-man");
+    const bubbleA = ctx.q(".mu-s8-bubbleA");
+    const bubbleB = ctx.q(".mu-s8-bubbleB");
+    const cta = ctx.q(".mu-s8-cta");
+    gsap.set([...cast, ...bubbleA, ...bubbleB, ...cta], { opacity: 0 });
+    gsap.set(cast, { y: 28 });
+    gsap.set([...bubbleA, ...bubbleB], { y: 20 });
+    gsap.set(cta, { y: 16 });
+    gsap.timeline({
+      scrollTrigger: {
+        trigger: ctx.root,
+        start: "top top",
+        end: "+=170%",
+        pin: true,
+        scrub: 0.75,
+        anticipatePin: 1,
+        fastScrollEnd: true
+      }
+    })
+      .to(cast, { opacity: 1, y: 0, duration: 0.24, stagger: 0.06, ease: "none" }, 0.1)
+      .to(bubbleA, { opacity: 1, y: 0, duration: 0.18, ease: "none" }, 0.52)
+      .to(bubbleB, { opacity: 1, y: 0, duration: 0.18, ease: "none" }, 0.7)
+      .to(cta, { opacity: 1, y: 0, duration: 0.18, ease: "none" }, 0.9);
     return;
   }
 
