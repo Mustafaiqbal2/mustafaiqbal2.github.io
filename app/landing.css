@@ -1145,58 +1145,6 @@ html.lv-page .site-footer {
   width: 70px;
 }
 /* ---- impact-frame easter eggs (white ground, ink art) ---- */
-.lv-boom__tag {
-  inset: 0;
-  background: var(--lv-bone);
-  color: var(--lv-ink);
-}
-.lv-boom__tag svg {
-  width: 100%;
-  height: 100%;
-  display: block;
-}
-.lv-tag__txt {
-  font-family: var(--font-sans), "Helvetica Neue", Arial, sans-serif;
-  font-size: 196px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  fill: currentColor;
-}
-.lv-tag__echo {
-  font-family: var(--font-sans), "Helvetica Neue", Arial, sans-serif;
-  font-size: 196px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2.5;
-  opacity: 0.45;
-}
-.lv-tag__over {
-  font-family: var(--font-sans), "Helvetica Neue", Arial, sans-serif;
-  font-size: 132px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  fill: none;
-  stroke: var(--lv-accent);
-  stroke-width: 3.5;
-}
-.lv-tag__swash {
-  stroke: currentColor;
-  stroke-width: 15;
-  fill: none;
-  stroke-linecap: round;
-  opacity: 0.9;
-}
-.lv-tag__drip {
-  stroke: currentColor;
-  stroke-width: 5;
-  stroke-linecap: round;
-  opacity: 0.75;
-}
-.lv-tag__spray circle {
-  fill: currentColor;
-}
 .lv-boom__cover {
   inset: 0;
   background: var(--lv-bone);
@@ -1226,17 +1174,6 @@ html.lv-page .site-footer {
 .lv-boom__star--a {
   left: 16%;
   top: 20%;
-}
-.lv-boom__star--b {
-  right: 14%;
-  top: 30%;
-  width: 150px;
-  color: var(--lv-accent-bright);
-}
-.lv-boom__star--c {
-  left: 26%;
-  bottom: 22%;
-  width: 130px;
 }
 /* ---- supernova ---- */
 .lv-boom__implode {
