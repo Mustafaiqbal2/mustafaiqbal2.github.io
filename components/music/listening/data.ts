@@ -231,7 +231,9 @@ export function parsePlayback(value: unknown): Playback {
 }
 
 export function musicApiUrl(path: "/spotify/room" | "/spotify/now"): string {
-  const base = process.env.NEXT_PUBLIC_MUSIC_API_URL?.trim().replace(/\/+$/, "");
-  if (!base) throw new Error("NEXT_PUBLIC_MUSIC_API_URL is not configured.");
+  const base = (
+    process.env.NEXT_PUBLIC_MUSIC_API_URL?.trim() ||
+    "https://mustafa-music-api.mustafaiqbal2-portfolio.workers.dev"
+  ).replace(/\/+$/, "");
   return base + path;
 }

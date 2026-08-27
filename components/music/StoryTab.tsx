@@ -56,6 +56,9 @@ export function StoryTab({ onBuilt }: { onBuilt: () => void }) {
           return;
         }
         const desktop = Boolean(mmCtx.conditions?.desktop);
+        let cancelled = false;
+        let frame = 0;
+        let timer = 0;
         const queue = BUILDERS.map((build, i) => () => {
           const sec = el.querySelector<HTMLElement>(`[data-scene="${i + 1}"]`);
           if (!sec) return;
@@ -63,6 +66,7 @@ export function StoryTab({ onBuilt }: { onBuilt: () => void }) {
           build({ root: sec, q, drawFrom, desktop });
         });
         const run = () => {
+          if (cancelled) return;
           const next = queue.shift();
           if (!next) {
             ScrollTrigger.refresh();
@@ -74,9 +78,14 @@ export function StoryTab({ onBuilt }: { onBuilt: () => void }) {
           } catch {
             /* one broken scene must not hold the boot gate */
           }
-          window.setTimeout(run, 40);
+          timer = window.setTimeout(run, 40);
         };
-        window.requestAnimationFrame(run);
+        frame = window.requestAnimationFrame(run);
+        return () => {
+          cancelled = true;
+          window.cancelAnimationFrame(frame);
+          window.clearTimeout(timer);
+        };
       }
     );
     return () => mm.revert();

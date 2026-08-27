@@ -9,7 +9,7 @@ import { siteUrl } from "@/data/portfolio";
 
 export const metadata: Metadata = {
   title: "Music",
-  description: "The story of MelodyMind: how one bad answer became a thesis about finding the song for the exact situation.",
+  description: "The story of MelodyMind, live song search, and Mustafa's Spotify listening room.",
   alternates: { canonical: `${siteUrl}/music/` }
 };
 

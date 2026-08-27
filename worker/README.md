@@ -34,7 +34,6 @@ Add each value through Wrangler's hidden prompt:
 
 ```powershell
 npx wrangler secret put SPOTIFY_CLIENT_ID --config worker/wrangler.toml
-npx wrangler secret put SPOTIFY_CLIENT_SECRET --config worker/wrangler.toml
 npx wrangler secret put SPOTIFY_REFRESH_TOKEN --config worker/wrangler.toml
 npx wrangler secret put ALLOWED_ORIGIN --config worker/wrangler.toml
 ```
@@ -48,12 +47,5 @@ npm run worker:deploy
 ```
 
 The deployment prints the `workers.dev` URL. Record it here after the first deployment.
-
-## Local checks
-
-```powershell
-npm run test:worker
-npx wrangler deploy --dry-run --config worker/wrangler.toml
-```
 
 No Spotify or Cloudflare secret belongs in a repository file, command argument, chat message, or browser bundle.

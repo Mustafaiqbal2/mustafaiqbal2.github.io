@@ -22,7 +22,6 @@ const RANGES: Record<TimeRange, string> = {
 
 export type SpotifyEnv = {
   SPOTIFY_CLIENT_ID: string;
-  SPOTIFY_CLIENT_SECRET: string;
   SPOTIFY_REFRESH_TOKEN: string;
 };
 
@@ -172,24 +171,27 @@ export function createSpotifyClient(
 ): SpotifyClient {
   let token: { value: string; expiresAt: number } | null = null;
   let tokenRefresh: Promise<string> | null = null;
+  let refreshToken = env.SPOTIFY_REFRESH_TOKEN;
 
   async function refreshAccessToken(): Promise<string> {
-    const credentials = btoa(env.SPOTIFY_CLIENT_ID + ":" + env.SPOTIFY_CLIENT_SECRET);
     const response = await fetchImpl(TOKEN_URL, {
       method: "POST",
       headers: {
-        Authorization: "Basic " + credentials,
         "Content-Type": "application/x-www-form-urlencoded"
       },
       body: new URLSearchParams({
         grant_type: "refresh_token",
-        refresh_token: env.SPOTIFY_REFRESH_TOKEN
+        refresh_token: refreshToken,
+        client_id: env.SPOTIFY_CLIENT_ID
       })
     });
 
     if (!response.ok) throw new SpotifyError("token", response.status);
     const payload = object(await response.json(), "token response");
     const value = string(payload.access_token, "token response.access_token");
+    if (typeof payload.refresh_token === "string" && payload.refresh_token.length > 0) {
+      refreshToken = payload.refresh_token;
+    }
     const expiresIn = typeof payload.expires_in === "number" ? payload.expires_in : 3600;
     token = { value, expiresAt: Date.now() + expiresIn * 1000 };
     return value;

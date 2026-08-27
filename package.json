@@ -7,8 +7,6 @@
     "build": "next build",
     "start": "next start",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run",
-    "test:worker": "vitest run worker/test",
     "worker:dev": "wrangler dev --config worker/wrangler.toml",
     "worker:deploy": "wrangler deploy --config worker/wrangler.toml",
     "spotify:authorize": "node worker/scripts/authorize.mjs"
@@ -31,7 +29,6 @@
     "@types/react-dom": "^19.0.0",
     "playwright-core": "^1.61.1",
     "typescript": "^5.9.0",
-    "vitest": "^4.1.11",
     "wrangler": "^4.127.0"
   }
 }

@@ -8,19 +8,21 @@ import { ArrowUpRight } from "lucide-react";
 import { TypedBrand } from "@/components/TypedBrand";
 import { StickMan } from "./sceneKit";
 import { StoryTab } from "./StoryTab";
+import { ListeningRoom } from "./listening/ListeningRoom";
 
 gsap.registerPlugin(ScrollTrigger);
 
-type TabId = "story" | "melodymind" | "rotation";
+type TabId = "story" | "melodymind" | "listening";
 
 const TABS: { id: TabId; label: string; desc: string }[] = [
   { id: "story", label: "The story", desc: "How MelodyMind started, scene by scene." },
   { id: "melodymind", label: "MelodyMind", desc: "Type a situation, get songs that fit it." },
-  { id: "rotation", label: "On rotation", desc: "What I listen to, updated from Spotify." }
+  { id: "listening", label: "Listening room", desc: "Playlists, favourites, and whatever is playing now." }
 ];
 
 export function MusicPage() {
   const [active, setActive] = useState<TabId>("story");
+  const [panelReady, setPanelReady] = useState(false);
   const lenisRef = useRef<Lenis | null>(null);
 
   /* boot gate release: the story tab calls this once its pins exist */
@@ -54,11 +56,17 @@ export function MusicPage() {
   }, []);
 
   /* hash <-> tab sync (static export friendly: one page, hash addressing) */
-  useEffect(() => {
+  useLayoutEffect(() => {
     const fromHash = () => {
-      const h = window.location.hash.replace("#", "") as TabId;
-      if (h === "melodymind" || h === "rotation") setActive(h);
-      else if (h === "story" || h === "") setActive("story");
+      const hash = window.location.hash.replace("#", "");
+      const next: TabId = hash === "rotation" || hash === "listening"
+        ? "listening"
+        : hash === "melodymind"
+          ? "melodymind"
+          : "story";
+      setActive(next);
+      setPanelReady(true);
+      if (next !== "story") document.documentElement.classList.remove("lv-boot");
     };
     fromHash();
     window.addEventListener("hashchange", fromHash);
@@ -66,6 +74,13 @@ export function MusicPage() {
   }, []);
 
   const pick = (id: TabId) => {
+    window.scrollTo({ top: 0, behavior: "auto" });
+    if (id === "story" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.documentElement.classList.add("lv-boot");
+      lenisRef.current?.stop();
+    } else {
+      document.documentElement.classList.remove("lv-boot");
+    }
     setActive(id);
     history.replaceState(null, "", id === "story" ? "#story" : `#${id}`);
     /* the story is scroll-driven: choosing it answers with motion — the
@@ -80,10 +95,10 @@ export function MusicPage() {
     }
   };
 
-  /* the stub overlays own the viewport while open */
+  /* Only the unfinished search tab owns the viewport. Listening Room is a page. */
   useEffect(() => {
-    document.documentElement.classList.toggle("mu-overlay-open", active !== "story");
-    if (active !== "story") lenisRef.current?.stop();
+    document.documentElement.classList.toggle("mu-overlay-open", active === "melodymind");
+    if (active === "melodymind") lenisRef.current?.stop();
     else if (!document.documentElement.classList.contains("lv-boot")) lenisRef.current?.start();
     return () => document.documentElement.classList.remove("mu-overlay-open");
   }, [active]);
@@ -105,7 +120,13 @@ export function MusicPage() {
         <h1 className="mu-hero__title">
           Got any good songs<b>?</b>
         </h1>
-        <p className="mu-hero__sub lv-mono">how melodymind happened</p>
+        <p className="mu-hero__sub lv-mono">
+          {active === "story"
+            ? "how melodymind happened"
+            : active === "melodymind"
+              ? "find a song for the exact situation"
+              : "inside my spotify"}
+        </p>
         <p className="mu-scrollcue lv-mono" aria-hidden="true">
           scroll <span className="mu-scrollcue__arrow">↓</span>
         </p>
@@ -135,7 +156,7 @@ export function MusicPage() {
                     <circle cx="36" cy="36" r="2" fill="currentColor" stroke="none" opacity="0.7" />
                   </svg>
                 )}
-                {t.id === "rotation" && (
+                {t.id === "listening" && (
                   <svg viewBox="0 0 48 48" className="mu-motif-eq" aria-hidden="true" fill="currentColor">
                     <rect className="mu-eqbar" x="8" y="16" width="6" height="24" rx="2" />
                     <rect className="mu-eqbar" x="18" y="10" width="6" height="30" rx="2" />
@@ -152,7 +173,8 @@ export function MusicPage() {
       </nav>
 
       {/* ---------- act I: the story ---------- */}
-      <StoryTab onBuilt={releaseBoot} />
+      {panelReady && active === "story" && <StoryTab onBuilt={releaseBoot} />}
+      {panelReady && active === "listening" && <ListeningRoom active />}
 
       {/* ---------- stub overlays for the other two acts ---------- */}
       {active === "melodymind" && (
@@ -161,18 +183,6 @@ export function MusicPage() {
             <p className="lv-mono mu-stub__eyebrow">MelodyMind</p>
             <h2>MelodyMind search</h2>
             <p>You&apos;ll type a situation and get songs that fit it. This tab is being built now.</p>
-            <button type="button" className="mu-stub__back lv-mono" onClick={() => pick("story")}>
-              back to the story
-            </button>
-          </div>
-        </div>
-      )}
-      {active === "rotation" && (
-        <div className="mu-stub" role="dialog" aria-label="On rotation">
-          <div className="mu-stub__card">
-            <p className="lv-mono mu-stub__eyebrow">On rotation</p>
-            <h2>On rotation</h2>
-            <p>Top artists and playlists pulled from my Spotify, updating on their own. Being built.</p>
             <button type="button" className="mu-stub__back lv-mono" onClick={() => pick("story")}>
               back to the story
             </button>
