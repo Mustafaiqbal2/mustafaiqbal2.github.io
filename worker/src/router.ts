@@ -15,6 +15,19 @@ export type RouterDeps = {
 const ROOM_SECONDS = 900;
 const NOW_SECONDS = 15;
 
+function allowedOrigin(value: string | null, productionOrigin: string): string | null {
+  if (!value) return null;
+  if (value === productionOrigin) return value;
+
+  try {
+    const url = new URL(value);
+    const localHost = url.hostname === "localhost" || url.hostname === "127.0.0.1";
+    return url.protocol === "http:" && localHost ? value : null;
+  } catch {
+    return null;
+  }
+}
+
 function securityHeaders(origin: string | null): Headers {
   const headers = new Headers({
     "Content-Type": "application/json; charset=utf-8",
@@ -65,7 +78,7 @@ export function createRouter(deps: RouterDeps = {}) {
   ): Promise<Response> {
     const url = new URL(request.url);
     const originHeader = request.headers.get("Origin");
-    const origin = originHeader === env.ALLOWED_ORIGIN ? originHeader : null;
+    const origin = allowedOrigin(originHeader, env.ALLOWED_ORIGIN);
     const isHealth = url.pathname === "/health";
 
     if (request.method === "OPTIONS") {
@@ -87,7 +100,15 @@ export function createRouter(deps: RouterDeps = {}) {
 
     const cacheKey = new Request(url.toString(), { method: "GET" });
     const cached = await deps.cache?.match(cacheKey);
-    if (cached) return cached;
+    if (cached) {
+      const headers = new Headers(cached.headers);
+      headers.set("Access-Control-Allow-Origin", origin);
+      return new Response(cached.body, {
+        status: cached.status,
+        statusText: cached.statusText,
+        headers
+      });
+    }
 
     try {
       const spotify = client(env);
