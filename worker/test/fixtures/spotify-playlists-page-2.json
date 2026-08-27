@@ -1,0 +1,15 @@
+{
+  "href": "https://api.spotify.com/v1/me/playlists?limit=50&offset=3",
+  "next": null,
+  "items": [
+    {
+      "id": "p3",
+      "name": "Everything else",
+      "description": "The shelf with no category.",
+      "public": true,
+      "external_urls": { "spotify": "https://open.spotify.com/playlist/p3" },
+      "images": [{ "url": "https://i.scdn.co/image/p3", "width": 640, "height": 640 }],
+      "items": { "total": 77 }
+    }
+  ]
+}
