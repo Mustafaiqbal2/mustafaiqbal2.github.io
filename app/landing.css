@@ -40,6 +40,13 @@ html.lv-page {
   /* keep the scrollbar gutter while lv-boot hides overflow, or every pin
      measured during boot is a scrollbar-width wider than the final page */
   scrollbar-gutter: stable;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html.lv-page::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 html.lv-boot {
   overflow: hidden;
