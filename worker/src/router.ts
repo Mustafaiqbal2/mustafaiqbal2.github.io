@@ -13,7 +13,7 @@ export type RouterDeps = {
 };
 
 const ROOM_SECONDS = 900;
-const NOW_SECONDS = 15;
+const NOW_SECONDS = 5;
 
 function allowedOrigin(value: string | null, productionOrigin: string): string | null {
   if (!value) return null;

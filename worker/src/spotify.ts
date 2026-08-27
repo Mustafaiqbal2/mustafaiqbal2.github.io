@@ -217,7 +217,7 @@ export function createSpotifyClient(
     return (await response.json()) as T;
   }
 
-  async function playlists(): Promise<Playlist[]> {
+  async function playlists(ownerId: string): Promise<Playlist[]> {
     const collected: Playlist[] = [];
     let next: string | null = API + "/me/playlists?limit=50";
 
@@ -226,7 +226,10 @@ export function createSpotifyClient(
       if (Array.isArray(page.items)) {
         for (const raw of page.items) {
           const item = object(raw, "playlist");
-          if (item.public === true) collected.push(normalizePlaylist(item));
+          const owner = object(item.owner, "playlist.owner");
+          if (item.public === true && owner.id === ownerId) {
+            collected.push(normalizePlaylist(item));
+          }
         }
       }
       next = typeof page.next === "string" && page.next.length > 0 ? page.next : null;
@@ -257,10 +260,12 @@ export function createSpotifyClient(
   return {
     async getRoom() {
       const ranges: TimeRange[] = ["short", "medium", "long"];
-      const [profileValue, playlistValues, recentValues, artistValues, trackValues] =
+      const profileValue = await get("/me");
+      const profileObject = object(profileValue, "profile");
+      const ownerId = string(profileObject.id, "profile.id");
+      const [playlistValues, recentValues, artistValues, trackValues] =
         await Promise.all([
-          get("/me"),
-          playlists(),
+          playlists(ownerId),
           recent(),
           Promise.all(ranges.map((range) => topArtists(range))),
           Promise.all(ranges.map((range) => topTracks(range)))

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { musicApiUrl, parseListeningRoom, parsePlayback } from "./data";
 import type { ListeningRoomPayload, LoadState, Playback } from "./types";
 
-const POLL_MS = 20_000;
+const POLL_MS = 8_000;
 
 export type ListeningRoomState = {
   room: LoadState<ListeningRoomPayload>;
