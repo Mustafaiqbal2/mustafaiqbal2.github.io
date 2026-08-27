@@ -45,7 +45,7 @@
   inset: 0;
   display: grid;
   place-items: center;
-  font-size: 13px;
+  font-size: 15px;
   letter-spacing: 0.08em;
 }
 
@@ -76,7 +76,7 @@
   right: 0;
   top: 22px;
   text-align: center;
-  font-size: 13px;
+  font-size: 15px;
   letter-spacing: 0.06em;
 }
 .mu-s2-wave {
@@ -141,13 +141,13 @@
   top: 10px;
   display: block;
   white-space: normal;
-  line-height: 1.85;
-  font-size: 12px;
+  line-height: 1.65;
+  font-size: 15px;
   letter-spacing: 0.02em;
 }
 .mu-s2-result {
   margin: 10px 4px 0;
-  font-size: 12px;
+  font-size: 14px;
   color: var(--lv-accent-bright);
 }
 .mu-s2-man {
@@ -212,16 +212,16 @@
   left: 13%;
   top: 76%;
   max-width: 470px;
-  font-size: 12px;
-  line-height: 1.8;
+  font-size: 14px;
+  line-height: 1.65;
   color: #c9ccd8;
   text-transform: none;
 }
 .mu-s2-gagnote {
   margin: 8px 4px 0;
   max-width: 260px;
-  font-size: 11px;
-  line-height: 1.7;
+  font-size: 14px;
+  line-height: 1.6;
   color: var(--lv-grey-light);
   text-transform: none;
 }

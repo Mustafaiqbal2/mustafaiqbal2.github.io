@@ -134,7 +134,7 @@ html.mu-overlay-open {
 }
 .mu-tab__label {
   display: block;
-  font-size: 13px;
+  font-size: 14px;
 }
 /* the original look: the description lives INSIDE the tab card and the
    card itself swells. The clunk fix is structural — the bar keeps a fixed
@@ -155,7 +155,7 @@ html.mu-overlay-open {
   gap: 14px;
 }
 .mu-tab__desc {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.45;
   color: var(--lv-grey-light);
 }
@@ -353,13 +353,14 @@ html.mu-overlay-open {
 }
 .mu-nametag {
   font-style: normal;
-  font-size: 11px;
+  font-size: 16px;
   letter-spacing: 0.14em;
   opacity: 0.85;
 }
 .mu-caption {
   max-width: 560px;
-  line-height: 1.8;
+  font-size: 16px;
+  line-height: 1.65;
   color: #c9ccd8;
   /* captions own their ground: scene art can never strike through text */
   background: rgba(7, 8, 13, 0.78);
@@ -418,3 +419,15 @@ html.mu-overlay-open {
     font-size: clamp(30px, 8.6vw, 44px);
   }
 }
+
+/* Diagram labels are information, not decoration. Keep them readable after
+   the desktop stage is scaled down on shorter laptops. */
+.mu-s6-map-title,
+.mu-s6-note,
+.mu-s7-step {
+  font-size: 13px;
+}
+
+/* Readable baseline for dialogue and names at the scaled desktop stage. */
+.mu-bubble__txt { font-size: 16px; }
+.mu-nametag { font-size: 13px; }

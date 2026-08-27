@@ -13,6 +13,6 @@
 .mu-s4-space { width: 250px; height: 230px; color: var(--lv-bone); }
 .mu-s4-space > svg { position: absolute; inset: 0; width: 100%; height: 100%; opacity: .75; }
 .mu-s4-dot { position: absolute; width: 10px; height: 10px; margin: -5px; border-radius: 50%; background: var(--lv-accent-bright); }
-.mu-s4-label { position: absolute; top: calc(100% + 12px); white-space: nowrap; font-size: 11px; letter-spacing: .1em; color: var(--lv-grey-light); }
+.mu-s4-label { position: absolute; top: calc(100% + 12px); white-space: nowrap; font-size: 13px; letter-spacing: .1em; color: var(--lv-grey-light); }
 .mu-s4-cap { position: absolute; right: 8%; bottom: 12%; width: 390px; }
 @media (max-width: 1023px) { .mu-s4-stage { position: static; display: grid; gap: 34px; padding: 12vh 7vw; } .mu-s4-h, .mu-s4-cap { position: static; width: auto; max-width: 560px; } .mu-s4-flow { position: relative; left: auto; top: auto; width: 100%; height: auto; transform: none; display: grid; gap: 32px; justify-items: center; } .mu-s4-arrow { transform: rotate(90deg); } .mu-s4-listener > svg { width: 130px; height: 130px; } .mu-s4-space { transform: scale(.86); margin-block: -16px; } }

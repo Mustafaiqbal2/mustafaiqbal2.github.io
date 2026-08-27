@@ -5,9 +5,9 @@
 .mu-s3-word { position: absolute; display: inline-flex; align-items: center; gap: 7px; transform: translate(-50%, -50%); white-space: nowrap; }
 .mu-s3-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--lv-accent-bright); }
 .mu-s3-dot--warm { background: var(--lv-pink); }.mu-s3-dot--cool { background: var(--lv-cyan); }
-.mu-s3-label { font-size: 11px; letter-spacing: .08em; }
+.mu-s3-label { font-size: 13px; letter-spacing: .08em; }
 .mu-s3-link--near { stroke: var(--lv-accent-bright); stroke-width: 2.4; }.mu-s3-link--far { stroke: rgba(242,242,238,.44); stroke-width: 1.8; }
-.mu-s3-distance { position: absolute; font-size: 11px; color: var(--lv-accent-bright); }.mu-s3-distance--near { left: 52.8%; top: 38.5%; }.mu-s3-distance--far { left: 34%; top: 61.5%; color: var(--lv-grey-light); }
+.mu-s3-distance { position: absolute; font-size: 13px; color: var(--lv-accent-bright); }.mu-s3-distance--near { left: 52.8%; top: 38.5%; }.mu-s3-distance--far { left: 34%; top: 61.5%; color: var(--lv-grey-light); }
 .mu-s3-cap { position: absolute; right: 6%; top: 24%; width: 350px; }
 .mu-s3-mobile-explain { display: none; }
 @media (max-width: 1023px) { .mu-s3-stage { position: static; display: grid; gap: 28px; padding: 12vh 7vw; } .mu-s3-h { position: static; max-width: 560px; } .mu-s3-map, .mu-s3-cap { display: none; } .mu-s3-mobile-explain { display: grid; gap: 14px; max-width: 540px; padding: 22px; border: 1px solid rgba(242,242,238,.28); border-radius: 16px; background: rgba(7,8,13,.72); } .mu-s3-mobile-explain span { color: var(--lv-accent-bright); font-size: 11px; letter-spacing: .12em; } .mu-s3-mobile-explain h3 { margin: 0; font-size: 25px; line-height: 1.08; } .mu-s3-mobile-explain p { margin: 0; color: #c9ccd8; line-height: 1.65; } }

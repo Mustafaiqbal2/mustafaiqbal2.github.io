@@ -83,12 +83,12 @@
 }
 .mu-s5-box__txt b {
   font-weight: 400;
-  font-size: 14px;
+  font-size: 16px;
   letter-spacing: 0.06em;
   text-transform: lowercase;
 }
 .mu-s5-box__txt small {
-  font-size: 10.5px;
+  font-size: 13px;
   letter-spacing: 0.05em;
   color: var(--lv-grey-light);
   text-transform: lowercase;
@@ -103,14 +103,19 @@
 
 /* the ticker of numbers */
 .mu-s5-nums {
-  flex: 0 1 auto;
+  flex: 0 0 340px;
+  width: 340px;
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 9.5px;
+  font-size: 13px;
   letter-spacing: 0.02em;
   color: var(--lv-grey-light);
-  white-space: nowrap;
+  white-space: normal;
+  flex-wrap: wrap;
+  justify-content: center;
+  row-gap: 7px;
+  line-height: 1.35;
 }
 .mu-s5-nums span {
   display: inline-block;
@@ -149,7 +154,7 @@
 }
 .mu-s5-word {
   position: absolute;
-  font-size: 9.5px;
+  font-size: 13px;
   letter-spacing: 0.04em;
   color: var(--lv-grey-light);
   text-transform: lowercase;
@@ -200,6 +205,7 @@
   margin-top: 6px;
   white-space: nowrap;
   color: var(--lv-grey-light);
+  font-size: 13px;
 }
 
 .mu-s5-cap {
@@ -235,7 +241,9 @@
   .mu-s5-nums {
     flex-wrap: wrap;
     justify-content: center;
-    max-width: 240px;
+    flex: 0 0 auto;
+    width: min(300px, 86vw);
+    max-width: 300px;
     row-gap: 6px;
   }
   .mu-s5-adwrap {
