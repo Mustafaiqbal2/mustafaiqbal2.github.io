@@ -6,7 +6,14 @@
    ============================================================ */
 
 html.mu-page {
-  scrollbar-gutter: stable;
+  scrollbar-gutter: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html.mu-page::-webkit-scrollbar {
+  display: none;
+  width: 0;
+  height: 0;
 }
 html.mu-page body {
   background: #07080d;
