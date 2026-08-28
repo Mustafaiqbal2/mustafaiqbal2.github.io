@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect } from "react";
+import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./listening-room-choreography.css";
@@ -8,6 +8,70 @@ import "./listening-room-choreography.css";
 gsap.registerPlugin(ScrollTrigger);
 
 export function ListeningRoomChoreography({ signal }: { signal: number }) {
+  const lastEntranceSignal = useRef(signal);
+
+  /* The entrance reveal is deliberately isolated from the scroll timelines.
+     Changing `signal` must never tear down ScrollTrigger while the white tab
+     curtain is moving; doing that was what made Listening Room appear to snap
+     away while Story stayed smooth. */
+  useLayoutEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (signal <= lastEntranceSignal.current) return;
+    lastEntranceSignal.current = signal;
+
+    const room = document.querySelector<HTMLElement>(".mu .lr");
+    if (!room) return;
+
+    const context = gsap.context(() => {
+      const heroTimeline = gsap.timeline({ defaults: { overwrite: "auto" } });
+      const heroImage = room.querySelector(".lr-entry__cover img, .lr-entry__cover .lr-cover-fallback");
+      const heroDetails = room.querySelectorAll(".lr-entry__track > *, .lr-entry__art > svg");
+
+      heroTimeline.fromTo(
+        ".lr-entry__copy > *",
+        { autoAlpha: 0, x: -14 },
+        {
+          autoAlpha: 1,
+          x: 0,
+          duration: 0.7,
+          stagger: 0.08,
+          ease: "power3.out"
+        },
+        0.08
+      );
+
+      if (heroImage) {
+        heroTimeline.fromTo(
+          heroImage,
+          { scale: 1.13 },
+          {
+            scale: 1,
+            duration: 1.05,
+            ease: "power3.out"
+          },
+          0
+        );
+      }
+
+      heroTimeline.fromTo(
+        heroDetails,
+        { autoAlpha: 0, y: 12 },
+        {
+          autoAlpha: 1,
+          y: 0,
+          duration: 0.52,
+          stagger: 0.045,
+          ease: "power3.out"
+        },
+        0.38
+      );
+    }, room);
+
+    return () => context.revert();
+  }, [signal]);
+
+  /* Scroll-driven detail choreography is created once per Listening Room
+     mount. It is not rebuilt when the tab reveal signal changes. */
   useLayoutEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
@@ -22,54 +86,6 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
       if (!room || !entry) return false;
 
       context = gsap.context(() => {
-        /* The curtain reveals a page that is already alive. This entrance only
-           animates inner details, leaving the Listening Room's pinned geometry
-           to its existing scroll timelines. */
-        if (signal > 0) {
-          const heroTimeline = gsap.timeline({ defaults: { overwrite: "auto" } });
-          const heroImage = room.querySelector(".lr-entry__cover img, .lr-entry__cover .lr-cover-fallback");
-          const heroDetails = room.querySelectorAll(".lr-entry__track > *, .lr-entry__art > svg");
-
-          heroTimeline.fromTo(
-            ".lr-entry__copy > *",
-            { autoAlpha: 0, x: -14 },
-            {
-              autoAlpha: 1,
-              x: 0,
-              duration: 0.7,
-              stagger: 0.08,
-              ease: "power3.out"
-            },
-            0.08
-          );
-
-          if (heroImage) {
-            heroTimeline.fromTo(
-              heroImage,
-              { scale: 1.13 },
-              {
-                scale: 1,
-                duration: 1.05,
-                ease: "power3.out"
-              },
-              0
-            );
-          }
-
-          heroTimeline.fromTo(
-            heroDetails,
-            { autoAlpha: 0, y: 12 },
-            {
-              autoAlpha: 1,
-              y: 0,
-              duration: 0.52,
-              stagger: 0.045,
-              ease: "power3.out"
-            },
-            0.38
-          );
-        }
-
         const playlists = room.querySelector<HTMLElement>(".lr-playlists");
         if (playlists) {
           const playlistDetails = gsap.timeline({
@@ -241,7 +257,7 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
       observer?.disconnect();
       context?.revert();
     };
-  }, [signal]);
+  }, []);
 
   return null;
 }
