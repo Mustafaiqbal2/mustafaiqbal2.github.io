@@ -27,6 +27,7 @@ export function MusicPage() {
   const lenisRef = useRef<Lenis | null>(null);
   const transitionRef = useRef<HTMLDivElement>(null);
   const transitionBusyRef = useRef(false);
+  const transitionTimelineRef = useRef<gsap.core.Timeline | null>(null);
 
   /* boot gate release: the story tab calls this once its pins exist */
   const releaseBoot = useCallback(() => {
@@ -58,6 +59,10 @@ export function MusicPage() {
     };
   }, []);
 
+  useEffect(() => {
+    return () => transitionTimelineRef.current?.kill();
+  }, []);
+
   /* hash <-> tab sync (static export friendly: one page, hash addressing) */
   useLayoutEffect(() => {
     const fromHash = () => {
@@ -76,7 +81,11 @@ export function MusicPage() {
     return () => window.removeEventListener("hashchange", fromHash);
   }, []);
 
-  const commitTab = useCallback((id: TabId, resumeScroll = true) => {
+  const commitTab = useCallback((
+    id: TabId,
+    resumeScroll = true,
+    onCommitted?: () => void
+  ) => {
     const resetToTop = () => {
       lenisRef.current?.scrollTo(0, { immediate: true, force: true });
       window.scrollTo({ top: 0, behavior: "auto" });
@@ -94,58 +103,100 @@ export function MusicPage() {
     setActive(id);
     history.replaceState(null, "", id === "story" ? "#story" : `#${id}`);
 
-    /* Remounting a pinned panel changes document height. Reset again after
-       React removes the old pin spacers so every tab starts at the top. */
+    /* Wait for React to mount the destination and for its pin spacers to
+       settle before the curtain starts revealing it. */
     window.requestAnimationFrame(() => {
       ScrollTrigger.refresh();
       resetToTop();
       if (resumeScroll && id === "listening") lenisRef.current?.start();
+      onCommitted?.();
     });
   }, []);
 
   const pick = (id: TabId) => {
     if (id === active || transitionBusyRef.current) return;
 
-    const curtain = transitionRef.current;
+    const transition = transitionRef.current;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (!curtain || reduceMotion) {
+    if (!transition || reduceMotion) {
       commitTab(id);
       return;
     }
 
-    const label = curtain.querySelector<HTMLElement>(".mu-tab-curtain__label");
-    if (!label) {
+    const cover = transition.querySelector<HTMLElement>(".mu-tab-transition__cover");
+    const reveal = transition.querySelector<HTMLElement>(".mu-tab-transition__reveal");
+    const label = transition.querySelector<HTMLElement>(".mu-tab-transition__label");
+    if (!cover || !reveal || !label) {
       commitTab(id);
       return;
     }
 
     const tab = TABS.find((item) => item.id === id);
-    curtain.dataset.target = id;
+    transition.dataset.target = id;
     label.textContent = tab?.label ?? "Music";
     transitionBusyRef.current = true;
     lenisRef.current?.stop();
 
-    gsap.killTweensOf([curtain, label]);
-    gsap.set(curtain, { yPercent: 100, pointerEvents: "auto" });
-    gsap.set(label, { opacity: 0, scale: 0.985 });
+    transitionTimelineRef.current?.kill();
+    gsap.killTweensOf([cover, reveal, label]);
+    gsap.set(transition, { visibility: "visible", pointerEvents: "auto" });
+    gsap.set(cover, { scaleY: 0, transformOrigin: "50% 100%", force3D: true });
+    gsap.set(reveal, { scaleY: 0, transformOrigin: "50% 0%", force3D: true });
+    gsap.set(label, { opacity: 0, y: 8 });
 
-    gsap.timeline({
+    const timeline = gsap.timeline({
       onComplete: () => {
-        gsap.set(curtain, { yPercent: 100, pointerEvents: "none" });
-        gsap.set(label, { opacity: 0, scale: 0.985 });
+        gsap.set(transition, { visibility: "hidden", pointerEvents: "none" });
+        gsap.set([cover, reveal], { scaleY: 0 });
+        gsap.set(label, { opacity: 0, y: 8 });
         transitionBusyRef.current = false;
+        transitionTimelineRef.current = null;
         if (id === "listening" && !document.documentElement.classList.contains("lv-boot")) {
           lenisRef.current?.start();
         }
       }
-    })
-      /* Match the reference: one flat sheet rises over the old page. */
-      .to(curtain, { yPercent: 0, duration: 0.46, ease: "power3.inOut" })
-      .to(label, { opacity: 1, scale: 1, duration: 0.14, ease: "power2.out" }, "-=0.13")
-      /* Swap while the viewport is completely covered. */
-      .add(() => commitTab(id, false), "+=0.1")
-      /* The sheet itself leaves upward, revealing the new page from below. */
-      .to(curtain, { yPercent: -100, duration: 0.5, ease: "power3.inOut" }, "+=0.1");
+    });
+
+    transitionTimelineRef.current = timeline;
+
+    timeline
+      /* Cover: the lower edge stays anchored while the sheet grows upward. */
+      .to(cover, {
+        scaleY: 1,
+        duration: 0.78,
+        ease: "power4.inOut",
+        force3D: true
+      })
+      .to(label, {
+        opacity: 1,
+        y: 0,
+        duration: 0.2,
+        ease: "power2.out"
+      }, "-=0.18")
+      /* Handoff under complete coverage. The reveal layer takes ownership
+         before the old cover layer is ever reset, so there is no flash frame. */
+      .add(() => {
+        gsap.set(reveal, { scaleY: 1 });
+        timeline.pause();
+        commitTab(id, false, () => {
+          window.requestAnimationFrame(() => timeline.resume());
+        });
+      }, "+=0.1")
+      .to(label, {
+        opacity: 0,
+        y: -8,
+        duration: 0.16,
+        ease: "power2.in"
+      }, "+=0.06")
+      .set(cover, { scaleY: 0 })
+      /* Reveal: top edge stays anchored while the bottom edge rises away,
+         uncovering the destination from the bottom upward. */
+      .to(reveal, {
+        scaleY: 0,
+        duration: 0.82,
+        ease: "power4.inOut",
+        force3D: true
+      }, "-=0.01");
   };
 
   /* Only the unfinished search tab owns the viewport. Listening Room is a page. */
@@ -160,8 +211,10 @@ export function MusicPage() {
 
   return (
     <main id="main" className="mu lv-space">
-      <div ref={transitionRef} className="mu-tab-curtain" data-target="story" aria-hidden="true">
-        <strong className="mu-tab-curtain__label">The story</strong>
+      <div ref={transitionRef} className="mu-tab-transition" data-target="story" aria-hidden="true">
+        <div className="mu-tab-transition__cover" />
+        <div className="mu-tab-transition__reveal" />
+        <strong className="mu-tab-transition__label">The story</strong>
       </div>
 
       <aside className="mu-mobile-gate" aria-label="Desktop experience">
