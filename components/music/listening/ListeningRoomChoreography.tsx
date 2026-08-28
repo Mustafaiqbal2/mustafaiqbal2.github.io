@@ -10,10 +10,7 @@ gsap.registerPlugin(ScrollTrigger);
 export function ListeningRoomChoreography({ signal }: { signal: number }) {
   const lastEntranceSignal = useRef(signal);
 
-  /* The entrance reveal is deliberately isolated from the scroll timelines.
-     Changing `signal` must never tear down ScrollTrigger while the white tab
-     curtain is moving; doing that was what made Listening Room appear to snap
-     away while Story stayed smooth. */
+  /* Tab entrance stays isolated from the page's scroll choreography. */
   useLayoutEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (signal <= lastEntranceSignal.current) return;
@@ -70,8 +67,6 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
     return () => context.revert();
   }, [signal]);
 
-  /* Scroll-driven detail choreography is created once per Listening Room
-     mount. It is not rebuilt when the tab reveal signal changes. */
   useLayoutEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
@@ -138,46 +133,171 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
 
         const taste = room.querySelector<HTMLElement>(".lr-taste");
         if (taste) {
-          const tasteDetails = gsap.timeline({
+          /* ListeningRoom historically created its own taste timeline and this
+             component added a second detail timeline on top. Kill the older
+             owner first. One scene should have one animation hierarchy. */
+          ScrollTrigger.getAll().forEach((trigger) => {
+            if (trigger.trigger === taste) trigger.kill(true);
+          });
+
+          const panels = gsap.utils.toArray<HTMLElement>(taste.querySelectorAll(".lr-taste__panel"));
+          const periodItems = gsap.utils.toArray<HTMLElement>(taste.querySelectorAll(".lr-period__item"));
+          if (panels.length < 3) return;
+
+          const stale = taste.querySelectorAll<HTMLElement>(
+            ".lr-section-head > *, .lr-taste__panel, .lr-artist, .lr-track-row, .lr-period__item, .lr-artist__art img, .lr-artist__art .lr-cover-fallback, .lr-artist__meta > *, .lr-track-row__rank, .lr-track-row__cover, .lr-track-row__copy > *, .lr-track-row svg"
+          );
+          gsap.set(stale, { clearProps: "transform,opacity,visibility,clipPath" });
+
+          const activatePanel = (index: number) => {
+            panels.forEach((panel, panelIndex) => {
+              const activePanel = panelIndex === index;
+              panel.style.pointerEvents = activePanel ? "auto" : "none";
+              panel.setAttribute("aria-hidden", activePanel ? "false" : "true");
+            });
+          };
+
+          activatePanel(0);
+          gsap.set(panels[0], { autoAlpha: 1, y: 0, clipPath: "inset(0% 0 0% 0)" });
+          gsap.set(panels.slice(1), { autoAlpha: 0, y: 24, clipPath: "inset(5% 0 0 0)" });
+          gsap.set(periodItems, { opacity: 0.28, y: 0 });
+          gsap.set(periodItems[0], { opacity: 1, y: -2 });
+
+          const tasteTimeline = gsap.timeline({
             scrollTrigger: {
               trigger: taste,
               start: "top top",
-              end: "+=390%",
-              scrub: 0.78,
-              invalidateOnRefresh: true
+              end: "+=480%",
+              pin: true,
+              scrub: 1.05,
+              anticipatePin: 1,
+              fastScrollEnd: true,
+              invalidateOnRefresh: true,
+              onUpdate: (self) => {
+                const index = self.progress < 0.42 ? 0 : self.progress < 0.74 ? 1 : 2;
+                activatePanel(index);
+              }
             }
           });
 
-          const addTasteChapter = (period: "short" | "medium" | "long", at: number) => {
-            tasteDetails
-              .fromTo(
-                `.lr-taste__panel--${period} .lr-artist__art img, .lr-taste__panel--${period} .lr-artist__art .lr-cover-fallback`,
-                { scale: 1.12 },
+          tasteTimeline
+            .fromTo(
+              ".lr-taste .lr-section-head h3",
+              { autoAlpha: 0, y: 34, clipPath: "inset(100% 0 0 0)" },
+              {
+                autoAlpha: 1,
+                y: 0,
+                clipPath: "inset(0% 0 0 0)",
+                duration: 0.42,
+                ease: "power4.out"
+              },
+              0
+            )
+            .fromTo(
+              ".lr-taste .lr-section-head p",
+              { autoAlpha: 0, y: 18 },
+              { autoAlpha: 1, y: 0, duration: 0.34, ease: "power3.out" },
+              0.08
+            )
+            .fromTo(
+              ".lr-taste .lr-period",
+              { autoAlpha: 0, y: 16 },
+              { autoAlpha: 1, y: 0, duration: 0.34, ease: "power3.out" },
+              0.1
+            );
+
+          const addChapter = (
+            panel: HTMLElement,
+            periodIndex: number,
+            at: number,
+            exitAt?: number
+          ) => {
+            const feature = panel.querySelector<HTMLElement>(".lr-artist:first-child");
+            const artistRows = panel.querySelectorAll<HTMLElement>(".lr-artist:not(:first-child)");
+            const trackRows = panel.querySelectorAll<HTMLElement>(".lr-track-row");
+
+            if (periodIndex > 0) {
+              tasteTimeline.fromTo(
+                panel,
+                { autoAlpha: 0, y: 24, clipPath: "inset(5% 0 0 0)" },
                 {
-                  scale: 1,
-                  duration: 0.56,
-                  stagger: 0.04,
+                  autoAlpha: 1,
+                  y: 0,
+                  clipPath: "inset(0% 0 0 0)",
+                  duration: 0.32,
                   ease: "power3.out"
                 },
                 at
-              )
+              );
+            }
+
+            if (feature) {
+              tasteTimeline.fromTo(
+                feature,
+                { autoAlpha: 0, y: 28, clipPath: "inset(8% 0 0 0)" },
+                {
+                  autoAlpha: 1,
+                  y: 0,
+                  clipPath: "inset(0% 0 0 0)",
+                  duration: 0.46,
+                  ease: "power4.out"
+                },
+                at + 0.03
+              );
+            }
+
+            tasteTimeline
               .fromTo(
-                `.lr-taste__panel--${period} .lr-artist__meta > *, .lr-taste__panel--${period} .lr-track-row__rank, .lr-taste__panel--${period} .lr-track-row__copy > *, .lr-taste__panel--${period} .lr-track-row svg`,
-                { autoAlpha: 0, y: 10 },
+                artistRows,
+                { autoAlpha: 0, y: 18 },
                 {
                   autoAlpha: 1,
                   y: 0,
                   duration: 0.34,
-                  stagger: 0.016,
-                  ease: "power2.out"
+                  stagger: 0.045,
+                  ease: "power3.out"
                 },
-                at + 0.09
+                at + 0.1
+              )
+              .fromTo(
+                trackRows,
+                { autoAlpha: 0, y: 16 },
+                {
+                  autoAlpha: 1,
+                  y: 0,
+                  duration: 0.32,
+                  stagger: 0.035,
+                  ease: "power3.out"
+                },
+                at + 0.15
               );
+
+            if (exitAt !== undefined) {
+              tasteTimeline.to(
+                panel,
+                {
+                  autoAlpha: 0,
+                  y: -20,
+                  clipPath: "inset(0 0 5% 0)",
+                  duration: 0.28,
+                  ease: "power2.inOut"
+                },
+                exitAt
+              );
+            }
           };
 
-          addTasteChapter("short", 0.1);
-          addTasteChapter("medium", 1.1);
-          addTasteChapter("long", 1.84);
+          addChapter(panels[0], 0, 0.24, 1.08);
+          tasteTimeline
+            .to(periodItems[0], { opacity: 0.28, y: 0, duration: 0.18 }, 1.02)
+            .to(periodItems[1], { opacity: 1, y: -2, duration: 0.18 }, 1.02);
+
+          addChapter(panels[1], 1, 1.18, 1.98);
+          tasteTimeline
+            .to(periodItems[1], { opacity: 0.28, y: 0, duration: 0.18 }, 1.92)
+            .to(periodItems[2], { opacity: 1, y: -2, duration: 0.18 }, 1.92);
+
+          addChapter(panels[2], 2, 2.08);
         }
 
         const snapshot = room.querySelector<HTMLElement>(".lr-snapshot");
