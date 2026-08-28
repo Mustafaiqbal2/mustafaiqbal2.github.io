@@ -10,7 +10,6 @@ import { StickMan } from "./sceneKit";
 import { StoryTab } from "./StoryTab";
 import { ListeningRoom } from "./listening/ListeningRoom";
 import { ListeningRoomChoreography } from "./listening/ListeningRoomChoreography";
-import { ListeningTransitionVines } from "./listening/ListeningTransitionVines";
 import "./music-transition.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -33,19 +32,18 @@ export function MusicPage() {
   const transitionBusyRef = useRef(false);
   const transitionTimelineRef = useRef<gsap.core.Timeline | null>(null);
 
-  /* boot gate release: the story tab calls this once its pins exist */
   const releaseBoot = useCallback(() => {
     document.documentElement.classList.remove("lv-boot");
     if (!transitionBusyRef.current) lenisRef.current?.start();
   }, []);
 
-  /* adaptive smooth scroll, same gate as the landing (weak machines skip it) */
   useLayoutEffect(() => {
     const navi = navigator as Navigator & { deviceMemory?: number };
     const weak =
       (navi.hardwareConcurrency || 8) <= 4 || (navi.deviceMemory !== undefined && navi.deviceMemory <= 4);
     let lenis: Lenis | null = null;
     let raf: ((t: number) => void) | null = null;
+
     if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches && !weak) {
       lenis = new Lenis({ duration: 1.05, smoothWheel: true });
       lenis.on("scroll", ScrollTrigger.update);
@@ -55,6 +53,7 @@ export function MusicPage() {
       if (document.documentElement.classList.contains("lv-boot")) lenis.stop();
       lenisRef.current = lenis;
     }
+
     return () => {
       if (raf) gsap.ticker.remove(raf);
       if (lenis) lenis.destroy();
@@ -69,7 +68,6 @@ export function MusicPage() {
     };
   }, []);
 
-  /* hash <-> tab sync (static export friendly: one page, hash addressing) */
   useLayoutEffect(() => {
     const fromHash = () => {
       const hash = window.location.hash.replace("#", "");
@@ -83,6 +81,7 @@ export function MusicPage() {
       setPanelReady(true);
       if (next !== "story") document.documentElement.classList.remove("lv-boot");
     };
+
     fromHash();
     window.addEventListener("hashchange", fromHash);
     return () => window.removeEventListener("hashchange", fromHash);
@@ -102,17 +101,17 @@ export function MusicPage() {
 
     lenisRef.current?.stop();
     resetToTop();
+
     if (id === "story" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       document.documentElement.classList.add("lv-boot");
     } else {
       document.documentElement.classList.remove("lv-boot");
     }
+
     setActive(id);
     setSelected(id);
     history.replaceState(null, "", id === "story" ? "#story" : `#${id}`);
 
-    /* Wait for React to mount the destination and for its pin spacers to
-       settle before the curtain starts revealing it. */
     window.requestAnimationFrame(() => {
       ScrollTrigger.refresh();
       resetToTop();
@@ -126,14 +125,15 @@ export function MusicPage() {
   const pick = (id: TabId) => {
     if (id === selected || transitionBusyRef.current) return;
 
-    /* The control responds on the click itself. The heavy page content only
-       changes later, underneath a fully-covered viewport. */
     setSelected(id);
 
     const transition = transitionRef.current;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (!transition || reduceMotion) {
       commitTab(id);
+      if (id === "listening") {
+        window.requestAnimationFrame(() => setListeningRevealSignal((value) => value + 1));
+      }
       return;
     }
 
@@ -142,15 +142,11 @@ export function MusicPage() {
     const label = transition.querySelector<HTMLElement>(".mu-tab-transition__label");
     if (!cover || !reveal || !label) {
       commitTab(id);
+      if (id === "listening") {
+        window.requestAnimationFrame(() => setListeningRevealSignal((value) => value + 1));
+      }
       return;
     }
-
-    const isListening = id === "listening";
-    const vines = transition.querySelector<SVGSVGElement>(".mu-listening-vines");
-    const vineStems = vines ? gsap.utils.toArray<SVGPathElement>(vines.querySelectorAll(".mu-vine-stem")) : [];
-    const vineBranches = vines ? gsap.utils.toArray<SVGPathElement>(vines.querySelectorAll(".mu-vine-branch")) : [];
-    const vineLeaves = vines ? gsap.utils.toArray<SVGPathElement>(vines.querySelectorAll(".mu-vine-leaf")) : [];
-    const vineBlooms = vines ? gsap.utils.toArray<SVGGElement>(vines.querySelectorAll(".mu-vine-bloom")) : [];
 
     const tab = TABS.find((item) => item.id === id);
     label.textContent = tab?.label ?? "Music";
@@ -159,39 +155,34 @@ export function MusicPage() {
 
     transitionTimelineRef.current?.kill();
     gsap.killTweensOf([cover, reveal, label]);
-    if (vines) gsap.killTweensOf([vines, ...vineStems, ...vineBranches, ...vineLeaves, ...vineBlooms]);
     gsap.set(transition, { visibility: "visible", pointerEvents: "auto" });
     gsap.set(cover, { scaleY: 0, transformOrigin: "50% 100%", force3D: true });
     gsap.set(reveal, { scaleY: 0, transformOrigin: "50% 0%", force3D: true });
     gsap.set(label, { opacity: 0, y: 18, scale: 0.965 });
-
-    if (vines) {
-      gsap.set(vines, { opacity: 0, y: 0, scale: 1 });
-      gsap.set(vineStems, { strokeDashoffset: 1 });
-      gsap.set(vineBranches, { strokeDashoffset: 1 });
-      gsap.set(vineLeaves, { autoAlpha: 0, scale: 0.2, rotate: -10 });
-      gsap.set(vineBlooms, { autoAlpha: 0, scale: 0.5, rotate: -12 });
-    }
 
     const timeline = gsap.timeline({
       onComplete: () => {
         gsap.set(transition, { visibility: "hidden", pointerEvents: "none" });
         gsap.set([cover, reveal], { scaleY: 0 });
         gsap.set(label, { opacity: 0, y: 18, scale: 0.965 });
-        if (vines) gsap.set(vines, { opacity: 0, y: 0 });
         transitionBusyRef.current = false;
         transitionTimelineRef.current = null;
+
         if (id !== "melodymind" && !document.documentElement.classList.contains("lv-boot")) {
           lenisRef.current?.start();
+        }
+
+        /* Listening Room gets no special work while the curtain is moving.
+           Its entrance choreography starts only after the exact same curtain
+           sequence used by Story has fully cleared the viewport. */
+        if (id === "listening") {
+          window.requestAnimationFrame(() => setListeningRevealSignal((value) => value + 1));
         }
       }
     });
 
     transitionTimelineRef.current = timeline;
 
-    /* The white curtain remains the dominant motion. Listening Room gets a
-       second, quieter botanical layer that grows only once there is enough
-       white surface for the linework to read clearly. */
     timeline
       .to(cover, {
         scaleY: 1.018,
@@ -216,43 +207,7 @@ export function MusicPage() {
         scale: 1,
         duration: 0.18,
         ease: "back.out(1.35)"
-      }, 0.82);
-
-    if (isListening && vines) {
-      timeline
-        .to(vines, { opacity: 1, duration: 0.18, ease: "sine.out" }, 0.28)
-        .to(vineStems, {
-          strokeDashoffset: 0,
-          duration: 0.9,
-          stagger: 0.045,
-          ease: "power2.out"
-        }, 0.3)
-        .to(vineBranches, {
-          strokeDashoffset: 0,
-          duration: 0.68,
-          stagger: 0.045,
-          ease: "power2.out"
-        }, 0.5)
-        .to(vineLeaves, {
-          autoAlpha: 0.9,
-          scale: 1,
-          rotate: 0,
-          duration: 0.4,
-          stagger: { each: 0.026, from: "random" },
-          ease: "back.out(1.55)"
-        }, 0.68)
-        .to(vineBlooms, {
-          autoAlpha: 0.92,
-          scale: 1,
-          rotate: 0,
-          duration: 0.52,
-          stagger: 0.075,
-          ease: "back.out(1.7)"
-        }, 0.86);
-    }
-
-    timeline
-      /* Both white sheets are fully covering before React swaps the panel. */
+      }, 0.82)
       .add(() => {
         gsap.set(reveal, { scaleY: 1.018 });
         timeline.pause();
@@ -268,11 +223,6 @@ export function MusicPage() {
         ease: "power2.in"
       }, 1.18)
       .set(cover, { scaleY: 0 }, 1.26)
-      .add(() => {
-        if (isListening) setListeningRevealSignal((value) => value + 1);
-      }, 1.28)
-      /* The lower edge travels upward, revealing the new page. The botanical
-         layer lingers for the first half of that reveal, then drifts away. */
       .to(reveal, {
         scaleY: 0.018,
         duration: 1.02,
@@ -285,19 +235,8 @@ export function MusicPage() {
         ease: "sine.out",
         force3D: true
       }, 2.32);
-
-    if (isListening && vines) {
-      timeline.to(vines, {
-        opacity: 0,
-        y: -24,
-        scale: 1.01,
-        duration: 0.62,
-        ease: "power2.in"
-      }, 1.5);
-    }
   };
 
-  /* Only the unfinished search tab owns the viewport. Listening Room is a page. */
   useEffect(() => {
     document.documentElement.classList.toggle("mu-overlay-open", active === "melodymind");
     if (active === "melodymind") lenisRef.current?.stop();
@@ -312,7 +251,6 @@ export function MusicPage() {
       <div ref={transitionRef} className="mu-tab-transition" aria-hidden="true">
         <div className="mu-tab-transition__cover" />
         <div className="mu-tab-transition__reveal" />
-        <ListeningTransitionVines />
         <strong className="mu-tab-transition__label">The story</strong>
       </div>
 
@@ -332,7 +270,6 @@ export function MusicPage() {
         </div>
       </div>
 
-      {/* ---------- opening title (S0) ---------- */}
       <header className="mu-hero">
         <p className="mu-hero__eyebrow lv-mono">/music</p>
         <h1 className="mu-hero__title">
@@ -350,7 +287,6 @@ export function MusicPage() {
         </p>
       </header>
 
-      {/* ---------- the three doors ---------- */}
       <nav className="mu-tabs" aria-label="Music sections">
         {TABS.map((t) => (
           <button
@@ -363,34 +299,33 @@ export function MusicPage() {
             <span className="mu-tab__label lv-mono">{t.label}</span>
             <span className="mu-tab__more" aria-hidden="true">
               <span className="mu-tab__inner">
-              <span className="mu-tab__motif">
-                {t.id === "story" && <StickMan pose="happy" className="mu-motif-stick" />}
-                {t.id === "melodymind" && (
-                  <svg viewBox="0 0 48 48" className="mu-motif-probe" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                    <circle cx="24" cy="24" r="3.5" fill="currentColor" stroke="none" />
-                    <circle className="mu-motif-probe__ring" cx="24" cy="24" r="10" />
-                    <circle cx="10" cy="12" r="2" fill="currentColor" stroke="none" opacity="0.7" />
-                    <circle cx="38" cy="15" r="2" fill="currentColor" stroke="none" opacity="0.7" />
-                    <circle cx="36" cy="36" r="2" fill="currentColor" stroke="none" opacity="0.7" />
-                  </svg>
-                )}
-                {t.id === "listening" && (
-                  <svg viewBox="0 0 48 48" className="mu-motif-eq" aria-hidden="true" fill="currentColor">
-                    <rect className="mu-eqbar" x="8" y="16" width="6" height="24" rx="2" />
-                    <rect className="mu-eqbar" x="18" y="10" width="6" height="30" rx="2" />
-                    <rect className="mu-eqbar" x="28" y="20" width="6" height="20" rx="2" />
-                    <rect className="mu-eqbar" x="38" y="14" width="6" height="26" rx="2" />
-                  </svg>
-                )}
-              </span>
-              <span className="mu-tab__desc">{t.desc}</span>
+                <span className="mu-tab__motif">
+                  {t.id === "story" && <StickMan pose="happy" className="mu-motif-stick" />}
+                  {t.id === "melodymind" && (
+                    <svg viewBox="0 0 48 48" className="mu-motif-probe" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                      <circle cx="24" cy="24" r="3.5" fill="currentColor" stroke="none" />
+                      <circle className="mu-motif-probe__ring" cx="24" cy="24" r="10" />
+                      <circle cx="10" cy="12" r="2" fill="currentColor" stroke="none" opacity="0.7" />
+                      <circle cx="38" cy="15" r="2" fill="currentColor" stroke="none" opacity="0.7" />
+                      <circle cx="36" cy="36" r="2" fill="currentColor" stroke="none" opacity="0.7" />
+                    </svg>
+                  )}
+                  {t.id === "listening" && (
+                    <svg viewBox="0 0 48 48" className="mu-motif-eq" aria-hidden="true" fill="currentColor">
+                      <rect className="mu-eqbar" x="8" y="16" width="6" height="24" rx="2" />
+                      <rect className="mu-eqbar" x="18" y="10" width="6" height="30" rx="2" />
+                      <rect className="mu-eqbar" x="28" y="20" width="6" height="20" rx="2" />
+                      <rect className="mu-eqbar" x="38" y="14" width="6" height="26" rx="2" />
+                    </svg>
+                  )}
+                </span>
+                <span className="mu-tab__desc">{t.desc}</span>
               </span>
             </span>
           </button>
         ))}
       </nav>
 
-      {/* ---------- act I: the story ---------- */}
       {panelReady && active === "story" && <StoryTab onBuilt={releaseBoot} />}
       {panelReady && active === "listening" && (
         <>
@@ -399,7 +334,6 @@ export function MusicPage() {
         </>
       )}
 
-      {/* ---------- stub overlays for the other two acts ---------- */}
       {active === "melodymind" && (
         <div className="mu-stub" role="dialog" aria-label="MelodyMind">
           <div className="mu-stub__card">
