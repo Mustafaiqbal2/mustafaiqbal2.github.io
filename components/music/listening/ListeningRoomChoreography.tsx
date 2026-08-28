@@ -12,8 +12,7 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
 
   /* The entrance reveal is deliberately isolated from the scroll timelines.
      Changing `signal` must never tear down ScrollTrigger while the white tab
-     curtain is moving; doing that was what made Listening Room appear to snap
-     away while Story stayed smooth. */
+     curtain is moving. */
   useLayoutEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     if (signal <= lastEntranceSignal.current) return;
@@ -70,8 +69,9 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
     return () => context.revert();
   }, [signal]);
 
-  /* Scroll-driven detail choreography is created once per Listening Room
-     mount. It is not rebuilt when the tab reveal signal changes. */
+  /* Secondary detail choreography must never own the Artists/Tracks scene.
+     That pinned chapter is fully owned by ListeningRoom.tsx so its spacer and
+     every downstream ScrollTrigger are measured in one context. */
   useLayoutEffect(() => {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
@@ -134,50 +134,6 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
               },
               0.24
             );
-        }
-
-        const taste = room.querySelector<HTMLElement>(".lr-taste");
-        if (taste) {
-          const tasteDetails = gsap.timeline({
-            scrollTrigger: {
-              trigger: taste,
-              start: "top top",
-              end: "+=390%",
-              scrub: 0.78,
-              invalidateOnRefresh: true
-            }
-          });
-
-          const addTasteChapter = (period: "short" | "medium" | "long", at: number) => {
-            tasteDetails
-              .fromTo(
-                `.lr-taste__panel--${period} .lr-artist__art img, .lr-taste__panel--${period} .lr-artist__art .lr-cover-fallback`,
-                { scale: 1.12 },
-                {
-                  scale: 1,
-                  duration: 0.56,
-                  stagger: 0.04,
-                  ease: "power3.out"
-                },
-                at
-              )
-              .fromTo(
-                `.lr-taste__panel--${period} .lr-artist__meta > *, .lr-taste__panel--${period} .lr-track-row__rank, .lr-taste__panel--${period} .lr-track-row__copy > *, .lr-taste__panel--${period} .lr-track-row svg`,
-                { autoAlpha: 0, y: 10 },
-                {
-                  autoAlpha: 1,
-                  y: 0,
-                  duration: 0.34,
-                  stagger: 0.016,
-                  ease: "power2.out"
-                },
-                at + 0.09
-              );
-          };
-
-          addTasteChapter("short", 0.1);
-          addTasteChapter("medium", 1.1);
-          addTasteChapter("long", 1.84);
         }
 
         const snapshot = room.querySelector<HTMLElement>(".lr-snapshot");
