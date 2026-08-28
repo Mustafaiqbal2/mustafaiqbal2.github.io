@@ -112,6 +112,15 @@ function recentTrack(value: unknown, path: string): RecentTrack {
   return { ...track(item, path), playedAt: text(item.playedAt, path + ".playedAt") };
 }
 
+function uniqueRecent(items: RecentTrack[]): RecentTrack[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    if (seen.has(item.id)) return false;
+    seen.add(item.id);
+    return true;
+  });
+}
+
 function playlist(value: unknown, path: string): Playlist {
   const item = record(value, path);
   return {
@@ -205,6 +214,9 @@ function profile(value: unknown, path: string): Profile {
 
 export function parseListeningRoom(value: unknown): ListeningRoomPayload {
   const root = record(value, "root");
+  const recent = list(root.recent, "recent").map((entry, index) =>
+    recentTrack(entry, "recent[" + index + "]")
+  );
   return {
     generatedAt: text(root.generatedAt, "generatedAt"),
     profile: profile(root.profile, "profile"),
@@ -213,9 +225,7 @@ export function parseListeningRoom(value: unknown): ListeningRoomPayload {
     ),
     topArtists: ranked(root.topArtists, "topArtists", artist),
     topTracks: ranked(root.topTracks, "topTracks", track),
-    recent: list(root.recent, "recent").map((entry, index) =>
-      recentTrack(entry, "recent[" + index + "]")
-    ),
+    recent: uniqueRecent(recent),
     snapshot: snapshot(root.snapshot, "snapshot")
   };
 }

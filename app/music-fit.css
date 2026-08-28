@@ -5,8 +5,8 @@
 @media (min-width: 1024px) and (max-height: 920px) {
   .mu .lr-entry,
   .mu .lr-section {
-    padding-top: clamp(72px, 9.5svh, 88px);
-    padding-bottom: clamp(34px, 5svh, 48px);
+    padding-top: clamp(64px, 8.5svh, 82px);
+    padding-bottom: clamp(32px, 4.5svh, 42px);
   }
 
   .mu .lr-entry__copy h2 {
@@ -18,55 +18,93 @@
   }
 
   .mu .lr-section-head h3 {
-    font-size: clamp(52px, 9.5svh, 84px);
+    font-size: clamp(50px, 9svh, 80px);
   }
 
   .mu .lr-section-head p {
-    margin-top: 14px;
-    font-size: clamp(15px, 2.1svh, 19px);
+    margin-top: 12px;
+    font-size: clamp(15px, 2svh, 19px);
   }
 
   .mu .lr-playlist-viewport,
   .mu .lr-recent__viewport {
-    margin-top: clamp(26px, 4svh, 40px);
+    margin-top: clamp(22px, 3.5svh, 34px);
   }
 
   .mu .lr-playlist {
-    flex-basis: clamp(248px, min(27vw, calc(100svh - 440px)), 360px);
+    flex-basis: clamp(238px, min(26vw, calc(100svh - 440px)), 350px);
   }
 
   .mu .lr-recent-card {
-    flex-basis: clamp(242px, min(26vw, calc(100svh - 430px)), 350px);
+    flex-basis: clamp(220px, min(24vw, calc(100svh - 455px)), 320px);
   }
 
   .mu .lr-playlist:nth-child(even) {
-    margin-top: clamp(18px, 4.5svh, 34px);
+    margin-top: clamp(16px, 3.5svh, 30px);
   }
 
   .mu .lr-recent-card:nth-child(even) {
-    margin-top: clamp(20px, 5svh, 38px);
+    margin-top: clamp(12px, 3svh, 24px);
   }
 
   .mu .lr-playlist__meta,
   .mu .lr-recent-card__copy {
-    padding-top: 12px;
+    padding-top: 10px;
+  }
+
+  .mu .lr-recent-card__copy strong {
+    font-size: clamp(18px, 2.5svh, 24px);
+  }
+
+  .mu .lr-recent-card__copy small {
+    margin-top: 3px;
+    font-size: 11px;
   }
 
   .mu .lr-taste__layout,
   .mu .lr-snapshot__layout {
-    margin-top: clamp(20px, 3.5svh, 30px);
+    margin-top: clamp(16px, 2.7svh, 26px);
+  }
+
+  .mu .lr-taste__layout {
+    gap: clamp(32px, 5vw, 72px);
+  }
+
+  /* Eight natural 54px track rows were taller than the remaining viewport,
+     so the artist grid fix alone could never make this scene fit. */
+  .mu .lr-track-row a {
+    grid-template-columns: 24px clamp(38px, 5.2svh, 48px) minmax(0, 1fr) auto;
+    gap: clamp(8px, 1vw, 12px);
+    padding: clamp(3px, 0.65svh, 6px) 4px;
+  }
+
+  .mu .lr-track-row__cover {
+    width: clamp(38px, 5.2svh, 48px);
+  }
+
+  .mu .lr-track-row__copy strong {
+    font-size: clamp(12px, 1.7svh, 14px);
+  }
+
+  .mu .lr-track-row__copy small {
+    margin-top: 2px;
+    font-size: 10px;
+  }
+
+  .mu .lr-track-row svg {
+    width: 14px;
   }
 
   .mu .lr-artist-grid {
-    min-height: clamp(330px, 48svh, 420px);
+    min-height: clamp(300px, 46svh, 390px);
   }
 
   .mu .lr-hours__plot {
-    height: clamp(240px, 38svh, 320px);
+    height: clamp(230px, 36svh, 310px);
   }
 }
 
-@media (min-width: 1024px) and (max-height: 680px) {
+@media (min-width: 1024px) and (max-height: 720px) {
   .mu .lr-entry__scroll,
   .mu .lr-scroll-note {
     display: none;
@@ -76,8 +114,24 @@
     padding-top: 12px;
   }
 
+  .mu .lr-section-head h3 {
+    font-size: clamp(48px, 8.5svh, 62px);
+  }
+
+  .mu .lr-period button {
+    padding: 8px 11px;
+  }
+
   .mu .lr-playlist-track,
   .mu .lr-recent__track {
-    padding-bottom: 18px;
+    padding-bottom: 16px;
+  }
+
+  .mu .lr-recent-card {
+    flex-basis: clamp(210px, min(23vw, calc(100svh - 445px)), 270px);
+  }
+
+  .mu .lr-recent-card:nth-child(even) {
+    margin-top: 12px;
   }
 }
