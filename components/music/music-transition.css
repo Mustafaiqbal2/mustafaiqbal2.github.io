@@ -1,79 +1,118 @@
-/* Tab changes use the same motion language as the reference site:
-   a single destination-coloured sheet covers the old page, holds for a beat,
-   then continues upward to reveal the new page from the bottom. */
-.mu-tab-curtain {
+/*
+ * Music tab transition
+ *
+ * Two independent sheets make the hand-off deterministic:
+ * - cover grows from the bottom until the viewport is completely hidden
+ * - reveal is snapped to fully-covered behind it
+ * - the destination mounts while both sheets cover the page
+ * - reveal collapses toward the top, uncovering the new page from the bottom
+ *
+ * Keeping the two phases on separate elements avoids the single-frame flash
+ * that can happen when one translated viewport sheet is reset between phases.
+ */
+.mu-tab-transition {
+  --mu-curtain-bg: #f2f2ee;
+  --mu-curtain-fg: #07080d;
   position: fixed;
   inset: 0;
   z-index: 100;
-  display: grid;
-  place-items: center;
   overflow: hidden;
+  visibility: hidden;
   pointer-events: none;
-  transform: translate3d(0, 100%, 0);
-  backface-visibility: hidden;
-  will-change: transform;
-  background: #07080d;
-  color: #f2f2ee;
+  isolation: isolate;
 }
 
-/* A hairline on the moving edge gives the sheet definition without turning
-   the transition into a graphic treatment. */
-.mu-tab-curtain::after {
+.mu-tab-transition[data-target="story"] {
+  --mu-curtain-bg: #f2f2ee;
+  --mu-curtain-fg: #07080d;
+}
+
+.mu-tab-transition[data-target="melodymind"] {
+  --mu-curtain-bg: #17111f;
+  --mu-curtain-fg: #f2f2ee;
+}
+
+.mu-tab-transition[data-target="listening"] {
+  --mu-curtain-bg: #6d28d9;
+  --mu-curtain-fg: #f2f2ee;
+}
+
+.mu-tab-transition__cover,
+.mu-tab-transition__reveal {
+  position: absolute;
+  inset: -1px 0;
+  background: var(--mu-curtain-bg);
+  backface-visibility: hidden;
+  transform: translateZ(0) scaleY(0);
+  will-change: transform;
+}
+
+.mu-tab-transition__cover {
+  z-index: 1;
+  transform-origin: 50% 100%;
+}
+
+.mu-tab-transition__reveal {
+  z-index: 2;
+  transform-origin: 50% 0%;
+}
+
+/* Fine moving-edge definition. There is deliberately no texture or glow;
+   the motion should feel expensive because of timing, not decoration. */
+.mu-tab-transition__cover::after,
+.mu-tab-transition__reveal::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  bottom: 0;
   height: 1px;
-  background: currentColor;
+  background: var(--mu-curtain-fg);
   opacity: 0.11;
   pointer-events: none;
 }
 
-.mu-tab-curtain[data-target="story"] {
-  background: #f2f2ee;
-  color: #07080d;
+.mu-tab-transition__cover::after {
+  top: 0;
 }
 
-.mu-tab-curtain[data-target="melodymind"] {
-  background: #07080d;
-  color: #f2f2ee;
+.mu-tab-transition__reveal::after {
+  bottom: 0;
 }
 
-.mu-tab-curtain[data-target="listening"] {
-  background: #6d28d9;
-  color: #f2f2ee;
-}
-
-.mu-tab-curtain__label {
+.mu-tab-transition__label {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 50%;
   display: block;
   margin: 0;
-  font-size: clamp(18px, 1.65vw, 28px);
+  color: var(--mu-curtain-fg);
+  font-size: clamp(16px, 1.35vw, 22px);
   font-weight: 650;
   line-height: 1;
-  letter-spacing: -0.025em;
+  letter-spacing: -0.02em;
   text-align: center;
   white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, -50%);
   will-change: opacity, transform;
 }
 
-.mu-tab-curtain[data-target="story"] .mu-tab-curtain__label::after {
+.mu-tab-transition__label::after {
   content: ".";
   color: #b79cff;
 }
 
-.mu-tab-curtain[data-target="listening"] .mu-tab-curtain__label::after {
-  content: ".";
+.mu-tab-transition[data-target="listening"] .mu-tab-transition__label::after {
   color: #8bd8ff;
 }
 
-.mu-tab-curtain[data-target="melodymind"] .mu-tab-curtain__label::after {
-  content: ".";
+.mu-tab-transition[data-target="melodymind"] .mu-tab-transition__label::after {
   color: #b79cff;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .mu-tab-curtain {
+  .mu-tab-transition {
     display: none;
   }
 }
