@@ -1,0 +1,53 @@
+.lr-entry__cover,
+.lr-playlist__cover,
+.lr-artist__art,
+.lr-recent-card__cover {
+  overflow: hidden;
+}
+
+.lr-entry__cover img,
+.lr-playlist__cover img,
+.lr-artist__art img,
+.lr-recent-card__cover img,
+.lr-entry__cover .lr-cover-fallback,
+.lr-playlist__cover .lr-cover-fallback,
+.lr-artist__art .lr-cover-fallback,
+.lr-recent-card__cover .lr-cover-fallback {
+  transform-origin: 50% 50%;
+  will-change: transform;
+}
+
+.lr-entry__copy > *,
+.lr-entry__track > *,
+.lr-playlist__number,
+.lr-playlist__meta > *,
+.lr-playlist > svg,
+.lr-artist__meta > *,
+.lr-track-row__rank,
+.lr-track-row__copy > *,
+.lr-track-row svg,
+.lr-insight > *,
+.lr-recent-card__copy > *,
+.lr-recent-card > svg {
+  will-change: transform, opacity;
+}
+
+.lr-playlist,
+.lr-artist,
+.lr-recent-card {
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lr-entry__cover img,
+  .lr-playlist__cover img,
+  .lr-artist__art img,
+  .lr-recent-card__cover img,
+  .lr-entry__cover .lr-cover-fallback,
+  .lr-playlist__cover .lr-cover-fallback,
+  .lr-artist__art .lr-cover-fallback,
+  .lr-recent-card__cover .lr-cover-fallback {
+    transform: none !important;
+  }
+}

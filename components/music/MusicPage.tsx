@@ -9,6 +9,8 @@ import { TypedBrand } from "@/components/TypedBrand";
 import { StickMan } from "./sceneKit";
 import { StoryTab } from "./StoryTab";
 import { ListeningRoom } from "./listening/ListeningRoom";
+import { ListeningRoomChoreography } from "./listening/ListeningRoomChoreography";
+import { ListeningTransitionVines } from "./listening/ListeningTransitionVines";
 import "./music-transition.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -25,6 +27,7 @@ export function MusicPage() {
   const [active, setActive] = useState<TabId>("story");
   const [selected, setSelected] = useState<TabId>("story");
   const [panelReady, setPanelReady] = useState(false);
+  const [listeningRevealSignal, setListeningRevealSignal] = useState(0);
   const lenisRef = useRef<Lenis | null>(null);
   const transitionRef = useRef<HTMLDivElement>(null);
   const transitionBusyRef = useRef(false);
@@ -142,6 +145,13 @@ export function MusicPage() {
       return;
     }
 
+    const isListening = id === "listening";
+    const vines = transition.querySelector<SVGSVGElement>(".mu-listening-vines");
+    const vineStems = vines ? gsap.utils.toArray<SVGPathElement>(vines.querySelectorAll(".mu-vine-stem")) : [];
+    const vineBranches = vines ? gsap.utils.toArray<SVGPathElement>(vines.querySelectorAll(".mu-vine-branch")) : [];
+    const vineLeaves = vines ? gsap.utils.toArray<SVGPathElement>(vines.querySelectorAll(".mu-vine-leaf")) : [];
+    const vineBlooms = vines ? gsap.utils.toArray<SVGGElement>(vines.querySelectorAll(".mu-vine-bloom")) : [];
+
     const tab = TABS.find((item) => item.id === id);
     label.textContent = tab?.label ?? "Music";
     transitionBusyRef.current = true;
@@ -149,16 +159,26 @@ export function MusicPage() {
 
     transitionTimelineRef.current?.kill();
     gsap.killTweensOf([cover, reveal, label]);
+    if (vines) gsap.killTweensOf([vines, ...vineStems, ...vineBranches, ...vineLeaves, ...vineBlooms]);
     gsap.set(transition, { visibility: "visible", pointerEvents: "auto" });
     gsap.set(cover, { scaleY: 0, transformOrigin: "50% 100%", force3D: true });
     gsap.set(reveal, { scaleY: 0, transformOrigin: "50% 0%", force3D: true });
     gsap.set(label, { opacity: 0, y: 18, scale: 0.965 });
+
+    if (vines) {
+      gsap.set(vines, { opacity: 0, y: 0, scale: 1 });
+      gsap.set(vineStems, { strokeDashoffset: 1 });
+      gsap.set(vineBranches, { strokeDashoffset: 1 });
+      gsap.set(vineLeaves, { autoAlpha: 0, scale: 0.2, rotate: -10 });
+      gsap.set(vineBlooms, { autoAlpha: 0, scale: 0.5, rotate: -12 });
+    }
 
     const timeline = gsap.timeline({
       onComplete: () => {
         gsap.set(transition, { visibility: "hidden", pointerEvents: "none" });
         gsap.set([cover, reveal], { scaleY: 0 });
         gsap.set(label, { opacity: 0, y: 18, scale: 0.965 });
+        if (vines) gsap.set(vines, { opacity: 0, y: 0 });
         transitionBusyRef.current = false;
         transitionTimelineRef.current = null;
         if (id !== "melodymind" && !document.documentElement.classList.contains("lv-boot")) {
@@ -169,9 +189,10 @@ export function MusicPage() {
 
     transitionTimelineRef.current = timeline;
 
+    /* The white curtain remains the dominant motion. Listening Room gets a
+       second, quieter botanical layer that grows only once there is enough
+       white surface for the linework to read clearly. */
     timeline
-      /* Slow, continuous rise. The tiny overshoot is outside the viewport,
-         so it reads as softness rather than an elastic/cartoon bounce. */
       .to(cover, {
         scaleY: 1.018,
         duration: 0.96,
@@ -195,7 +216,42 @@ export function MusicPage() {
         scale: 1,
         duration: 0.18,
         ease: "back.out(1.35)"
-      }, 0.82)
+      }, 0.82);
+
+    if (isListening && vines) {
+      timeline
+        .to(vines, { opacity: 1, duration: 0.18, ease: "sine.out" }, 0.28)
+        .to(vineStems, {
+          strokeDashoffset: 0,
+          duration: 0.9,
+          stagger: 0.045,
+          ease: "power2.out"
+        }, 0.3)
+        .to(vineBranches, {
+          strokeDashoffset: 0,
+          duration: 0.68,
+          stagger: 0.045,
+          ease: "power2.out"
+        }, 0.5)
+        .to(vineLeaves, {
+          autoAlpha: 0.9,
+          scale: 1,
+          rotate: 0,
+          duration: 0.4,
+          stagger: { each: 0.026, from: "random" },
+          ease: "back.out(1.55)"
+        }, 0.68)
+        .to(vineBlooms, {
+          autoAlpha: 0.92,
+          scale: 1,
+          rotate: 0,
+          duration: 0.52,
+          stagger: 0.075,
+          ease: "back.out(1.7)"
+        }, 0.86);
+    }
+
+    timeline
       /* Both white sheets are fully covering before React swaps the panel. */
       .add(() => {
         gsap.set(reveal, { scaleY: 1.018 });
@@ -210,22 +266,35 @@ export function MusicPage() {
         scale: 0.985,
         duration: 0.22,
         ease: "power2.in"
-      }, "+=0.04")
-      .set(cover, { scaleY: 0 })
-      /* The lower edge now travels upward, revealing the new page from the
-         bottom. A soft tail keeps the last few pixels from snapping away. */
+      }, 1.18)
+      .set(cover, { scaleY: 0 }, 1.26)
+      .add(() => {
+        if (isListening) setListeningRevealSignal((value) => value + 1);
+      }, 1.28)
+      /* The lower edge travels upward, revealing the new page. The botanical
+         layer lingers for the first half of that reveal, then drifts away. */
       .to(reveal, {
         scaleY: 0.018,
         duration: 1.02,
         ease: "power3.inOut",
         force3D: true
-      }, "-=0.01")
+      }, 1.3)
       .to(reveal, {
         scaleY: 0,
         duration: 0.14,
         ease: "sine.out",
         force3D: true
-      });
+      }, 2.32);
+
+    if (isListening && vines) {
+      timeline.to(vines, {
+        opacity: 0,
+        y: -24,
+        scale: 1.01,
+        duration: 0.62,
+        ease: "power2.in"
+      }, 1.5);
+    }
   };
 
   /* Only the unfinished search tab owns the viewport. Listening Room is a page. */
@@ -243,6 +312,7 @@ export function MusicPage() {
       <div ref={transitionRef} className="mu-tab-transition" aria-hidden="true">
         <div className="mu-tab-transition__cover" />
         <div className="mu-tab-transition__reveal" />
+        <ListeningTransitionVines />
         <strong className="mu-tab-transition__label">The story</strong>
       </div>
 
@@ -322,7 +392,12 @@ export function MusicPage() {
 
       {/* ---------- act I: the story ---------- */}
       {panelReady && active === "story" && <StoryTab onBuilt={releaseBoot} />}
-      {panelReady && active === "listening" && <ListeningRoom active />}
+      {panelReady && active === "listening" && (
+        <>
+          <ListeningRoom active />
+          <ListeningRoomChoreography signal={listeningRevealSignal} />
+        </>
+      )}
 
       {/* ---------- stub overlays for the other two acts ---------- */}
       {active === "melodymind" && (
