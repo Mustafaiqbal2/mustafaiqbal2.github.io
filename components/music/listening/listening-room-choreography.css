@@ -14,7 +14,7 @@
 .lr-artist__art .lr-cover-fallback,
 .lr-recent-card__cover .lr-cover-fallback {
   transform-origin: 50% 50%;
-  will-change: transform, filter;
+  will-change: transform;
 }
 
 .lr-entry__copy > *,
@@ -48,7 +48,6 @@
   .lr-playlist__cover .lr-cover-fallback,
   .lr-artist__art .lr-cover-fallback,
   .lr-recent-card__cover .lr-cover-fallback {
-    filter: none !important;
     transform: none !important;
   }
 }
