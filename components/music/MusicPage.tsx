@@ -76,7 +76,7 @@ export function MusicPage() {
     return () => window.removeEventListener("hashchange", fromHash);
   }, []);
 
-  const commitTab = useCallback((id: TabId) => {
+  const commitTab = useCallback((id: TabId, resumeScroll = true) => {
     const resetToTop = () => {
       lenisRef.current?.scrollTo(0, { immediate: true, force: true });
       window.scrollTo({ top: 0, behavior: "auto" });
@@ -99,7 +99,7 @@ export function MusicPage() {
     window.requestAnimationFrame(() => {
       ScrollTrigger.refresh();
       resetToTop();
-      if (id !== "story") lenisRef.current?.start();
+      if (resumeScroll && id === "listening") lenisRef.current?.start();
     });
   }, []);
 
@@ -113,9 +113,8 @@ export function MusicPage() {
       return;
     }
 
-    const copy = curtain.querySelector<HTMLElement>(".mu-tab-curtain__inner");
     const label = curtain.querySelector<HTMLElement>(".mu-tab-curtain__label");
-    if (!copy || !label) {
+    if (!label) {
       commitTab(id);
       return;
     }
@@ -124,40 +123,45 @@ export function MusicPage() {
     curtain.dataset.target = id;
     label.textContent = tab?.label ?? "Music";
     transitionBusyRef.current = true;
+    lenisRef.current?.stop();
 
-    gsap.killTweensOf([curtain, copy]);
+    gsap.killTweensOf([curtain, label]);
     gsap.set(curtain, { yPercent: 100, pointerEvents: "auto" });
-    gsap.set(copy, { opacity: 0, y: 18 });
+    gsap.set(label, { opacity: 0, scale: 0.985 });
 
     gsap.timeline({
       onComplete: () => {
         gsap.set(curtain, { yPercent: 100, pointerEvents: "none" });
-        gsap.set(copy, { opacity: 0, y: 18 });
+        gsap.set(label, { opacity: 0, scale: 0.985 });
         transitionBusyRef.current = false;
+        if (id === "listening" && !document.documentElement.classList.contains("lv-boot")) {
+          lenisRef.current?.start();
+        }
       }
     })
-      .to(curtain, { yPercent: 0, duration: 0.54, ease: "power4.inOut" })
-      .to(copy, { opacity: 1, y: 0, duration: 0.24, ease: "power3.out" }, "-=0.2")
-      .add(() => commitTab(id), "+=0.06")
-      .to(copy, { opacity: 0, y: -16, duration: 0.17, ease: "power2.in" }, "+=0.07")
-      .to(curtain, { yPercent: -100, duration: 0.58, ease: "power4.inOut" }, "-=0.08");
+      /* Match the reference: one flat sheet rises over the old page. */
+      .to(curtain, { yPercent: 0, duration: 0.46, ease: "power3.inOut" })
+      .to(label, { opacity: 1, scale: 1, duration: 0.14, ease: "power2.out" }, "-=0.13")
+      /* Swap while the viewport is completely covered. */
+      .add(() => commitTab(id, false), "+=0.1")
+      /* The sheet itself leaves upward, revealing the new page from below. */
+      .to(curtain, { yPercent: -100, duration: 0.5, ease: "power3.inOut" }, "+=0.1");
   };
 
   /* Only the unfinished search tab owns the viewport. Listening Room is a page. */
   useEffect(() => {
     document.documentElement.classList.toggle("mu-overlay-open", active === "melodymind");
     if (active === "melodymind") lenisRef.current?.stop();
-    else if (!document.documentElement.classList.contains("lv-boot")) lenisRef.current?.start();
+    else if (!transitionBusyRef.current && !document.documentElement.classList.contains("lv-boot")) {
+      lenisRef.current?.start();
+    }
     return () => document.documentElement.classList.remove("mu-overlay-open");
   }, [active]);
 
   return (
     <main id="main" className="mu lv-space">
       <div ref={transitionRef} className="mu-tab-curtain" data-target="story" aria-hidden="true">
-        <div className="mu-tab-curtain__inner">
-          <span className="mu-tab-curtain__mark lv-mono">/music</span>
-          <strong className="mu-tab-curtain__label">The story</strong>
-        </div>
+        <strong className="mu-tab-curtain__label">The story</strong>
       </div>
 
       <aside className="mu-mobile-gate" aria-label="Desktop experience">
