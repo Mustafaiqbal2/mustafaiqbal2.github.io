@@ -1,3 +1,6 @@
+/* Tab changes use the same motion language as the reference site:
+   a single destination-coloured sheet covers the old page, holds for a beat,
+   then continues upward to reveal the new page from the bottom. */
 .mu-tab-curtain {
   position: fixed;
   inset: 0;
@@ -6,39 +9,25 @@
   place-items: center;
   overflow: hidden;
   pointer-events: none;
-  transform: translateY(100%);
+  transform: translate3d(0, 100%, 0);
+  backface-visibility: hidden;
   will-change: transform;
   background: #07080d;
   color: #f2f2ee;
-  isolation: isolate;
 }
 
-.mu-tab-curtain::before,
+/* A hairline on the moving edge gives the sheet definition without turning
+   the transition into a graphic treatment. */
 .mu-tab-curtain::after {
   content: "";
   position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.11;
   pointer-events: none;
-}
-
-.mu-tab-curtain::before {
-  inset: 0;
-  z-index: -2;
-  opacity: 0.22;
-  background-image:
-    linear-gradient(rgba(242, 242, 238, 0.1) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(242, 242, 238, 0.1) 1px, transparent 1px);
-  background-size: 48px 48px;
-  mask-image: radial-gradient(circle at center, black, transparent 72%);
-}
-
-.mu-tab-curtain::after {
-  z-index: -1;
-  width: min(68vw, 980px);
-  aspect-ratio: 1;
-  border-radius: 50%;
-  filter: blur(90px);
-  opacity: 0.3;
-  background: #6d28d9;
 }
 
 .mu-tab-curtain[data-target="story"] {
@@ -46,25 +35,9 @@
   color: #07080d;
 }
 
-.mu-tab-curtain[data-target="story"]::before {
-  background-image:
-    linear-gradient(rgba(7, 8, 13, 0.08) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(7, 8, 13, 0.08) 1px, transparent 1px);
-}
-
-.mu-tab-curtain[data-target="story"]::after {
-  background: #b79cff;
-  opacity: 0.18;
-}
-
 .mu-tab-curtain[data-target="melodymind"] {
   background: #6d28d9;
   color: #f2f2ee;
-}
-
-.mu-tab-curtain[data-target="melodymind"]::after {
-  background: #8bd8ff;
-  opacity: 0.2;
 }
 
 .mu-tab-curtain[data-target="listening"] {
@@ -72,36 +45,26 @@
   color: #f2f2ee;
 }
 
-.mu-tab-curtain__inner {
-  position: relative;
-  display: grid;
-  justify-items: center;
-  gap: 12px;
-  text-align: center;
-}
-
-.mu-tab-curtain__mark {
-  font-size: 10px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
-  opacity: 0.58;
-}
-
 .mu-tab-curtain__label {
   display: block;
   margin: 0;
-  font-size: clamp(42px, 7vw, 108px);
-  font-weight: 800;
-  line-height: 0.9;
-  letter-spacing: -0.045em;
+  font-size: clamp(18px, 1.65vw, 28px);
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  text-align: center;
+  white-space: nowrap;
+  will-change: opacity, transform;
 }
 
-.mu-tab-curtain__label::after {
+.mu-tab-curtain[data-target="listening"] .mu-tab-curtain__label::after,
+.mu-tab-curtain[data-target="story"] .mu-tab-curtain__label::after {
   content: ".";
   color: #b79cff;
 }
 
 .mu-tab-curtain[data-target="melodymind"] .mu-tab-curtain__label::after {
+  content: ".";
   color: #8bd8ff;
 }
 
