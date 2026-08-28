@@ -9,6 +9,7 @@ import { TypedBrand } from "@/components/TypedBrand";
 import { StickMan } from "./sceneKit";
 import { StoryTab } from "./StoryTab";
 import { ListeningRoom } from "./listening/ListeningRoom";
+import "./music-transition.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -24,6 +25,8 @@ export function MusicPage() {
   const [active, setActive] = useState<TabId>("story");
   const [panelReady, setPanelReady] = useState(false);
   const lenisRef = useRef<Lenis | null>(null);
+  const transitionRef = useRef<HTMLDivElement>(null);
+  const transitionBusyRef = useRef(false);
 
   /* boot gate release: the story tab calls this once its pins exist */
   const releaseBoot = useCallback(() => {
@@ -73,7 +76,7 @@ export function MusicPage() {
     return () => window.removeEventListener("hashchange", fromHash);
   }, []);
 
-  const pick = (id: TabId) => {
+  const commitTab = useCallback((id: TabId) => {
     const resetToTop = () => {
       lenisRef.current?.scrollTo(0, { immediate: true, force: true });
       window.scrollTo({ top: 0, behavior: "auto" });
@@ -90,6 +93,7 @@ export function MusicPage() {
     }
     setActive(id);
     history.replaceState(null, "", id === "story" ? "#story" : `#${id}`);
+
     /* Remounting a pinned panel changes document height. Reset again after
        React removes the old pin spacers so every tab starts at the top. */
     window.requestAnimationFrame(() => {
@@ -97,6 +101,46 @@ export function MusicPage() {
       resetToTop();
       if (id !== "story") lenisRef.current?.start();
     });
+  }, []);
+
+  const pick = (id: TabId) => {
+    if (id === active || transitionBusyRef.current) return;
+
+    const curtain = transitionRef.current;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!curtain || reduceMotion) {
+      commitTab(id);
+      return;
+    }
+
+    const copy = curtain.querySelector<HTMLElement>(".mu-tab-curtain__inner");
+    const label = curtain.querySelector<HTMLElement>(".mu-tab-curtain__label");
+    if (!copy || !label) {
+      commitTab(id);
+      return;
+    }
+
+    const tab = TABS.find((item) => item.id === id);
+    curtain.dataset.target = id;
+    label.textContent = tab?.label ?? "Music";
+    transitionBusyRef.current = true;
+
+    gsap.killTweensOf([curtain, copy]);
+    gsap.set(curtain, { yPercent: 100, pointerEvents: "auto" });
+    gsap.set(copy, { opacity: 0, y: 18 });
+
+    gsap.timeline({
+      onComplete: () => {
+        gsap.set(curtain, { yPercent: 100, pointerEvents: "none" });
+        gsap.set(copy, { opacity: 0, y: 18 });
+        transitionBusyRef.current = false;
+      }
+    })
+      .to(curtain, { yPercent: 0, duration: 0.54, ease: "power4.inOut" })
+      .to(copy, { opacity: 1, y: 0, duration: 0.24, ease: "power3.out" }, "-=0.2")
+      .add(() => commitTab(id), "+=0.06")
+      .to(copy, { opacity: 0, y: -16, duration: 0.17, ease: "power2.in" }, "+=0.07")
+      .to(curtain, { yPercent: -100, duration: 0.58, ease: "power4.inOut" }, "-=0.08");
   };
 
   /* Only the unfinished search tab owns the viewport. Listening Room is a page. */
@@ -109,6 +153,13 @@ export function MusicPage() {
 
   return (
     <main id="main" className="mu lv-space">
+      <div ref={transitionRef} className="mu-tab-curtain" data-target="story" aria-hidden="true">
+        <div className="mu-tab-curtain__inner">
+          <span className="mu-tab-curtain__mark lv-mono">/music</span>
+          <strong className="mu-tab-curtain__label">The story</strong>
+        </div>
+      </div>
+
       <aside className="mu-mobile-gate" aria-label="Desktop experience">
         <span className="mu-mobile-gate__mark" aria-hidden="true">M</span>
         <h1>Give this one a bigger screen.</h1>
