@@ -30,27 +30,25 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
           const heroImage = room.querySelector(".lr-entry__cover img, .lr-entry__cover .lr-cover-fallback");
           const heroDetails = room.querySelectorAll(".lr-entry__track > *, .lr-entry__art > svg");
 
-          heroTimeline
-            .fromTo(
-              ".lr-entry__copy > *",
-              { autoAlpha: 0, filter: "blur(8px)" },
-              {
-                autoAlpha: 1,
-                filter: "blur(0px)",
-                duration: 0.72,
-                stagger: 0.08,
-                ease: "power3.out"
-              },
-              0.08
-            );
+          heroTimeline.fromTo(
+            ".lr-entry__copy > *",
+            { autoAlpha: 0, x: -14 },
+            {
+              autoAlpha: 1,
+              x: 0,
+              duration: 0.7,
+              stagger: 0.08,
+              ease: "power3.out"
+            },
+            0.08
+          );
 
           if (heroImage) {
             heroTimeline.fromTo(
               heroImage,
-              { scale: 1.13, filter: "saturate(0.72) contrast(0.94)" },
+              { scale: 1.13 },
               {
                 scale: 1,
-                filter: "saturate(1) contrast(1)",
                 duration: 1.05,
                 ease: "power3.out"
               },
@@ -87,10 +85,9 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
           playlistDetails
             .fromTo(
               ".lr-playlist__cover img, .lr-playlist__cover .lr-cover-fallback",
-              { scale: 1.12, filter: "saturate(0.72) brightness(0.82)" },
+              { scale: 1.12 },
               {
                 scale: 1,
-                filter: "saturate(1) brightness(1)",
                 duration: 0.72,
                 stagger: 0.04,
                 ease: "power3.out"
@@ -138,10 +135,9 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
           tasteDetails
             .fromTo(
               ".lr-taste__panel--short .lr-artist__art img, .lr-taste__panel--short .lr-artist__art .lr-cover-fallback",
-              { scale: 1.12, filter: "saturate(0.78)" },
+              { scale: 1.12 },
               {
                 scale: 1,
-                filter: "saturate(1)",
                 duration: 0.68,
                 stagger: 0.045,
                 ease: "power3.out"
@@ -198,10 +194,9 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
           recentDetails
             .fromTo(
               ".lr-recent-card__cover img, .lr-recent-card__cover .lr-cover-fallback",
-              { scale: 1.14, filter: "saturate(0.7) brightness(0.84)" },
+              { scale: 1.14 },
               {
                 scale: 1,
-                filter: "saturate(1) brightness(1)",
                 duration: 0.72,
                 stagger: 0.045,
                 ease: "power3.out"
