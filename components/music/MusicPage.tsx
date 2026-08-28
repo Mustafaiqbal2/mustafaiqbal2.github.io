@@ -60,7 +60,9 @@ export function MusicPage() {
   }, []);
 
   useEffect(() => {
-    return () => transitionTimelineRef.current?.kill();
+    return () => {
+      transitionTimelineRef.current?.kill();
+    };
   }, []);
 
   /* hash <-> tab sync (static export friendly: one page, hash addressing) */
