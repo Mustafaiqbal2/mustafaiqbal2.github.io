@@ -1,0 +1,67 @@
+.lr-taste .lr-period {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: clamp(14px, 1.8vw, 24px);
+  padding: 0 0 2px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.lr-period__item {
+  position: relative;
+  display: block;
+  padding: 0 0 10px;
+  color: var(--lr-paper);
+  font: 600 10px/1 var(--font-mono), monospace;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  opacity: 0.34;
+  will-change: opacity;
+}
+
+.lr-period__item::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: currentColor;
+  opacity: 0.34;
+}
+
+.lr-period__item:first-child {
+  opacity: 1;
+}
+
+.lr-taste__stage {
+  position: relative;
+  width: min(100%, 1380px);
+  margin: clamp(36px, 5vh, 60px) auto 0;
+  isolation: isolate;
+}
+
+.lr-taste__panel {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  pointer-events: none;
+  will-change: transform, opacity, clip-path;
+}
+
+.lr-taste__panel:first-child {
+  position: relative;
+  pointer-events: auto;
+}
+
+.lr-taste__panel:not(:first-child) {
+  opacity: 0;
+  visibility: hidden;
+}
+
+.lr-taste__panel .lr-taste__layout {
+  width: 100%;
+  margin: 0;
+}
