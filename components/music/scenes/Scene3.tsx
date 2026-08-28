@@ -26,12 +26,14 @@ export function Scene3() {
             <path className="mu-draw mu-s3-route-head" d="M166 34 L151 25 M166 34 L152 46" />
           </svg>
         </div>
+        <MuCaption className="mu-s3-cap">
+          Nomic, the text embedding model, turns the whole request into numbers. Together, those numbers place the request on a map. Sentences with similar meanings land near each other.
+        </MuCaption>
         <div className="mu-s3-map" aria-hidden="true">
           <div className="mu-s3-map__head lv-mono"><span>map of meaning</span><span>one point per sentence</span></div>
           <svg className="mu-s3-map__grid" viewBox="0 0 800 520" fill="none" stroke="currentColor" strokeLinecap="round">
             <path className="mu-draw mu-s3-frame" d="M20 25 Q394 12 778 24 Q792 256 780 495 Q396 510 20 496 Q8 259 20 25" />
             <path className="mu-draw mu-s3-cluster" d="M318 184 Q462 102 600 168 Q700 236 614 340 Q478 410 338 326 Q264 248 318 184" />
-            <path className="mu-draw mu-s3-focus" d="M478 255 Q515 235 548 258" />
           </svg>
           {POINTS.map((point) => (
             <span key={point.key} className="mu-s3-point" style={{ left: `${point.x}%`, top: `${point.y}%` }}>
@@ -42,9 +44,6 @@ export function Scene3() {
           <span className="mu-s3-request-point" />
           <span className="mu-s3-request-label lv-mono">this request</span>
         </div>
-        <MuCaption className="mu-s3-cap">
-          Nomic, the text embedding model, turns the whole request into numbers. Together, those numbers place the request on a map. Sentences with similar meanings land near each other.
-        </MuCaption>
       </div>
     </section>
   );
@@ -66,7 +65,6 @@ export function buildScene3(ctx: SceneCtx): void {
     .fromTo(ctx.q(".mu-s3-frame, .mu-s3-cluster"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.44, stagger: 0.08, ease: "none" }, 0.92)
     .from(ctx.q(".mu-s3-map__head"), { opacity: 0, y: -10, duration: 0.2 }, 1.1)
     .from(ctx.q(".mu-s3-point"), { opacity: 0, scale: 0, duration: 0.2, stagger: 0.08, ease: "back.out(1.4)" }, 1.28)
-    .fromTo(ctx.q(".mu-s3-focus"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.3, ease: "none" }, 1.85)
-    .from(ctx.q(".mu-s3-request-point, .mu-s3-request-label"), { opacity: 0, scale: 0.5, duration: 0.24 }, 2.02)
-    .from(ctx.q(".mu-s3-cap"), { opacity: 0, x: 28, duration: 0.34 }, 2.14);
+    .from(ctx.q(".mu-s3-request-point, .mu-s3-request-label"), { opacity: 0, scale: 0.5, duration: 0.24 }, 1.86)
+    .from(ctx.q(".mu-s3-cap"), { opacity: 0, x: -28, duration: 0.34 }, 2.02);
 }

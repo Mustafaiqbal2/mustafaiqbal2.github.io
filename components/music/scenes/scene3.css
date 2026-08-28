@@ -4,12 +4,12 @@
 .mu-s3-query > span { font-size: 12px; letter-spacing: .12em; color: var(--lv-grey); }
 .mu-s3-query strong { font-size: 26px; line-height: 1.18; font-weight: 650; }
 .mu-s3-query svg { position: absolute; left: 90%; top: 42%; width: 180px; color: var(--lv-accent); }
+.mu-s3-cap { position: absolute; left: 8%; top: 58%; width: 380px; }
 .mu-s3-map { position: absolute; left: 42%; top: 22%; width: 760px; height: 540px; }
 .mu-s3-map__head { display: flex; justify-content: space-between; padding: 0 18px 10px; font-size: 12px; letter-spacing: .1em; color: var(--lv-grey); }
 .mu-s3-map__grid { position: absolute; inset: 22px 0 0; width: 100%; height: calc(100% - 22px); }
 .mu-s3-frame { stroke: rgba(11,12,18,.55); stroke-width: 2; }
 .mu-s3-cluster { stroke: rgba(109,40,217,.42); stroke-width: 2; }
-.mu-s3-focus { stroke: var(--lv-accent); stroke-width: 2.6; }
 .mu-s3-point { position: absolute; display: flex; align-items: center; gap: 8px; transform: translate(-50%,-50%); white-space: nowrap; }
 .mu-s3-point__dot { width: 11px; height: 11px; border-radius: 50%; background: var(--lv-accent); box-shadow: 0 0 0 5px rgba(109,40,217,.09); }
 .mu-s3-point__dot--pink { background: #d1438f; box-shadow: 0 0 0 5px rgba(209,67,143,.1); }
@@ -17,7 +17,6 @@
 .mu-s3-point b { font-size: 12px; letter-spacing: .05em; font-weight: 500; }
 .mu-s3-request-point { position: absolute; left: 58%; top: 67%; width: 16px; height: 16px; margin: -8px; border-radius: 50%; background: var(--lv-ink); box-shadow: 0 0 0 7px rgba(109,40,217,.2); }
 .mu-s3-request-label { position: absolute; left: 60.5%; top: 69%; font-size: 12px; letter-spacing: .08em; color: var(--lv-accent); }
-.mu-s3-cap { position: absolute; right: 8%; bottom: 8%; width: 480px; }
 @media (max-width:1023px) {
   .mu-s3-stage { position: static; display: grid; gap: 28px; padding: 12vh 7vw; }
   .mu-s3-h,.mu-s3-query,.mu-s3-map,.mu-s3-cap { position: relative; inset: auto; width: 100%; }
