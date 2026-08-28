@@ -126,36 +126,42 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
             scrollTrigger: {
               trigger: taste,
               start: "top top",
-              end: "+=135%",
-              scrub: 0.75,
+              end: "+=390%",
+              scrub: 0.78,
               invalidateOnRefresh: true
             }
           });
 
-          tasteDetails
-            .fromTo(
-              ".lr-taste__panel--short .lr-artist__art img, .lr-taste__panel--short .lr-artist__art .lr-cover-fallback",
-              { scale: 1.12 },
-              {
-                scale: 1,
-                duration: 0.68,
-                stagger: 0.045,
-                ease: "power3.out"
-              },
-              0.12
-            )
-            .fromTo(
-              ".lr-taste__panel--short .lr-artist__meta > *, .lr-taste__panel--short .lr-track-row__rank, .lr-taste__panel--short .lr-track-row__copy > *, .lr-taste__panel--short .lr-track-row svg",
-              { autoAlpha: 0, y: 10 },
-              {
-                autoAlpha: 1,
-                y: 0,
-                duration: 0.38,
-                stagger: 0.018,
-                ease: "power2.out"
-              },
-              0.22
-            );
+          const addTasteChapter = (period: "short" | "medium" | "long", at: number) => {
+            tasteDetails
+              .fromTo(
+                `.lr-taste__panel--${period} .lr-artist__art img, .lr-taste__panel--${period} .lr-artist__art .lr-cover-fallback`,
+                { scale: 1.12 },
+                {
+                  scale: 1,
+                  duration: 0.56,
+                  stagger: 0.04,
+                  ease: "power3.out"
+                },
+                at
+              )
+              .fromTo(
+                `.lr-taste__panel--${period} .lr-artist__meta > *, .lr-taste__panel--${period} .lr-track-row__rank, .lr-taste__panel--${period} .lr-track-row__copy > *, .lr-taste__panel--${period} .lr-track-row svg`,
+                { autoAlpha: 0, y: 10 },
+                {
+                  autoAlpha: 1,
+                  y: 0,
+                  duration: 0.34,
+                  stagger: 0.016,
+                  ease: "power2.out"
+                },
+                at + 0.09
+              );
+          };
+
+          addTasteChapter("short", 0.1);
+          addTasteChapter("medium", 1.1);
+          addTasteChapter("long", 1.84);
         }
 
         const snapshot = room.querySelector<HTMLElement>(".lr-snapshot");
