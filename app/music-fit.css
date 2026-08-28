@@ -66,37 +66,45 @@
     margin-top: clamp(16px, 2.7svh, 26px);
   }
 
+  .mu .lr-taste__stage {
+    padding-top: clamp(12px, 1.8svh, 18px);
+  }
+
   .mu .lr-taste__layout {
-    gap: clamp(32px, 5vw, 72px);
+    gap: clamp(30px, 4.4vw, 66px);
   }
 
-  /* Eight natural 54px track rows were taller than the remaining viewport,
-     so the artist grid fix alone could never make this scene fit. */
-  .mu .lr-track-row a {
-    grid-template-columns: 24px clamp(38px, 5.2svh, 48px) minmax(0, 1fr) auto;
+  .mu .lr-taste .lr-track-row a {
+    grid-template-columns: 24px minmax(0, 1fr) clamp(36px, 5.2svh, 46px) 15px;
+    grid-template-areas: "rank copy cover arrow";
     gap: clamp(8px, 1vw, 12px);
-    padding: clamp(3px, 0.65svh, 6px) 4px;
+    padding: clamp(4px, 0.7svh, 7px) 0;
   }
 
-  .mu .lr-track-row__cover {
-    width: clamp(38px, 5.2svh, 48px);
+  .mu .lr-taste .lr-track-row__cover {
+    width: 100%;
   }
 
-  .mu .lr-track-row__copy strong {
+  .mu .lr-taste .lr-track-row__copy strong {
     font-size: clamp(12px, 1.7svh, 14px);
   }
 
-  .mu .lr-track-row__copy small {
+  .mu .lr-taste .lr-track-row__copy small {
     margin-top: 2px;
-    font-size: 10px;
+    font-size: 9px;
   }
 
-  .mu .lr-track-row svg {
+  .mu .lr-taste .lr-track-row svg {
     width: 14px;
   }
 
-  .mu .lr-artist-grid {
-    min-height: clamp(300px, 46svh, 390px);
+  .mu .lr-taste .lr-artist-grid {
+    min-height: clamp(330px, 46svh, 430px);
+  }
+
+  .mu .lr-taste .lr-artist:not(:first-child) {
+    grid-template-columns: clamp(42px, 5.2svh, 54px) minmax(0, 1fr);
+    padding: clamp(4px, 0.65svh, 7px) 0;
   }
 
   .mu .lr-hours__plot {
@@ -125,6 +133,22 @@
   .mu .lr-period__item {
     padding-bottom: 8px;
     font-size: 9px;
+  }
+
+  .mu .lr-taste .lr-artist-grid {
+    min-height: clamp(300px, 44svh, 350px);
+    grid-template-columns: minmax(0, 1.22fr) minmax(190px, 0.78fr);
+  }
+
+  .mu .lr-taste .lr-artist:not(:first-child) {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 10px;
+    padding: 3px 0;
+  }
+
+  .mu .lr-taste .lr-track-row a {
+    grid-template-columns: 22px minmax(0, 1fr) 38px 14px;
+    padding: 3px 0;
   }
 
   .mu .lr-playlist-track,
