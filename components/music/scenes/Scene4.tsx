@@ -2,50 +2,75 @@
 
 import "./scene4.css";
 import gsap from "gsap";
-import { MuCaption, MuHeading, WaveDoodle, type SceneCtx } from "../sceneKit";
+import { MuCaption, MuHeading, VinylDoodle, type SceneCtx } from "../sceneKit";
 
-const BARS = [0.16, 0.42, 0.72, 0.32, 0.88, 0.56, 0.24, 0.68, 0.39, 0.94, 0.47, 0.2];
-const DOTS = [[16, 68], [31, 34], [45, 54], [62, 23], [73, 69], [83, 43], [55, 80], [27, 83]] as const;
+const BANDS = [38, 64, 92, 55, 78, 43, 104, 72, 51, 88, 63, 97, 45, 75, 58, 84];
+const VECTOR = [28, 66, 45, 81, 37, 72, 53, 91, 61, 42, 76, 57];
 
 export function Scene4() {
   return (
-    <section className="mu-scene mu-s4" data-scene="4" aria-label="A song is turned into a position by an audio embedding model">
+    <section className="mu-scene mu-scene--night mu-s4" data-scene="4" aria-label="The audio embedding model turns a song into numbers">
       <div className="mu-stage mu-s4-stage">
-        <MuHeading className="mu-s4-h">A song needed coordinates too.</MuHeading>
-        <div className="mu-s4-flow" aria-hidden="true">
-          <div className="mu-s4-sound"><WaveDoodle className="mu-s4-wave" /><span className="mu-s4-label lv-mono">a song</span></div>
-          <Arrow className="mu-s4-arrow mu-s4-arrow--one" d="M8 30 Q74 16 150 30" />
-          <div className="mu-s4-listener"><svg viewBox="0 0 190 180" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path className="mu-draw" d="M95 18 Q36 20 28 80 Q25 142 79 158 Q95 166 111 158 Q165 142 162 80 Q154 20 95 18" /><path className="mu-draw" d="M64 68 Q78 53 95 67 Q112 53 126 68" /><path className="mu-draw" d="M58 94 Q75 112 95 101 Q115 112 132 94" /><path className="mu-draw" d="M85 121 Q95 130 105 121" /><path className="mu-draw" d="M44 71 Q25 76 31 111 Q38 130 55 116" /><path className="mu-draw" d="M146 71 Q165 76 159 111 Q152 130 135 116" /></svg><span className="mu-s4-label lv-mono">audio embedding model</span></div>
-          <Arrow className="mu-s4-arrow mu-s4-arrow--two" d="M8 30 Q74 45 150 30" />
-          <div className="mu-s4-numbers lv-mono">{BARS.map((height, i) => <i key={i} style={{ height: `${height * 100}%` }} />)}<span>numbers</span></div>
-          <Arrow className="mu-s4-arrow mu-s4-arrow--three" d="M8 30 Q74 15 150 30" />
-          <div className="mu-s4-space"><svg viewBox="0 0 250 230" fill="none" stroke="currentColor" strokeWidth="2.3" strokeLinecap="round"><path className="mu-draw" d="M127 12 Q205 8 232 73 Q249 139 207 194 Q152 232 85 210 Q20 189 18 121 Q14 53 72 24 Q97 13 127 12" /></svg>{DOTS.map(([left, top], i) => <i key={i} className="mu-s4-dot" style={{ left: `${left}%`, top: `${top}%` }} />)}<span className="mu-s4-label lv-mono">a position for the song</span></div>
+        <MuHeading className="mu-s4-h">The audio needed its own coordinates.</MuHeading>
+        <MuCaption className="mu-s4-cap">
+          CLAP is a pretrained audio embedding model. It reads patterns in a song and turns the audio into a list of numbers. That list gives the song a position of its own.
+        </MuCaption>
+
+        <div className="mu-s4-console" aria-hidden="true">
+          <div className="mu-s4-source">
+            <VinylDoodle className="mu-s4-vinyl" />
+            <span className="lv-mono">audio preview</span>
+          </div>
+
+          <svg className="mu-s4-cable mu-s4-cable--one" viewBox="0 0 150 80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path className="mu-draw mu-s4-shaft" d="M8 42 Q74 21 136 42" />
+            <path className="mu-draw mu-s4-head" d="M136 42 L121 33 M136 42 L122 53" />
+          </svg>
+
+          <div className="mu-s4-analyser">
+            <div className="mu-s4-analyser__head lv-mono"><span>CLAP</span><span>audio embedding model</span></div>
+            <svg className="mu-s4-waveform" viewBox="0 0 420 96" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path className="mu-draw" d="M8 51 C28 50 29 20 49 48 S72 80 91 49 S115 12 134 49 S159 76 178 50 S202 29 221 49 S245 87 264 49 S287 18 307 50 S333 72 350 48 S382 26 412 50" />
+            </svg>
+            <div className="mu-s4-bands">{BANDS.map((height, index) => <i key={index} style={{ height }} />)}</div>
+            <div className="mu-s4-scale lv-mono"><span>low frequency</span><span>time</span><span>high frequency</span></div>
+          </div>
+
+          <svg className="mu-s4-cable mu-s4-cable--two" viewBox="0 0 150 80" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <path className="mu-draw mu-s4-shaft" d="M8 42 Q74 63 136 42" />
+            <path className="mu-draw mu-s4-head" d="M136 42 L121 33 M136 42 L122 53" />
+          </svg>
+
+          <div className="mu-s4-vector">
+            <div className="mu-s4-vector__bars">{VECTOR.map((height, index) => <i key={index} style={{ height: `${height}%` }} />)}</div>
+            <span className="lv-mono">song coordinates</span>
+          </div>
         </div>
-        <MuCaption className="mu-s4-cap">The text model could only turn sentences into positions. We used an audio embedding model to turn each song into numbers too. Those numbers give the song a position that can later be compared with a request.</MuCaption>
       </div>
     </section>
   );
 }
 
-function Arrow({ className, d }: { className: string; d: string }) {
-  return <svg className={className} viewBox="0 0 170 60" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden="true"><path className="mu-draw mu-s4-shaft" d={d} /><path className="mu-draw mu-s4-head" d="M150 30 L138 22 M150 30 L138 39" /></svg>;
-}
-
 export function buildScene4(ctx: SceneCtx): void {
   if (!ctx.desktop) {
-    [".mu-s4-h", ".mu-s4-flow", ".mu-s4-cap"].forEach((selector) => {
-      const el = ctx.q(selector)[0];
-      if (el) gsap.from(el, { opacity: 0, y: 28, ease: "none", scrollTrigger: { trigger: el, start: "top 80%", end: "top 38%", scrub: 0.8 } });
+    [".mu-s4-h", ".mu-s4-console", ".mu-s4-cap"].forEach((selector) => {
+      const element = ctx.q(selector)[0];
+      if (element) gsap.from(element, { opacity: 0, y: 24, duration: 0.5, scrollTrigger: { trigger: element, start: "top 84%" } });
     });
     return;
   }
-  const tl = gsap.timeline({ scrollTrigger: { trigger: ctx.root, start: "top top", end: "+=360%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true } });
-  const draw = (selector: string, at: number, duration = 0.28) => tl.fromTo(ctx.q(selector), ctx.drawFrom(), { strokeDashoffset: 0, duration, stagger: 0.02, ease: "none" }, at);
-  tl.from(ctx.q(".mu-s4-h"), { opacity: 0, y: 36, duration: 0.32 }, 0).fromTo(ctx.q(".mu-s4-wave .mu-draw"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.3, stagger: 0.02, ease: "none" }, 0.32).from(ctx.q(".mu-s4-sound .mu-s4-label"), { opacity: 0, duration: 0.14 }, 0.55);
-  draw(".mu-s4-arrow--one .mu-s4-shaft", 0.65).fromTo(ctx.q(".mu-s4-arrow--one .mu-s4-head"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.1, ease: "none" }, 0.91);
-  draw(".mu-s4-listener .mu-draw", 0.98, 0.34).from(ctx.q(".mu-s4-listener .mu-s4-label"), { opacity: 0, duration: 0.14 }, 1.28);
-  draw(".mu-s4-arrow--two .mu-s4-shaft", 1.42).fromTo(ctx.q(".mu-s4-arrow--two .mu-s4-head"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.1, ease: "none" }, 1.68);
-  tl.from(ctx.q(".mu-s4-numbers i"), { scaleY: 0, transformOrigin: "50% 100%", duration: 0.18, stagger: 0.025, ease: "none" }, 1.76).from(ctx.q(".mu-s4-numbers span"), { opacity: 0, duration: 0.12 }, 2.03);
-  draw(".mu-s4-arrow--three .mu-s4-shaft", 2.12).fromTo(ctx.q(".mu-s4-arrow--three .mu-s4-head"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.1, ease: "none" }, 2.38);
-  draw(".mu-s4-space .mu-draw", 2.48, 0.32).from(ctx.q(".mu-s4-dot"), { opacity: 0, scale: 0, duration: 0.16, stagger: 0.04, ease: "none" }, 2.7).from(ctx.q(".mu-s4-space .mu-s4-label"), { opacity: 0, duration: 0.14 }, 2.94).from(ctx.q(".mu-s4-cap"), { opacity: 0, y: 22, duration: 0.3 }, 3.14);
+  const tl = gsap.timeline({ scrollTrigger: { trigger: ctx.root, start: "top top", end: "+=340%", pin: true, scrub: 0.9, anticipatePin: 1 } });
+  tl.from(ctx.q(".mu-s4-h"), { opacity: 0, y: 34, duration: 0.35 }, 0)
+    .from(ctx.q(".mu-s4-cap"), { opacity: 0, x: 24, duration: 0.3 }, 0.3)
+    .fromTo(ctx.q(".mu-s4-vinyl .mu-draw"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.38, stagger: 0.04, ease: "none" }, 0.48)
+    .from(ctx.q(".mu-s4-source span"), { opacity: 0, y: 8, duration: 0.2 }, 0.78)
+    .fromTo(ctx.q(".mu-s4-cable--one .mu-s4-shaft"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.34, ease: "none" }, 0.8)
+    .fromTo(ctx.q(".mu-s4-cable--one .mu-s4-head"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.1, ease: "none" }, 1.12)
+    .from(ctx.q(".mu-s4-analyser"), { opacity: 0, scale: 0.96, duration: 0.28 }, 1.12)
+    .fromTo(ctx.q(".mu-s4-waveform .mu-draw"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.44, ease: "none" }, 1.34)
+    .from(ctx.q(".mu-s4-bands i"), { scaleY: 0, transformOrigin: "50% 100%", duration: 0.28, stagger: 0.025, ease: "none" }, 1.54)
+    .fromTo(ctx.q(".mu-s4-cable--two .mu-s4-shaft"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.34, ease: "none" }, 2.04)
+    .fromTo(ctx.q(".mu-s4-cable--two .mu-s4-head"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.1, ease: "none" }, 2.36)
+    .from(ctx.q(".mu-s4-vector__bars i"), { scaleY: 0, transformOrigin: "50% 100%", duration: 0.22, stagger: 0.03, ease: "none" }, 2.44)
+    .from(ctx.q(".mu-s4-vector > span"), { opacity: 0, y: 8, duration: 0.2 }, 2.75);
 }

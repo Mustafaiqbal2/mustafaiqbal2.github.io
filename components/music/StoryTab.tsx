@@ -3,8 +3,8 @@
 /**
  * Act I: the scroll-driven MelodyMind story. Eight scenes, each a
  * self-contained component + builder pair under ./scenes. Builders run
- * chunked (one per ~40ms) top-to-bottom so each pin measures a document that
- * already contains the spacers above it; onBuilt releases the boot gate.
+ * top-to-bottom in the same layout pass so the whole story is ready before
+ * the boot gate releases.
  */
 
 import { useLayoutEffect, useRef } from "react";
@@ -58,7 +58,6 @@ export function StoryTab({ onBuilt }: { onBuilt: () => void }) {
         const desktop = Boolean(mmCtx.conditions?.desktop);
         let cancelled = false;
         let frame = 0;
-        let timer = 0;
         const queue = BUILDERS.map((build, i) => () => {
           const sec = el.querySelector<HTMLElement>(`[data-scene="${i + 1}"]`);
           if (!sec) return;
@@ -67,24 +66,20 @@ export function StoryTab({ onBuilt }: { onBuilt: () => void }) {
         });
         const run = () => {
           if (cancelled) return;
-          const next = queue.shift();
-          if (!next) {
-            ScrollTrigger.refresh();
-            onBuilt();
-            return;
-          }
-          try {
-            next();
-          } catch {
-            /* one broken scene must not hold the boot gate */
-          }
-          timer = window.setTimeout(run, 40);
+          queue.forEach((build, index) => {
+            try {
+              build();
+            } catch (error) {
+              console.error(`[music] failed to build scene ${index + 1}`, error);
+            }
+          });
+          ScrollTrigger.refresh();
+          onBuilt();
         };
         frame = window.requestAnimationFrame(run);
         return () => {
           cancelled = true;
           window.cancelAnimationFrame(frame);
-          window.clearTimeout(timer);
         };
       }
     );

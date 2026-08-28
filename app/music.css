@@ -311,6 +311,17 @@ html.mu-overlay-open {
   min-height: 100vh;
   overflow: clip;
 }
+.mu-scene--night {
+  background: #07080d;
+  color: var(--lv-bone);
+}
+.mu-scene--paper {
+  background:
+    radial-gradient(circle at 78% 18%, rgba(109, 40, 217, 0.07), transparent 27%),
+    radial-gradient(circle at 17% 76%, rgba(19, 127, 174, 0.06), transparent 24%),
+    var(--lv-bone);
+  color: var(--lv-ink);
+}
 /* THE STAGE: every scene composes inside a fixed 1440x900 design space
    that scales AS ONE UNIT to fit the viewport. Composition is authored
    once and can never drift apart across screen sizes — the entire class
@@ -419,6 +430,13 @@ html.mu-overlay-open {
   .mu-hero {
     min-height: 48vh;
   }
+}
+.mu-scene--paper .mu-caption {
+  color: #353741;
+  background: transparent;
+  border-top: 1px solid rgba(11, 12, 18, 0.22);
+  border-radius: 0;
+  padding: 14px 0 0;
 }
 
 @media (max-width: 440px) {

@@ -1,161 +1,55 @@
 "use client";
 
-/**
- * Scene 5 — "teach the machine to listen". The one technical diagram scene:
- * a left-to-right drawn pipeline (wave -> frozen ear -> numbers -> adapter)
- * ending in a curved arrow that delivers a bright new dot into a small
- * word-space blob. Landing grammar: wobbly boxes, true-length arrows drawn
- * shaft-then-head, mono labels.
- */
-
 import "./scene5.css";
 import gsap from "gsap";
-import { WaveDoodle, MuCaption, MuHeading, NameTag, type SceneCtx } from "../sceneKit";
+import { MuCaption, MuHeading, type SceneCtx } from "../sceneKit";
 
-const NUMS: string[] = [
-  "0.12", "-0.87", "0.44", "0.03", "-0.29", "0.91", "-0.55", "0.18",
-  "0.67", "-0.12", "0.35", "-0.74", "0.08", "0.52", "-0.31", "0.26"
+const TEXT_POINTS = [
+  { name: "rainy drive", x: 67, y: 31 },
+  { name: "leaving home", x: 46, y: 59 },
+  { name: "breakup", x: 72, y: 72 }
+];
+const AUDIO_POINTS = [
+  { name: "clip A", x: 30, y: 68 },
+  { name: "clip B", x: 70, y: 45 },
+  { name: "clip C", x: 48, y: 26 }
 ];
 
-/* small hand-drawn arrow: shaft path + separate arrowhead path (the landing's
-   arrow rule: shaft draws first, head flicks in after) */
-function PipeArrow({ className }: { className?: string }) {
+function CoordinateMap({ type }: { type: "text" | "audio" }) {
+  const points = type === "text" ? TEXT_POINTS : AUDIO_POINTS;
   return (
-    <svg
-      viewBox="0 0 44 40"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.4}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path className="mu-draw mu-s5-shaft" d="M3 22 Q22 16 39 20" />
-      <path className="mu-draw mu-s5-head" d="M39 20 L30 14 M39 20 L31 27" />
-    </svg>
+    <div className={`mu-s5-map mu-s5-map--${type}`}>
+      <div className="mu-s5-map__head lv-mono"><strong>{type === "text" ? "sentence map" : "song map"}</strong><span>{type === "text" ? "from Nomic" : "from CLAP"}</span></div>
+      <svg viewBox="0 0 470 360" fill="none" stroke="currentColor" strokeLinecap="round" aria-hidden="true">
+        <path className="mu-draw mu-s5-frame" d="M18 20 Q237 10 452 20 Q462 180 452 340 Q234 351 18 340 Q8 180 18 20" />
+        <path className="mu-draw mu-s5-axis" d="M55 310 Q240 306 420 310 M55 310 Q50 180 55 54" />
+      </svg>
+      {points.map((point, index) => (
+        <span key={point.name} className="mu-s5-point" style={{ left: `${point.x}%`, top: `${point.y}%` }}>
+          <i data-pair={index + 1} /><b className="lv-mono">{point.name}</b>
+        </span>
+      ))}
+    </div>
   );
 }
 
 export function Scene5() {
   return (
-    <section className="mu-scene mu-s5" data-scene="5" aria-label="teach the machine to listen">
-      <div className="mu-s5-inner mu-stage">
-        <MuHeading className="mu-s5-h">So we trained a model to listen.</MuHeading>
-
-        <div className="mu-s5-mid">
-          <div className="mu-s5-pipe">
-            <WaveDoodle className="mu-s5-wave" />
-
-            <PipeArrow className="mu-s5-arrow mu-s5-a1" />
-
-            <div className="mu-s5-box mu-s5-clap">
-              <svg
-                viewBox="0 0 170 90"
-                preserveAspectRatio="none"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2.6}
-                strokeLinecap="round"
-                aria-hidden="true"
-              >
-                <path className="mu-draw mu-s5-frame" d="M9 11 Q85 5 161 10 Q166 45 162 80 Q85 86 8 81 Q4 45 9 11" />
-              </svg>
-              <div className="mu-s5-box__txt">
-                <b className="lv-mono">clap</b>
-                <small className="lv-mono">a frozen ear</small>
-              </div>
-            </div>
-
-            <PipeArrow className="mu-s5-arrow mu-s5-a2" />
-
-            <div className="mu-s5-nums lv-mono" aria-label="a row of numbers, the song as the machine sees it">
-              {NUMS.map((n) => (
-                <span key={n}>{n}</span>
-              ))}
-            </div>
-
-            <PipeArrow className="mu-s5-arrow mu-s5-a3" />
-
-            <div className="mu-s5-adwrap">
-              <div className="mu-s5-box mu-s5-ad">
-                <svg
-                  viewBox="0 0 190 100"
-                  preserveAspectRatio="none"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2.6}
-                  strokeLinecap="round"
-                  aria-hidden="true"
-                >
-                  <path className="mu-draw mu-s5-frame" d="M10 12 Q95 5 180 11 Q186 50 181 89 Q95 96 9 90 Q4 50 10 12" />
-                </svg>
-                <div className="mu-s5-box__txt">
-                  <b className="lv-mono">the adapter</b>
-                  <small className="lv-mono">the part we trained</small>
-                  <svg
-                    className="mu-s5-under"
-                    viewBox="0 0 120 8"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth={2.4}
-                    strokeLinecap="round"
-                    aria-hidden="true"
-                  >
-                    <path className="mu-draw mu-s5-underline" d="M4 5 Q30 2 60 5 Q90 8 116 4" />
-                  </svg>
-                </div>
-              </div>
-
-              {/* curved delivery arrow, bending up and to the right into the blob */}
-              <svg
-                className="mu-s5-arc"
-                viewBox="0 0 200 190"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2.4}
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <path className="mu-draw mu-s5-shaft" d="M20 185 Q10 100 60 60 Q110 25 148 30" />
-                <path className="mu-draw mu-s5-head" d="M148 30 L136 24 M148 30 L138 40" />
-              </svg>
-
-              {/* the word-space blob (scene 4's, smaller) with 4 word dots */}
-              <div className="mu-s5-blob">
-                <svg
-                  viewBox="0 0 170 130"
-                  preserveAspectRatio="none"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth={2.4}
-                  strokeLinecap="round"
-                  aria-hidden="true"
-                >
-                  <path
-                    className="mu-draw mu-s5-blobline"
-                    d="M85 8 Q140 4 158 40 Q170 75 140 105 Q100 128 55 118 Q12 106 8 68 Q6 30 40 14 Q62 6 85 8"
-                  />
-                </svg>
-                <span className="mu-s5-word lv-mono" style={{ left: "16%", top: "26%" }}>slow</span>
-                <span className="mu-s5-word lv-mono" style={{ left: "58%", top: "20%" }}>warm</span>
-                <span className="mu-s5-word lv-mono" style={{ left: "13%", top: "60%" }}>night</span>
-                <span className="mu-s5-word lv-mono" style={{ left: "62%", top: "66%" }}>sad</span>
-                <svg className="mu-s5-ring" viewBox="0 0 36 36" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
-                  <circle cx="18" cy="18" r="15" />
-                </svg>
-                <i className="mu-s5-dot" aria-hidden="true" />
-                <NameTag className="mu-s5-tag">word space</NameTag>
-              </div>
-            </div>
+    <section className="mu-scene mu-scene--paper mu-s5" data-scene="5" aria-label="The sentence map and song map use different coordinates">
+      <div className="mu-stage mu-s5-stage">
+        <MuHeading className="mu-s5-h">The two maps used different coordinates.</MuHeading>
+        <div className="mu-s5-maps" aria-hidden="true">
+          <CoordinateMap type="text" />
+          <div className="mu-s5-divider">
+            <svg viewBox="0 0 130 330" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+              <path className="mu-draw mu-s5-mismatch" d="M16 82 Q64 38 114 82 M16 165 Q64 121 114 165 M16 248 Q64 204 114 248" />
+            </svg>
+            <span className="lv-mono">same pairs<br/>different positions</span>
           </div>
+          <CoordinateMap type="audio" />
         </div>
-
         <MuCaption className="mu-s5-cap">
-          CLAP is an existing model that turns audio into numbers. We froze it and trained a small adapter network on
-          top, using about ten thousand songs, so that each song lands where a description of it would land. After
-          that, songs and sentences share one space.
+          Both models produced numbers, but their maps had different scales and directions. A sentence and its matching audio clip could describe the same situation and still land far apart.
         </MuCaption>
       </div>
     </section>
@@ -163,93 +57,20 @@ export function Scene5() {
 }
 
 export function buildScene5(ctx: SceneCtx): void {
-  const { q, root, drawFrom, desktop } = ctx;
-
-  /* ---------- mobile: static stack, gentle scrubbed entrances ---------- */
-  if (!desktop) {
-    const picks: string[] = [".mu-s5-h", ".mu-s5-pipe", ".mu-s5-cap"];
-    picks.forEach((sel) => {
-      const el = q(sel)[0];
-      if (!el) return;
-      gsap.from(el, {
-        y: 36,
-        opacity: 0,
-        scrollTrigger: { trigger: el, start: "top 78%", end: "top 35%", scrub: 0.8 }
-      });
+  if (!ctx.desktop) {
+    [".mu-s5-h", ".mu-s5-maps", ".mu-s5-cap"].forEach((selector) => {
+      const element = ctx.q(selector)[0];
+      if (element) gsap.from(element, { opacity: 0, y: 24, duration: 0.5, scrollTrigger: { trigger: element, start: "top 84%" } });
     });
     return;
   }
-
-  /* ---------- desktop: one pinned scrubbed timeline ---------- */
-
-  /* the bright dot starts hidden back at the arc's mouth (build-time set so
-     there is no flash; offsets are world-space deltas from its final resting
-     spot inside the blob) */
-  gsap.set(q(".mu-s5-dot"), { x: -125, y: 160, opacity: 0 });
-
-  const tl = gsap.timeline({
-    scrollTrigger: {
-      trigger: root,
-      start: "top top",
-      end: "+=400%",
-      pin: true,
-      scrub: 1,
-      anticipatePin: 1,
-      fastScrollEnd: true
-    }
-  });
-
-  /* 0 – 0.4 heading */
-  tl.from(q(".mu-s5-h"), { y: 44, opacity: 0, duration: 0.32 }, 0.04);
-
-  /* 0.4 – 0.9 wave draws; first arrow shaft then head */
-  tl.fromTo(q(".mu-s5-wave .mu-draw"), drawFrom(), { strokeDashoffset: 0, duration: 0.35, ease: "none" }, 0.4)
-    .fromTo(q(".mu-s5-a1 .mu-s5-shaft"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, ease: "none" }, 0.52)
-    .fromTo(q(".mu-s5-a1 .mu-s5-head"), drawFrom(), { strokeDashoffset: 0, duration: 0.06, ease: "none" }, 0.83);
-
-  /* 0.9 – 1.4 clap box draws, labels fade */
-  tl.fromTo(q(".mu-s5-clap .mu-s5-frame"), drawFrom(), { strokeDashoffset: 0, duration: 0.34, ease: "none" }, 0.92)
-    .from(q(".mu-s5-clap .mu-s5-box__txt"), { opacity: 0, duration: 0.22 }, 1.16);
-
-  /* 1.4 – 1.9 second arrow; the numbers reveal left to right */
-  tl.fromTo(q(".mu-s5-a2 .mu-s5-shaft"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, ease: "none" }, 1.42)
-    .fromTo(q(".mu-s5-a2 .mu-s5-head"), drawFrom(), { strokeDashoffset: 0, duration: 0.06, ease: "none" }, 1.73)
-    .from(q(".mu-s5-nums span"), { opacity: 0, duration: 0.16, stagger: 0.018, ease: "none" }, 1.5);
-
-  /* 1.9 – 2.5 third arrow; adapter box; accent underline under its sub-label */
-  tl.fromTo(q(".mu-s5-a3 .mu-s5-shaft"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, ease: "none" }, 1.92)
-    .fromTo(q(".mu-s5-a3 .mu-s5-head"), drawFrom(), { strokeDashoffset: 0, duration: 0.06, ease: "none" }, 2.23)
-    .fromTo(q(".mu-s5-ad .mu-s5-frame"), drawFrom(), { strokeDashoffset: 0, duration: 0.34, ease: "none" }, 2.0)
-    .from(q(".mu-s5-ad .mu-s5-box__txt"), { opacity: 0, duration: 0.2 }, 2.24)
-    .fromTo(q(".mu-s5-underline"), drawFrom(), { strokeDashoffset: 0, duration: 0.12, ease: "none" }, 2.38);
-
-  /* 2.5 – 3.2 blob draws; curved arrow shaft then head; the bright dot
-     travels the curve (world-space keyframes) and lands with a ring pulse */
-  tl.fromTo(q(".mu-s5-blobline"), drawFrom(), { strokeDashoffset: 0, duration: 0.3, ease: "none" }, 2.46)
-    .from(q(".mu-s5-word, .mu-s5-tag"), { opacity: 0, duration: 0.2, stagger: 0.03 }, 2.62)
-    .fromTo(q(".mu-s5-arc .mu-s5-shaft"), drawFrom(), { strokeDashoffset: 0, duration: 0.4, ease: "none" }, 2.52)
-    .fromTo(q(".mu-s5-arc .mu-s5-head"), drawFrom(), { strokeDashoffset: 0, duration: 0.06, ease: "none" }, 2.94)
-    .to(q(".mu-s5-dot"), { opacity: 1, duration: 0.05, ease: "none" }, 2.6)
-    .to(
-      q(".mu-s5-dot"),
-      {
-        keyframes: { x: [-130, -110, -40, 3, 0], y: [115, 65, 15, 5, 0], easeEach: "none" },
-        duration: 0.5,
-        ease: "none"
-      },
-      2.6
-    )
-    .fromTo(
-      q(".mu-s5-ring"),
-      { scale: 0.4, opacity: 0.85 },
-      { scale: 1.4, opacity: 0, duration: 0.22, ease: "none", immediateRender: false },
-      3.08
-    );
-
-  /* 3.3 – 4.0 caption; the bright dot pulses gently twice */
-  tl.from(q(".mu-s5-cap"), { y: 26, opacity: 0, duration: 0.3 }, 3.32)
-    .to(q(".mu-s5-dot"), { scale: 1.3, duration: 0.1, ease: "none" }, 3.5)
-    .to(q(".mu-s5-dot"), { scale: 1, duration: 0.12, ease: "none" }, 3.6)
-    .to(q(".mu-s5-dot"), { scale: 1.3, duration: 0.1, ease: "none" }, 3.78)
-    .to(q(".mu-s5-dot"), { scale: 1, duration: 0.12, ease: "none" }, 3.88);
+  const tl = gsap.timeline({ scrollTrigger: { trigger: ctx.root, start: "top top", end: "+=320%", pin: true, scrub: 0.9, anticipatePin: 1 } });
+  tl.from(ctx.q(".mu-s5-h"), { opacity: 0, y: 34, duration: 0.34 }, 0)
+    .fromTo(ctx.q(".mu-s5-map--text .mu-draw"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.42, stagger: 0.04, ease: "none" }, 0.3)
+    .from(ctx.q(".mu-s5-map--text .mu-s5-map__head, .mu-s5-map--text .mu-s5-point"), { opacity: 0, scale: 0.85, duration: 0.22, stagger: 0.08 }, 0.68)
+    .fromTo(ctx.q(".mu-s5-map--audio .mu-draw"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.42, stagger: 0.04, ease: "none" }, 1.02)
+    .from(ctx.q(".mu-s5-map--audio .mu-s5-map__head, .mu-s5-map--audio .mu-s5-point"), { opacity: 0, scale: 0.85, duration: 0.22, stagger: 0.08 }, 1.4)
+    .fromTo(ctx.q(".mu-s5-mismatch"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.55, ease: "none" }, 1.78)
+    .from(ctx.q(".mu-s5-divider span"), { opacity: 0, y: 8, duration: 0.22 }, 2.16)
+    .from(ctx.q(".mu-s5-cap"), { opacity: 0, y: 20, duration: 0.34 }, 2.32);
 }

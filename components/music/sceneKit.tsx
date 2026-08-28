@@ -11,12 +11,20 @@
 import type { CSSProperties, ReactNode } from "react";
 
 /* true-length dash draw helper — identical contract to the landing's */
+const pathLength = (target: Element) => {
+  try {
+    return Math.max(1, (target as SVGGeometryElement).getTotalLength());
+  } catch {
+    return 1;
+  }
+};
+
 export const drawFrom = () => ({
   strokeDasharray: (_i: number, t: Element) => {
-    const len = (t as SVGGeometryElement).getTotalLength();
+    const len = pathLength(t);
     return `${len} ${len + 2}`;
   },
-  strokeDashoffset: (_i: number, t: Element) => (t as SVGGeometryElement).getTotalLength() + 1
+  strokeDashoffset: (_i: number, t: Element) => pathLength(t) + 1
 });
 
 /* ---------------- the stickman ---------------- */

@@ -4,40 +4,47 @@ import "./scene3.css";
 import gsap from "gsap";
 import { MuCaption, MuHeading, type SceneCtx } from "../sceneKit";
 
-const WORDS = [
-  { key: "heartbreak", label: "heartbreak", x: 48, y: 34, tone: "warm" },
-  { key: "breakup", label: "breakup", x: 57, y: 45, tone: "warm" },
-  { key: "leaving", label: "leaving home", x: 45, y: 56, tone: "warm" },
-  { key: "birthday", label: "birthday", x: 16, y: 62, tone: "cool" },
-  { key: "gym", label: "gym", x: 24, y: 78, tone: "cool" },
-  { key: "rain", label: "rain", x: 36, y: 24, tone: "mid" },
-  { key: "night", label: "night drive", x: 32, y: 52, tone: "mid" }
+const POINTS = [
+  { key: "heartbreak", label: "after a breakup", x: 66, y: 39, tone: "pink" },
+  { key: "leaving", label: "leaving home", x: 58, y: 51, tone: "pink" },
+  { key: "night", label: "night drive", x: 48, y: 61, tone: "violet" },
+  { key: "rain", label: "rain outside", x: 42, y: 46, tone: "violet" },
+  { key: "birthday", label: "birthday party", x: 24, y: 35, tone: "cyan" },
+  { key: "gym", label: "at the gym", x: 28, y: 73, tone: "cyan" }
 ] as const;
 
 export function Scene3() {
   return (
-    <section className="mu-scene mu-s3" data-scene="3" aria-label="Sentences are represented as positions in a map of meaning">
+    <section className="mu-scene mu-scene--paper mu-s3" data-scene="3" aria-label="A sentence becomes a position in a map of meaning">
       <div className="mu-stage mu-s3-stage">
-        <MuHeading className="mu-s3-h">First we turned sentences into points.</MuHeading>
-        <div className="mu-s3-map" aria-hidden="true">
-          <svg className="mu-s3-svg" viewBox="0 0 1440 900" fill="none" strokeLinecap="round" strokeLinejoin="round">
-            <path className="mu-draw mu-s3-axis" d="M116 758 Q500 752 820 759 Q1070 764 1320 758" />
-            <path className="mu-draw mu-s3-axis" d="M1320 758 L1302 750 M1320 758 L1303 766" />
-            <path className="mu-draw mu-s3-axis" d="M112 758 Q106 510 112 168" />
-            <path className="mu-draw mu-s3-axis" d="M112 168 L102 186 M112 168 L119 185" />
-            <path className="mu-draw mu-s3-link mu-s3-link--near" d="M692 306 Q760 351 821 405" />
-            <path className="mu-draw mu-s3-link mu-s3-link--far" d="M821 405 Q486 503 230 558" />
+        <MuHeading className="mu-s3-h">A sentence becomes a position.</MuHeading>
+        <div className="mu-s3-query">
+          <span className="lv-mono">request</span>
+          <strong>“a song for leaving home at night”</strong>
+          <svg viewBox="0 0 180 70" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
+            <path className="mu-draw mu-s3-route" d="M8 34 Q84 14 166 34" />
+            <path className="mu-draw mu-s3-route-head" d="M166 34 L151 25 M166 34 L152 46" />
           </svg>
-          {WORDS.map((word) => <span key={word.key} className={`mu-s3-word mu-s3-${word.key}`} style={{ left: `${word.x}%`, top: `${word.y}%` }}><i className={`mu-s3-dot mu-s3-dot--${word.tone}`} /><b className="mu-s3-label lv-mono">{word.label}</b></span>)}
-          <span className="mu-s3-distance mu-s3-distance--near lv-mono">close</span>
-          <span className="mu-s3-distance mu-s3-distance--far lv-mono">far apart</span>
         </div>
-        <MuCaption className="mu-s3-cap">An embedding model turns a sentence into a list of numbers. The numbers act like a position on a map. Similar situations land close together: “heartbreak” and “breakup” are close, while a birthday lands elsewhere.</MuCaption>
-        <div className="mu-s3-mobile-explain">
-          <span className="lv-mono">the idea</span>
-          <h3>Each request becomes a position.</h3>
-          <p>Similar situations land near each other. A breakup and heartbreak are close. A birthday is somewhere else, even if both could be called sad.</p>
+        <div className="mu-s3-map" aria-hidden="true">
+          <div className="mu-s3-map__head lv-mono"><span>map of meaning</span><span>one point per sentence</span></div>
+          <svg className="mu-s3-map__grid" viewBox="0 0 800 520" fill="none" stroke="currentColor" strokeLinecap="round">
+            <path className="mu-draw mu-s3-frame" d="M20 25 Q394 12 778 24 Q792 256 780 495 Q396 510 20 496 Q8 259 20 25" />
+            <path className="mu-draw mu-s3-cluster" d="M318 184 Q462 102 600 168 Q700 236 614 340 Q478 410 338 326 Q264 248 318 184" />
+            <path className="mu-draw mu-s3-focus" d="M478 255 Q515 235 548 258" />
+          </svg>
+          {POINTS.map((point) => (
+            <span key={point.key} className="mu-s3-point" style={{ left: `${point.x}%`, top: `${point.y}%` }}>
+              <i className={`mu-s3-point__dot mu-s3-point__dot--${point.tone}`} />
+              <b className="lv-mono">{point.label}</b>
+            </span>
+          ))}
+          <span className="mu-s3-request-point" />
+          <span className="mu-s3-request-label lv-mono">this request</span>
         </div>
+        <MuCaption className="mu-s3-cap">
+          Nomic, the text embedding model, turns the whole request into numbers. Together, those numbers place the request on a map. Sentences with similar meanings land near each other.
+        </MuCaption>
       </div>
     </section>
   );
@@ -45,19 +52,21 @@ export function Scene3() {
 
 export function buildScene3(ctx: SceneCtx): void {
   if (!ctx.desktop) {
-    [".mu-s3-h", ".mu-s3-mobile-explain"].forEach((selector) => {
-      const el = ctx.q(selector)[0];
-      if (el) gsap.from(el, { opacity: 0, y: 30, ease: "none", scrollTrigger: { trigger: el, start: "top 80%", end: "top 38%", scrub: 0.8 } });
+    [".mu-s3-h", ".mu-s3-query", ".mu-s3-map", ".mu-s3-cap"].forEach((selector) => {
+      const element = ctx.q(selector)[0];
+      if (element) gsap.from(element, { opacity: 0, y: 24, duration: 0.5, scrollTrigger: { trigger: element, start: "top 84%" } });
     });
     return;
   }
-  const tl = gsap.timeline({ scrollTrigger: { trigger: ctx.root, start: "top top", end: "+=360%", pin: true, scrub: 1, anticipatePin: 1, fastScrollEnd: true } });
-  tl.from(ctx.q(".mu-s3-h"), { y: 36, opacity: 0, duration: 0.32 }, 0)
-    .fromTo(ctx.q(".mu-s3-axis"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.42, stagger: 0.02, ease: "none" }, 0.14)
-    .from(ctx.q(".mu-s3-word"), { opacity: 0, scale: 0, duration: 0.18, stagger: 0.08, ease: "none" }, 0.58)
-    .fromTo(ctx.q(".mu-s3-link--near"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.32, ease: "none" }, 1.35)
-    .from(ctx.q(".mu-s3-distance--near"), { opacity: 0, duration: 0.12 }, 1.66)
-    .fromTo(ctx.q(".mu-s3-link--far"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.36, ease: "none" }, 1.92)
-    .from(ctx.q(".mu-s3-distance--far"), { opacity: 0, duration: 0.12 }, 2.25)
-    .from(ctx.q(".mu-s3-cap"), { opacity: 0, x: 26, duration: 0.3 }, 1.72);
+  const tl = gsap.timeline({ scrollTrigger: { trigger: ctx.root, start: "top top", end: "+=330%", pin: true, scrub: 0.9, anticipatePin: 1 } });
+  tl.from(ctx.q(".mu-s3-h"), { opacity: 0, y: 34, duration: 0.35 }, 0)
+    .from(ctx.q(".mu-s3-query"), { opacity: 0, x: -36, duration: 0.35 }, 0.28)
+    .fromTo(ctx.q(".mu-s3-route"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.35, ease: "none" }, 0.6)
+    .fromTo(ctx.q(".mu-s3-route-head"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.1, ease: "none" }, 0.93)
+    .fromTo(ctx.q(".mu-s3-frame, .mu-s3-cluster"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.44, stagger: 0.08, ease: "none" }, 0.92)
+    .from(ctx.q(".mu-s3-map__head"), { opacity: 0, y: -10, duration: 0.2 }, 1.1)
+    .from(ctx.q(".mu-s3-point"), { opacity: 0, scale: 0, duration: 0.2, stagger: 0.08, ease: "back.out(1.4)" }, 1.28)
+    .fromTo(ctx.q(".mu-s3-focus"), ctx.drawFrom(), { strokeDashoffset: 0, duration: 0.3, ease: "none" }, 1.85)
+    .from(ctx.q(".mu-s3-request-point, .mu-s3-request-label"), { opacity: 0, scale: 0.5, duration: 0.24 }, 2.02)
+    .from(ctx.q(".mu-s3-cap"), { opacity: 0, x: 28, duration: 0.34 }, 2.14);
 }
