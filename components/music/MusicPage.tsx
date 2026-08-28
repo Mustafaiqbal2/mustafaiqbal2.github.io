@@ -160,25 +160,75 @@ export function MusicPage() {
     gsap.set(reveal, { scaleY: 0, transformOrigin: "50% 0%", force3D: true });
     gsap.set(label, { opacity: 0, y: 18, scale: 0.965 });
 
-    const timeline = gsap.timeline({
-      onComplete: () => {
-        gsap.set(transition, { visibility: "hidden", pointerEvents: "none" });
-        gsap.set([cover, reveal], { scaleY: 0 });
-        gsap.set(label, { opacity: 0, y: 18, scale: 0.965 });
-        transitionBusyRef.current = false;
-        transitionTimelineRef.current = null;
+    const finishTransition = () => {
+      gsap.set(transition, { visibility: "hidden", pointerEvents: "none" });
+      gsap.set([cover, reveal], { scaleY: 0 });
+      gsap.set(label, { opacity: 0, y: 18, scale: 0.965 });
+      transitionBusyRef.current = false;
+      transitionTimelineRef.current = null;
 
-        if (id !== "melodymind" && !document.documentElement.classList.contains("lv-boot")) {
-          lenisRef.current?.start();
-        }
-
-        /* Listening Room gets no special work while the curtain is moving.
-           Its entrance choreography starts only after the exact same curtain
-           sequence used by Story has fully cleared the viewport. */
-        if (id === "listening") {
-          window.requestAnimationFrame(() => setListeningRevealSignal((value) => value + 1));
-        }
+      if (id !== "melodymind" && !document.documentElement.classList.contains("lv-boot")) {
+        lenisRef.current?.start();
       }
+
+      if (id === "listening") {
+        window.requestAnimationFrame(() => setListeningRevealSignal((value) => value + 1));
+      }
+    };
+
+    const runListeningReveal = () => {
+      /* Listening Room hydrates Spotify data and builds ScrollTriggers while
+         this sheet is leaving. Keep the moving edge on the browser compositor
+         so a busy JS frame cannot jump the curtain straight to its end. */
+      transitionTimelineRef.current = null;
+      gsap.set(cover, { scaleY: 0 });
+
+      const labelAnimation = label.animate(
+        [
+          { opacity: 1, transform: "translateY(0px) scale(1)" },
+          { opacity: 0, transform: "translateY(-12px) scale(0.985)" }
+        ],
+        {
+          duration: 220,
+          easing: "cubic-bezier(0.55, 0, 1, 0.45)",
+          fill: "forwards"
+        }
+      );
+
+      const revealAnimation = reveal.animate(
+        [
+          {
+            transform: "translateZ(0) scaleY(1.018)",
+            offset: 0,
+            easing: "cubic-bezier(0.65, 0, 0.35, 1)"
+          },
+          {
+            transform: "translateZ(0) scaleY(0.018)",
+            offset: 0.879,
+            easing: "cubic-bezier(0.39, 0.575, 0.565, 1)"
+          },
+          { transform: "translateZ(0) scaleY(0)", offset: 1 }
+        ],
+        {
+          duration: 1160,
+          fill: "forwards"
+        }
+      );
+
+      const settleListeningReveal = () => {
+        revealAnimation.onfinish = null;
+        revealAnimation.oncancel = null;
+        labelAnimation.cancel();
+        revealAnimation.cancel();
+        finishTransition();
+      };
+
+      revealAnimation.onfinish = settleListeningReveal;
+      revealAnimation.oncancel = settleListeningReveal;
+    };
+
+    const timeline = gsap.timeline({
+      onComplete: finishTransition
     });
 
     transitionTimelineRef.current = timeline;
@@ -212,7 +262,14 @@ export function MusicPage() {
         gsap.set(reveal, { scaleY: 1.018 });
         timeline.pause();
         commitTab(id, false, () => {
-          window.requestAnimationFrame(() => timeline.resume());
+          window.requestAnimationFrame(() => {
+            if (id === "listening") {
+              timeline.kill();
+              runListeningReveal();
+            } else {
+              timeline.resume();
+            }
+          });
         });
       }, 1.11)
       .to(label, {
