@@ -5,8 +5,7 @@ import {
   useLayoutEffect,
   useMemo,
   useRef,
-  useState,
-  type CSSProperties
+  useState
 } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -40,6 +39,14 @@ function clockHour(hours: number[]): string {
   return `${hour % 12 || 12} ${hour >= 12 ? "PM" : "AM"}`;
 }
 
+function clockPoint(hour: number, radius: number) {
+  const angle = (hour / 24) * Math.PI * 2 - Math.PI / 2;
+  return {
+    x: 230 + Math.cos(angle) * radius,
+    y: 230 + Math.sin(angle) * radius
+  };
+}
+
 function Cover({ src, alt = "" }: { src?: string; alt?: string }) {
   return src ? (
     <img src={src} alt={alt} loading="eager" decoding="async" />
@@ -57,10 +64,13 @@ function TastePanel({
   artists: Artist[];
   tracks: Track[];
 }) {
+  const [leadTrack, ...trackRows] = tracks;
+
   return (
     <div className={`lr-taste__panel lr-taste__panel--${period}`} data-period={period}>
       <div className="lr-taste__layout">
-        <div className="lr-artist-grid">
+        <div className="lr-artist-grid lr-artist-gallery">
+          <span className="lr-chart-label lv-mono">Top artists</span>
           {artists.map((artist, index) => (
             <a className="lr-artist" href={artist.url} target="_blank" rel="noreferrer" key={artist.id}>
               <span className="lr-artist__art"><Cover src={image(artist.images)} alt={artist.name} /></span>
@@ -71,18 +81,32 @@ function TastePanel({
             </a>
           ))}
         </div>
-        <ol className="lr-track-list">
-          {tracks.map((track, index) => (
-            <li className="lr-track-row" key={`${period}-${track.id}-${index}`}>
-              <a href={track.url} target="_blank" rel="noreferrer">
-                <span className="lr-track-row__rank lv-mono">{String(index + 1).padStart(2, "0")}</span>
-                <span className="lr-track-row__cover"><Cover src={image(track.album.images)} /></span>
-                <span className="lr-track-row__copy"><strong>{track.name}</strong><small>{artistNames(track)}</small></span>
-                <ArrowUpRight aria-hidden="true" />
-              </a>
-            </li>
-          ))}
-        </ol>
+        <div className="lr-track-chart">
+          <span className="lr-chart-label lv-mono">Top tracks</span>
+          {leadTrack && (
+            <a className="lr-track-lead" href={leadTrack.url} target="_blank" rel="noreferrer">
+              <span className="lr-track-lead__cover"><Cover src={image(leadTrack.album.images)} alt={leadTrack.album.name} /></span>
+              <span className="lr-track-lead__copy">
+                <i className="lv-mono">01</i>
+                <strong>{leadTrack.name}</strong>
+                <small>{artistNames(leadTrack)}</small>
+              </span>
+              <ArrowUpRight aria-hidden="true" />
+            </a>
+          )}
+          <ol className="lr-track-list">
+            {trackRows.map((track, index) => (
+              <li className="lr-track-row" key={`${period}-${track.id}-${index}`}>
+                <a href={track.url} target="_blank" rel="noreferrer">
+                  <span className="lr-track-row__rank lv-mono">{String(index + 2).padStart(2, "0")}</span>
+                  <span className="lr-track-row__cover"><Cover src={image(track.album.images)} /></span>
+                  <span className="lr-track-row__copy"><strong>{track.name}</strong><small>{artistNames(track)}</small></span>
+                  <ArrowUpRight aria-hidden="true" />
+                </a>
+              </li>
+            ))}
+          </ol>
+        </div>
       </div>
     </div>
   );
@@ -261,9 +285,20 @@ export function ListeningRoom({ active }: { active: boolean }) {
           .fromTo(".lr-taste .lr-section-head > *", { y: 30, opacity: 0 }, {
             y: 0, opacity: 1, duration: 0.3, stagger: 0.045, ease: "power3.out"
           }, 0)
+          .fromTo(shortPanel.querySelectorAll(".lr-chart-label"), { opacity: 0, y: 8 }, {
+            opacity: 1, y: 0, duration: 0.24, stagger: 0.04, ease: "power2.out"
+          }, 0.12)
           .fromTo(shortPanel.querySelectorAll(".lr-artist"), { y: 54, opacity: 0 }, {
             y: 0, opacity: 1, duration: 0.42, stagger: 0.055, ease: "power3.out"
           }, 0.16)
+          .fromTo(shortPanel.querySelectorAll(".lr-artist__art img, .lr-artist__art .lr-cover-fallback"), {
+            scale: 1.1
+          }, {
+            scale: 1, duration: 0.62, stagger: 0.035, ease: "power3.out"
+          }, 0.16)
+          .fromTo(shortPanel.querySelectorAll(".lr-track-lead"), { x: 34, opacity: 0 }, {
+            x: 0, opacity: 1, duration: 0.4, ease: "power3.out"
+          }, 0.2)
           .fromTo(shortPanel.querySelectorAll(".lr-track-row"), { x: 38, opacity: 0 }, {
             x: 0, opacity: 1, duration: 0.36, stagger: 0.04, ease: "power3.out"
           }, 0.24)
@@ -311,21 +346,38 @@ export function ListeningRoom({ active }: { active: boolean }) {
       }
 
       if (snapshot) {
+        const clockBars = gsap.utils.toArray<SVGLineElement>(".lr-clock__bar");
+        const clockRings = gsap.utils.toArray<SVGCircleElement>(".lr-clock__ring");
+
+        [...clockRings, ...clockBars].forEach((line) => {
+          const length = line.getTotalLength();
+          gsap.set(line, {
+            strokeDasharray: `${length} ${length + 2}`,
+            strokeDashoffset: length + 1
+          });
+        });
+
         gsap.timeline({
           scrollTrigger: { trigger: snapshot, start: "top top", end: "+=190%", pin: true, scrub: 0.85 }
         })
           .fromTo(".lr-snapshot .lr-section-head > *", { y: 34 }, {
             y: 0, duration: 0.32, stagger: 0.05, ease: "expo.out"
           }, 0)
-          .fromTo(".lr-hour-bar i", { scaleY: 0 }, {
-            scaleY: 1, duration: 0.65, stagger: 0.018, transformOrigin: "center bottom", ease: "expo.out"
-          }, 0.2)
-          .fromTo(".lr-hour-bar span", { opacity: 0, y: 12 }, {
-            opacity: 1, y: 0, duration: 0.25, stagger: 0.018
-          }, 0.42)
-          .fromTo(".lr-insight", { y: 40 }, {
-            y: 0, duration: 0.34, stagger: 0.07, ease: "expo.out"
-          }, 0.48);
+          .to(clockRings, {
+            strokeDashoffset: 0, duration: 0.45, stagger: 0.08, ease: "none"
+          }, 0.18)
+          .to(clockBars, {
+            strokeDashoffset: 0, duration: 0.62, stagger: 0.022, ease: "none"
+          }, 0.28)
+          .fromTo(".lr-clock__center > *", { opacity: 0, scale: 0.86 }, {
+            opacity: 1, scale: 1, duration: 0.34, stagger: 0.06, ease: "back.out(1.5)"
+          }, 0.54)
+          .fromTo(".lr-clock__label", { opacity: 0 }, {
+            opacity: 1, duration: 0.28, stagger: 0.04
+          }, 0.62)
+          .fromTo(".lr-insight", { opacity: 0, y: 34 }, {
+            opacity: 1, y: 0, duration: 0.38, stagger: 0.08, ease: "expo.out"
+          }, 0.68);
       }
 
       if (recentSection && recentViewport && recentTrack) {
@@ -375,6 +427,7 @@ export function ListeningRoom({ active }: { active: boolean }) {
   }
 
   const maxHour = Math.max(...data.snapshot.listeningHours, 1);
+  const peakHour = data.snapshot.listeningHours.indexOf(maxHour);
   const heroArt = heroTrack ? image(heroTrack.album.images) : undefined;
 
   return (
@@ -442,20 +495,39 @@ export function ListeningRoom({ active }: { active: boolean }) {
         <div className="lr-section-head"><h3>The last 50 plays</h3><p>When I listened and what repeated.</p></div>
         <div className="lr-snapshot__layout">
           <div className="lr-hours" aria-label={`Most active listening hour: ${clockHour(data.snapshot.listeningHours)}`}>
-            <div className="lr-hours__plot">
-              {data.snapshot.listeningHours.map((count, hour) => (
-                <span className="lr-hour-bar" key={hour}>
-                  <i style={{ "--lr-level": Math.max(0.04, count / maxHour) } as CSSProperties} />
-                  <span className="lv-mono">{hour % 3 === 0 ? String(hour).padStart(2, "0") : ""}</span>
-                </span>
-              ))}
+            <div className="lr-clock">
+              <svg viewBox="0 0 460 460" aria-hidden="true">
+                <circle className="lr-clock__ring lr-clock__ring--outer" cx="230" cy="230" r="205" />
+                <circle className="lr-clock__ring lr-clock__ring--inner" cx="230" cy="230" r="116" />
+                {data.snapshot.listeningHours.map((count, hour) => {
+                  const start = clockPoint(hour, 126);
+                  const end = clockPoint(hour, 136 + (count / maxHour) * 62);
+                  return (
+                    <line
+                      className={`lr-clock__bar${hour === peakHour ? " is-peak" : ""}${hour % 6 === 0 ? " is-quarter" : ""}`}
+                      key={hour}
+                      x1={start.x}
+                      y1={start.y}
+                      x2={end.x}
+                      y2={end.y}
+                    />
+                  );
+                })}
+              </svg>
+              <div className="lr-clock__center">
+                <span className="lv-mono">Prime hour</span>
+                <strong>{clockHour(data.snapshot.listeningHours)}</strong>
+              </div>
+              <span className="lr-clock__label lr-clock__label--midnight lv-mono">Midnight</span>
+              <span className="lr-clock__label lr-clock__label--six lv-mono">6 AM</span>
+              <span className="lr-clock__label lr-clock__label--noon lv-mono">Noon</span>
+              <span className="lr-clock__label lr-clock__label--evening lv-mono">6 PM</span>
             </div>
-            <div className="lr-hours__axis lv-mono"><span>Midnight</span><span>Noon</span><span>Midnight</span></div>
           </div>
           <div className="lr-insights">
-            <article className="lr-insight lr-insight--lead"><span>Prime listening hour</span><strong>{clockHour(data.snapshot.listeningHours)}</strong></article>
-            <article className="lr-insight"><span>Top artist</span><strong>{data.snapshot.topArtist?.name ?? "--"}</strong></article>
-            <article className="lr-insight"><span>Most repeated</span><strong>{data.snapshot.repeatedTracks[0]?.track.name ?? data.snapshot.topTrack?.name ?? "--"}</strong></article>
+            <p className="lr-insights__label lv-mono">Inside these plays</p>
+            <article className="lr-insight lr-insight--wide"><span>Top artist</span><strong>{data.snapshot.topArtist?.name ?? "--"}</strong></article>
+            <article className="lr-insight lr-insight--wide"><span>Most repeated</span><strong>{data.snapshot.repeatedTracks[0]?.track.name ?? data.snapshot.topTrack?.name ?? "--"}</strong></article>
             <article className="lr-insight"><span>Different artists</span><strong>{data.snapshot.uniqueArtists}</strong></article>
             <article className="lr-insight"><span>Different albums</span><strong>{data.snapshot.uniqueAlbums}</strong></article>
           </div>

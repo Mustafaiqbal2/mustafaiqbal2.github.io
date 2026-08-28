@@ -26,7 +26,6 @@
 .lr-track-row__rank,
 .lr-track-row__copy > *,
 .lr-track-row svg,
-.lr-insight > *,
 .lr-recent-card__copy > *,
 .lr-recent-card > svg {
   will-change: transform, opacity;

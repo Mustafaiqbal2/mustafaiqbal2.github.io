@@ -136,27 +136,6 @@ export function ListeningRoomChoreography({ signal }: { signal: number }) {
             );
         }
 
-        const snapshot = room.querySelector<HTMLElement>(".lr-snapshot");
-        if (snapshot) {
-          gsap.fromTo(
-            ".lr-insight > *",
-            { autoAlpha: 0, y: 10 },
-            {
-              autoAlpha: 1,
-              y: 0,
-              duration: 0.42,
-              stagger: 0.035,
-              ease: "power2.out",
-              scrollTrigger: {
-                trigger: snapshot,
-                start: "top top",
-                end: "+=105%",
-                scrub: 0.72
-              }
-            }
-          );
-        }
-
         const recent = room.querySelector<HTMLElement>(".lr-recent");
         if (recent) {
           const recentDetails = gsap.timeline({
