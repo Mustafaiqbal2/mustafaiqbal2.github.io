@@ -16,6 +16,8 @@
   position: fixed;
   inset: 0;
   z-index: 100;
+  display: grid;
+  place-items: center;
   overflow: hidden;
   visibility: hidden;
   pointer-events: none;
@@ -80,10 +82,8 @@
 }
 
 .mu-tab-transition__label {
-  position: absolute;
+  position: relative;
   z-index: 3;
-  left: 50%;
-  top: 50%;
   display: block;
   margin: 0;
   color: var(--mu-curtain-fg);
@@ -94,7 +94,6 @@
   text-align: center;
   white-space: nowrap;
   opacity: 0;
-  transform: translate(-50%, -50%);
   will-change: opacity, transform;
 }
 
