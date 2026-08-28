@@ -61,7 +61,7 @@
     font-size: 11px;
   }
 
-  .mu .lr-taste__layout,
+  .mu .lr-taste__stage,
   .mu .lr-snapshot__layout {
     margin-top: clamp(16px, 2.7svh, 26px);
   }
@@ -118,8 +118,13 @@
     font-size: clamp(48px, 8.5svh, 62px);
   }
 
-  .mu .lr-period button {
-    padding: 8px 11px;
+  .mu .lr-taste .lr-period {
+    gap: 12px;
+  }
+
+  .mu .lr-period__item {
+    padding-bottom: 8px;
+    font-size: 9px;
   }
 
   .mu .lr-playlist-track,
