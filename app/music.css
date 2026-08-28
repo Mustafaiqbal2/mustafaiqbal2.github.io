@@ -35,6 +35,9 @@ html.mu-overlay-open {
 .mu section {
   position: relative;
 }
+.mu-mobile-gate {
+  display: none;
+}
 /* the legacy global stylesheet pins heading colors to the old theme's ink */
 .mu h1,
 .mu h2,
@@ -408,6 +411,82 @@ html.mu-overlay-open {
 }
 
 @media (max-width: 1023px) {
+  html.mu-page body {
+    overflow: hidden;
+  }
+  .mu {
+    min-height: 100svh;
+    overflow: hidden;
+  }
+  .mu > :not(.mu-mobile-gate) {
+    display: none !important;
+  }
+  .mu-mobile-gate {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: grid;
+    place-content: center;
+    justify-items: start;
+    padding: max(28px, env(safe-area-inset-top)) max(24px, env(safe-area-inset-right)) max(28px, env(safe-area-inset-bottom)) max(24px, env(safe-area-inset-left));
+    background:
+      radial-gradient(circle at 82% 18%, rgba(109, 40, 217, 0.34), transparent 34%),
+      radial-gradient(circle at 14% 84%, rgba(139, 216, 255, 0.11), transparent 30%),
+      #07080d;
+    color: var(--lv-bone);
+  }
+  .mu-mobile-gate::before,
+  .mu-mobile-gate::after {
+    content: "";
+    position: absolute;
+    width: 3px;
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: white;
+    box-shadow: 44px 78px white, 198px -104px rgba(255,255,255,.7), 276px 122px rgba(255,255,255,.45), -72px -88px rgba(255,255,255,.5);
+  }
+  .mu-mobile-gate::before {
+    left: 18%;
+    top: 26%;
+  }
+  .mu-mobile-gate::after {
+    right: 26%;
+    bottom: 24%;
+    opacity: .55;
+    transform: scale(.7);
+  }
+  .mu-mobile-gate__mark {
+    display: grid;
+    width: 54px;
+    aspect-ratio: 1;
+    place-items: center;
+    margin-bottom: 30px;
+    background: var(--lv-bone);
+    color: var(--lv-ink);
+    font-size: 27px;
+    font-weight: 800;
+  }
+  .mu-mobile-gate h1 {
+    max-width: 520px;
+    margin: 0;
+    font-size: clamp(44px, 13vw, 72px);
+    line-height: .94;
+    letter-spacing: -.03em;
+  }
+  .mu-mobile-gate p {
+    max-width: 520px;
+    margin: 24px 0 0;
+    color: #c9ccd8;
+    font-size: 17px;
+    line-height: 1.55;
+  }
+  .mu-mobile-gate a {
+    margin-top: 32px;
+    border-bottom: 2px solid var(--lv-accent-bright);
+    color: var(--lv-bone);
+    text-decoration: none;
+    font: 600 13px/1.4 var(--font-mono), monospace;
+  }
   .mu-tabs {
     position: sticky;
     top: 8px;

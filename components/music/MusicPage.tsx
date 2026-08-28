@@ -74,25 +74,29 @@ export function MusicPage() {
   }, []);
 
   const pick = (id: TabId) => {
-    window.scrollTo({ top: 0, behavior: "auto" });
+    const resetToTop = () => {
+      lenisRef.current?.scrollTo(0, { immediate: true, force: true });
+      window.scrollTo({ top: 0, behavior: "auto" });
+      document.documentElement.scrollTop = 0;
+      document.body.scrollTop = 0;
+    };
+
+    lenisRef.current?.stop();
+    resetToTop();
     if (id === "story" && !window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
       document.documentElement.classList.add("lv-boot");
-      lenisRef.current?.stop();
     } else {
       document.documentElement.classList.remove("lv-boot");
     }
     setActive(id);
     history.replaceState(null, "", id === "story" ? "#story" : `#${id}`);
-    /* the story is scroll-driven: choosing it answers with motion — the
-       page glides to the first scene so the mechanic explains itself */
-    if (id === "story") {
-      const el = document.querySelector<HTMLElement>("[data-scene='1']");
-      if (el) {
-        const y = (el.closest(".pin-spacer") || el).getBoundingClientRect().top + window.scrollY + 4;
-        if (lenisRef.current) lenisRef.current.scrollTo(y, { duration: 1.2 });
-        else window.scrollTo({ top: y, behavior: "smooth" });
-      }
-    }
+    /* Remounting a pinned panel changes document height. Reset again after
+       React removes the old pin spacers so every tab starts at the top. */
+    window.requestAnimationFrame(() => {
+      ScrollTrigger.refresh();
+      resetToTop();
+      if (id !== "story") lenisRef.current?.start();
+    });
   };
 
   /* Only the unfinished search tab owns the viewport. Listening Room is a page. */
@@ -105,6 +109,13 @@ export function MusicPage() {
 
   return (
     <main id="main" className="mu lv-space">
+      <aside className="mu-mobile-gate" aria-label="Desktop experience">
+        <span className="mu-mobile-gate__mark" aria-hidden="true">M</span>
+        <h1>Give this one a bigger screen.</h1>
+        <p>The music page is a wide, scroll-driven experience. It looks much better on a laptop or desktop.</p>
+        <a href="/">Back home</a>
+      </aside>
+
       <div className="mu-top">
         <div className="lv-topbar lv-mono">
           <TypedBrand />

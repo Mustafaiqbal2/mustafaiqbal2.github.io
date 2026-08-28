@@ -1,11 +1,18 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties
+} from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowDown, ArrowUpRight, Headphones, RefreshCw } from "lucide-react";
 import { useListeningRoom } from "./useListeningRoom";
-import type { Art, Artist, Playback, TimeRange, Track } from "./types";
+import type { Art, Playback, TimeRange, Track } from "./types";
 import "./listening-room.css";
 
 gsap.registerPlugin(ScrollTrigger);
@@ -27,51 +34,39 @@ function artistNames(track: Track): string {
 
 function clockHour(hours: number[]): string {
   const max = Math.max(...hours);
-  if (max <= 0) return "—";
+  if (max <= 0) return "--";
   const hour = hours.indexOf(max);
   return `${hour % 12 || 12} ${hour >= 12 ? "PM" : "AM"}`;
 }
 
 function Cover({ src, alt = "" }: { src?: string; alt?: string }) {
-  return src ? <img src={src} alt={alt} loading="lazy" decoding="async" /> : <span aria-hidden="true">♪</span>;
-}
-
-function Groove({ className = "" }: { className?: string }) {
-  return (
-    <span className={`lr-groove ${className}`} aria-hidden="true">
-      <i /><i /><i /><i /><i /><i /><b />
-    </span>
+  return src ? (
+    <img src={src} alt={alt} loading="eager" decoding="async" />
+  ) : (
+    <span className="lr-cover-fallback" aria-hidden="true">M</span>
   );
 }
 
-function SignalLines({ className = "" }: { className?: string }) {
-  return (
-    <svg className={`lr-signal ${className}`} viewBox="0 0 900 240" fill="none" aria-hidden="true">
-      {[0, 1, 2, 3, 4].map((index) => (
-        <path
-          key={index}
-          className="lr-signal__line"
-          pathLength={1}
-          d={`M0 ${42 + index * 39} C120 ${8 + index * 29}, 190 ${92 + index * 23}, 300 ${46 + index * 36} S480 ${10 + index * 42}, 590 ${48 + index * 35} S770 ${88 + index * 22}, 900 ${42 + index * 39}`}
-        />
-      ))}
-    </svg>
-  );
-}
-
-function NowPlaying({ playback }: { playback: Playback | null }) {
+function NowPlaying({ playback, visible }: { playback: Playback | null; visible: boolean }) {
   const root = useRef<HTMLAnchorElement>(null);
   const track = playback?.track;
 
   useEffect(() => {
-    if (!root.current || !track) return;
-    const swap = root.current.querySelectorAll(".lr-now__art, .lr-now__copy > *");
+    const element = root.current;
+    if (!element || !track) return;
     gsap.fromTo(
-      swap,
-      { opacity: 0, y: 10, rotateX: -18 },
-      { opacity: 1, y: 0, rotateX: 0, duration: 0.48, stagger: 0.045, ease: "power3.out" }
+      element.querySelectorAll(".lr-now__art, .lr-now__copy > *"),
+      { opacity: 0, y: 12, clipPath: "inset(0 0 100% 0)" },
+      {
+        opacity: 1,
+        y: 0,
+        clipPath: "inset(0 0 0% 0)",
+        duration: 0.46,
+        stagger: 0.035,
+        ease: "expo.out",
+        overwrite: true
+      }
     );
-    gsap.fromTo(root.current, { scale: 0.96 }, { scale: 1, duration: 0.62, ease: "elastic.out(1, .65)" });
   }, [track?.id]);
 
   useEffect(() => {
@@ -82,13 +77,11 @@ function NowPlaying({ playback }: { playback: Playback | null }) {
     const start = playback.progressMs;
     const duration = Math.max(track.durationMs, 1);
     const update = () => {
-      if (document.hidden) {
-        frame = window.requestAnimationFrame(update);
-        return;
-      }
       const elapsed = playback.isPlaying ? Math.max(0, Date.now() - observed) : 0;
-      const progress = Math.min(1, (start + elapsed) / duration);
-      element.style.setProperty("--lr-now-progress", `${progress * 360}deg`);
+      element.style.setProperty(
+        "--lr-now-progress",
+        `${Math.min(1, (start + elapsed) / duration) * 100}%`
+      );
       frame = window.requestAnimationFrame(update);
     };
     update();
@@ -97,31 +90,17 @@ function NowPlaying({ playback }: { playback: Playback | null }) {
 
   if (!track) return null;
   return (
-    <a ref={root} className="lr-now" href={track.url} target="_blank" rel="noreferrer">
-      <span className="lr-now__progress" aria-hidden="true">
-        <span className="lr-now__art" key={track.id}>
-          <Cover src={image(track.album.images)} />
-        </span>
-      </span>
+    <a ref={root} className={`lr-now ${visible ? "is-visible" : ""}`} href={track.url} target="_blank" rel="noreferrer">
+      <span className="lr-now__art"><Cover src={image(track.album.images)} /></span>
       <span className="lr-now__copy">
-        <span className="lr-now__state lv-mono">{playback.isPlaying ? "playing now" : "played recently"}</span>
+        <span className="lr-now__state lv-mono">
+          {playback.isPlaying ? "Playing now" : "Played recently"}
+        </span>
         <strong>{track.name}</strong>
         <span>{artistNames(track)}</span>
       </span>
-      <span className={`lr-eq ${playback.isPlaying ? "lr-eq--live" : ""}`} aria-hidden="true">
-        <i /><i /><i /><i />
-      </span>
-    </a>
-  );
-}
-
-function RadioNode({ artist, rank, index }: { artist: Artist; rank: number; index: number }) {
-  const style = { "--lr-node-angle": `${index * 45 - 90}deg` } as CSSProperties;
-  return (
-    <a className="lr-radio__node" style={style} href={artist.url} target="_blank" rel="noreferrer">
-      <span className="lr-radio__portrait"><Cover src={image(artist.images)} /></span>
-      <span className="lr-radio__rank lv-mono">{String(rank).padStart(2, "0")}</span>
-      <strong>{artist.name}</strong>
+      <span className={`lr-now__light ${playback.isPlaying ? "is-live" : ""}`} aria-hidden="true" />
+      <span className="lr-now__bar" aria-hidden="true"><i /></span>
     </a>
   );
 }
@@ -129,252 +108,291 @@ function RadioNode({ artist, rank, index }: { artist: Artist; rank: number; inde
 export function ListeningRoom({ active }: { active: boolean }) {
   const root = useRef<HTMLDivElement>(null);
   const [period, setPeriod] = useState<TimeRange>("short");
+  const [showNow, setShowNow] = useState(false);
   const { room, playback, refresh } = useListeningRoom(active);
   const data = room.data;
-  const artists = data?.topArtists[period].slice(0, 8) ?? [];
+  const artists = data?.topArtists[period].slice(0, 7) ?? [];
   const tracks = data?.topTracks[period].slice(0, 8) ?? [];
   const recent = useMemo(() => data?.recent.slice(0, 12) ?? [], [data]);
+  const heroTrack = playback.data?.track ?? data?.topTracks.short[0] ?? null;
+
+  useEffect(() => {
+    const entry = root.current?.querySelector(".lr-entry");
+    if (!entry) return;
+    const observer = new IntersectionObserver(
+      ([item]) => setShowNow(!item.isIntersecting),
+      { threshold: 0.08 }
+    );
+    observer.observe(entry);
+    return () => observer.disconnect();
+  }, [data?.generatedAt]);
 
   useLayoutEffect(() => {
     const element = root.current;
     if (!active || !data || !element) return;
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const navigatorInfo = navigator as Navigator & { deviceMemory?: number };
-    const weak = (navigatorInfo.hardwareConcurrency || 8) <= 4 || (navigatorInfo.deviceMemory ?? 8) <= 4;
-    const mm = gsap.matchMedia(element);
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-    mm.add("(min-width: 1024px)", () => {
-      if (reduced || weak) return;
+    const context = gsap.context(() => {
       const entry = element.querySelector<HTMLElement>(".lr-entry");
-      const playlistSection = element.querySelector<HTMLElement>(".lr-playlists");
-      const shelf = element.querySelector<HTMLElement>(".lr-shelf");
-      const shelfTrack = element.querySelector<HTMLElement>(".lr-shelf__track");
-      const radio = element.querySelector<HTMLElement>(".lr-radio");
+      const playlists = element.querySelector<HTMLElement>(".lr-playlists");
+      const playlistViewport = element.querySelector<HTMLElement>(".lr-playlist-viewport");
+      const playlistTrack = element.querySelector<HTMLElement>(".lr-playlist-track");
+      const taste = element.querySelector<HTMLElement>(".lr-taste");
       const snapshot = element.querySelector<HTMLElement>(".lr-snapshot");
       const recentSection = element.querySelector<HTMLElement>(".lr-recent");
-      const recentTrack = element.querySelector<HTMLElement>(".lr-recent__trackline");
+      const recentViewport = element.querySelector<HTMLElement>(".lr-recent__viewport");
+      const recentTrack = element.querySelector<HTMLElement>(".lr-recent__track");
 
       if (entry) {
-        gsap.timeline({ scrollTrigger: { trigger: entry, start: "top top", end: "+=150%", pin: true, scrub: 1 } })
-          .fromTo(".lr-entry__copy > *", { opacity: 0, y: 42 }, { opacity: 1, y: 0, duration: 0.45, stagger: 0.08 }, 0)
-          .fromTo(".lr-turntable", { opacity: 0, x: 130, rotate: 8 }, { opacity: 1, x: 0, rotate: 0, duration: 0.7 }, 0.08)
-          .fromTo(".lr-turntable__arm", { rotate: -28 }, { rotate: 0, duration: 0.55, transformOrigin: "88% 12%" }, 0.58)
-          .to(".lr-turntable__record", { rotate: 220, duration: 1.2, ease: "none" }, 0.25)
-          .fromTo(".lr-entry__signal", { opacity: 0, scaleX: 0 }, { opacity: 1, scaleX: 1, duration: 0.5, transformOrigin: "left" }, 0.72)
-          .to(".lr-entry__copy", { opacity: 0.22, y: -35, duration: 0.38 }, 1.15);
+        gsap.timeline({
+          scrollTrigger: { trigger: entry, start: "top top", end: "+=145%", pin: true, scrub: 0.8 }
+        })
+          .fromTo(".lr-entry__copy > *", { y: 48 }, {
+            y: 0, duration: 0.55, stagger: 0.06, ease: "expo.out"
+          }, 0)
+          .fromTo(".lr-entry__art", {
+            x: 150, rotate: 5, clipPath: "inset(12% 0 12% 24%)"
+          }, {
+            x: 0, rotate: 0, clipPath: "inset(0% 0 0% 0%)", duration: 0.8, ease: "expo.out"
+          }, 0.08)
+          .fromTo(".lr-entry__wash", { opacity: 0, scale: 1.18 }, {
+            opacity: 0.2, scale: 1, duration: 0.9, ease: "power3.out"
+          }, 0.06)
+          .to(".lr-entry__art", { scale: 0.92, y: -24, duration: 0.75, ease: "none" }, 0.8)
+          .to(".lr-entry__copy", { opacity: 0.2, y: -36, duration: 0.5 }, 0.95);
       }
 
-      if (playlistSection && shelf && shelfTrack) {
-        const travel = () => Math.max(0, shelfTrack.scrollWidth - shelf.clientWidth);
-        gsap.timeline({ scrollTrigger: { trigger: playlistSection, start: "top top", end: "+=360%", pin: true, scrub: 1, invalidateOnRefresh: true } })
-          .fromTo(".lr-playlists .lr-chapter", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.24 }, 0)
-          .fromTo(".lr-playlist", { opacity: 0, x: 80, rotateY: -14 }, { opacity: 1, x: 0, rotateY: 0, duration: 0.38, stagger: 0.035 }, 0.12)
-          .to(shelfTrack, { x: () => -travel(), duration: 2.9, ease: "none" }, 0.55)
-          .to(".lr-shelf__groove", { rotate: 300, duration: 2.9, ease: "none" }, 0.55)
-          .to(".lr-playlist", { opacity: 0.35, scale: 0.94, duration: 0.34, stagger: 0.015 }, 3.25);
+      if (playlists && playlistViewport && playlistTrack) {
+        const travel = () => Math.max(0, playlistTrack.scrollWidth - playlistViewport.clientWidth);
+        gsap.timeline({
+          scrollTrigger: {
+            trigger: playlists,
+            start: "top top",
+            end: "+=330%",
+            pin: true,
+            scrub: 0.85,
+            invalidateOnRefresh: true
+          }
+        })
+          .fromTo(".lr-playlists .lr-section-head > *", { y: 38 }, {
+            y: 0, duration: 0.34, stagger: 0.05, ease: "expo.out"
+          }, 0)
+          .fromTo(".lr-playlist", { y: 100, rotate: 3 }, {
+            y: 0, rotate: 0, duration: 0.48, stagger: 0.045, ease: "expo.out"
+          }, 0.16)
+          .to(playlistTrack, { x: () => -travel(), duration: 2.5, ease: "none" }, 0.55);
       }
 
-      if (radio) {
-        gsap.timeline({ scrollTrigger: { trigger: radio, start: "top top", end: "+=320%", pin: true, scrub: 1 } })
-          .fromTo(".lr-radio .lr-chapter", { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.24 }, 0)
-          .fromTo(".lr-radio__machine", { opacity: 0, scale: 0.72, rotate: -24 }, { opacity: 1, scale: 1, rotate: 0, duration: 0.55 }, 0.12)
-          .fromTo(".lr-radio__node", { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.24, stagger: 0.08 }, 0.42)
-          .to(".lr-radio__needle", { rotate: 282, duration: 1.65, transformOrigin: "50% 100%", ease: "none" }, 0.55)
-          .fromTo(".lr-track-card", { opacity: 0, x: 80 }, { opacity: 1, x: 0, duration: 0.28, stagger: 0.08 }, 0.9)
-          .to(".lr-radio__rings", { rotate: 120, duration: 1.8, ease: "none" }, 0.55);
+      if (taste) {
+        gsap.timeline({
+          scrollTrigger: { trigger: taste, start: "top top", end: "+=230%", pin: true, scrub: 0.85 }
+        })
+          .fromTo(".lr-taste .lr-section-head > *", { y: 36 }, {
+            y: 0, duration: 0.32, stagger: 0.05, ease: "expo.out"
+          }, 0)
+          .fromTo(".lr-artist", { y: 80 }, {
+            y: 0, duration: 0.42, stagger: 0.07, ease: "expo.out"
+          }, 0.18)
+          .fromTo(".lr-track-row", { x: 70 }, {
+            x: 0, duration: 0.36, stagger: 0.055, ease: "expo.out"
+          }, 0.42);
       }
 
       if (snapshot) {
-        gsap.timeline({ scrollTrigger: { trigger: snapshot, start: "top top", end: "+=280%", pin: true, scrub: 1 } })
-          .fromTo(".lr-snapshot .lr-chapter", { opacity: 0, y: 28 }, { opacity: 1, y: 0, duration: 0.24 }, 0)
-          .fromTo(".lr-clock", { opacity: 0, scale: 0.7, rotate: -28 }, { opacity: 1, scale: 1, rotate: 0, duration: 0.55 }, 0.16)
-          .fromTo(".lr-clock__bar", { scaleY: 0 }, { scaleY: 1, duration: 0.2, stagger: 0.025, transformOrigin: "center bottom" }, 0.5)
-          .fromTo(".lr-snapshot .lr-signal__line", { strokeDashoffset: 1 }, { strokeDashoffset: 0, duration: 0.8, stagger: 0.08, ease: "none" }, 0.72)
-          .fromTo(".lr-stat", { opacity: 0, y: 42 }, { opacity: 1, y: 0, duration: 0.28, stagger: 0.09 }, 0.92)
-          .to(".lr-clock__orbit", { rotate: 360, duration: 1.5, ease: "none" }, 0.8);
+        gsap.timeline({
+          scrollTrigger: { trigger: snapshot, start: "top top", end: "+=190%", pin: true, scrub: 0.85 }
+        })
+          .fromTo(".lr-snapshot .lr-section-head > *", { y: 34 }, {
+            y: 0, duration: 0.32, stagger: 0.05, ease: "expo.out"
+          }, 0)
+          .fromTo(".lr-hour-bar i", { scaleY: 0 }, {
+            scaleY: 1, duration: 0.65, stagger: 0.018, transformOrigin: "center bottom", ease: "expo.out"
+          }, 0.2)
+          .fromTo(".lr-hour-bar span", { opacity: 0, y: 12 }, {
+            opacity: 1, y: 0, duration: 0.25, stagger: 0.018
+          }, 0.42)
+          .fromTo(".lr-insight", { y: 40 }, {
+            y: 0, duration: 0.34, stagger: 0.07, ease: "expo.out"
+          }, 0.48);
       }
 
-      if (recentSection && recentTrack) {
-        const travel = () => Math.max(0, recentTrack.scrollWidth - window.innerWidth + 120);
-        gsap.timeline({ scrollTrigger: { trigger: recentSection, start: "top top", end: "+=340%", pin: true, scrub: 1, invalidateOnRefresh: true } })
-          .fromTo(".lr-recent .lr-chapter", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.24 }, 0)
-          .fromTo(".lr-recent__beam", { scaleX: 0 }, { scaleX: 1, duration: 0.55, transformOrigin: "left" }, 0.2)
-          .fromTo(".lr-recent-card", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.24, stagger: 0.055 }, 0.42)
-          .to(recentTrack, { x: () => -travel(), duration: 2.35, ease: "none" }, 0.62)
-          .to(".lr-recent__star", { x: () => window.innerWidth * 0.8, opacity: 1, duration: 2.35, ease: "none" }, 0.62);
+      if (recentSection && recentViewport && recentTrack) {
+        const travel = () => Math.max(0, recentTrack.scrollWidth - recentViewport.clientWidth);
+        gsap.timeline({
+          scrollTrigger: {
+            trigger: recentSection,
+            start: "top top",
+            end: "+=300%",
+            pin: true,
+            scrub: 0.85,
+            invalidateOnRefresh: true
+          }
+        })
+          .fromTo(".lr-recent .lr-section-head > *", { y: 34 }, {
+            y: 0, duration: 0.32, stagger: 0.05, ease: "expo.out"
+          }, 0)
+          .fromTo(".lr-recent-card", { y: 100 }, {
+            y: 0, duration: 0.42, stagger: 0.05, ease: "expo.out"
+          }, 0.18)
+          .to(recentTrack, { x: () => -travel(), duration: 2.35, ease: "none" }, 0.55);
       }
-    });
 
-    mm.add("(max-width: 1023px)", () => {
-      if (reduced) return;
-      gsap.utils.toArray<HTMLElement>(".lr-chapter, .lr-playlist, .lr-radio__machine, .lr-track-card, .lr-clock, .lr-stat, .lr-recent-card", element)
-        .forEach((item) => gsap.from(item, { opacity: 0, y: 28, duration: 0.65, ease: "power3.out", scrollTrigger: { trigger: item, start: "top 88%", once: true } }));
-    });
+      requestAnimationFrame(() => ScrollTrigger.refresh());
+    }, element);
 
-    return () => mm.revert();
+    return () => context.revert();
   }, [active, data?.generatedAt]);
 
   useLayoutEffect(() => {
-    if (!root.current || !data || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const targets = root.current.querySelectorAll(
-      ".lr-radio__portrait, .lr-radio__node strong, .lr-track-card a > *"
-    );
+    const element = root.current;
+    if (!element || !data || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
     gsap.fromTo(
-      targets,
-      { opacity: 0, y: 10 },
-      { opacity: 1, y: 0, duration: 0.38, stagger: 0.025, ease: "power3.out", overwrite: "auto" }
+      element.querySelectorAll(".lr-artist, .lr-track-row"),
+      { opacity: 0, y: 18 },
+      { opacity: 1, y: 0, duration: 0.38, stagger: 0.025, ease: "expo.out", overwrite: true }
     );
   }, [period, data]);
 
   if (room.status === "idle" || (room.status === "loading" && !data)) {
-    return <section className="lr lr--loading" aria-live="polite"><div className="lr-loader"><i /><i /><i /><i /><i /></div><p className="lv-mono">opening the listening room</p></section>;
+    return (
+      <section className="lr lr--loading" aria-live="polite">
+        <div className="lr-loader"><i /><i /><i /><i /></div>
+        <p className="lv-mono">Opening the listening room</p>
+      </section>
+    );
   }
 
   if (!data) {
-    return <section className="lr lr--empty"><Headphones aria-hidden="true" /><p className="lv-mono">Listening room is offline.</p><button type="button" onClick={refresh}><RefreshCw aria-hidden="true" /> Try again</button></section>;
+    return (
+      <section className="lr lr--empty">
+        <Headphones aria-hidden="true" />
+        <p className="lv-mono">Listening room is offline.</p>
+        <button type="button" onClick={refresh}><RefreshCw aria-hidden="true" /> Try again</button>
+      </section>
+    );
   }
 
   const maxHour = Math.max(...data.snapshot.listeningHours, 1);
+  const heroArt = heroTrack ? image(heroTrack.album.images) : undefined;
 
   return (
     <div className="lr" ref={root}>
       <section className="lr-entry">
-        <div className="lr-entry__stars" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /><i /></div>
+        <div className="lr-entry__wash" aria-hidden="true"><Cover src={heroArt} /></div>
         <div className="lr-entry__copy">
-          <p className="lr-kicker lv-mono">live from spotify</p>
           <h2>Listening<br />room<b>.</b></h2>
           <p>My playlists, the artists I return to, and whatever is playing right now.</p>
-          <span className="lr-entry__scroll lv-mono">enter the room <ArrowDown /></span>
+          <span className="lr-entry__scroll lv-mono">Scroll to enter <ArrowDown /></span>
         </div>
-        <div className="lr-turntable" aria-hidden="true">
-          <div className="lr-turntable__deck">
-            <Groove className="lr-turntable__record" />
-            <span className="lr-turntable__arm"><i /></span>
-            <span className="lr-turntable__light" />
-          </div>
-          <SignalLines className="lr-entry__signal" />
-        </div>
+        <a className="lr-entry__art" href={heroTrack?.url ?? data.profile.url} target="_blank" rel="noreferrer">
+          <span className="lr-entry__cover"><Cover src={heroArt} alt={heroTrack?.album.name ?? ""} /></span>
+          <span className="lr-entry__track">
+            <small className="lv-mono">{playback.data?.isPlaying ? "Playing now" : "On repeat"}</small>
+            <strong>{heroTrack?.name ?? "Open Spotify"}</strong>
+            <span>{heroTrack ? artistNames(heroTrack) : data.profile.name}</span>
+          </span>
+          <ArrowUpRight aria-hidden="true" />
+        </a>
       </section>
 
-      <section className="lr-playlists">
-        <div className="lr-stage">
-          <div className="lr-chapter">
-            <p className="lr-index lv-mono">01 / playlists</p>
-            <h3>My playlists.</h3>
-            <p>Every playlist currently published on my Spotify profile.</p>
+      <section className="lr-section lr-playlists">
+        <div className="lr-section-head">
+          <h3>Playlists</h3>
+          <p>Everything currently published on my Spotify profile.</p>
+        </div>
+        <div className="lr-playlist-viewport">
+          <div className="lr-playlist-track">
+            {data.playlists.map((playlist, index) => (
+              <a className="lr-playlist" href={playlist.url} target="_blank" rel="noreferrer" key={playlist.id}>
+                <span className="lr-playlist__number lv-mono">{String(index + 1).padStart(2, "0")}</span>
+                <span className="lr-playlist__cover"><Cover src={image(playlist.images)} alt={playlist.name} /></span>
+                <span className="lr-playlist__meta"><strong>{playlist.name}</strong><small>{playlist.itemCount} tracks</small></span>
+                <ArrowUpRight aria-hidden="true" />
+              </a>
+            ))}
           </div>
-          <div className="lr-shelf">
-            <Groove className="lr-shelf__groove" />
-            <div className="lr-shelf__track">
-              {data.playlists.map((playlist, index) => (
-                <a className="lr-playlist" href={playlist.url} target="_blank" rel="noreferrer" key={playlist.id}>
-                  <span className="lr-playlist__number lv-mono">{String(index + 1).padStart(2, "0")}</span>
-                  <span className="lr-playlist__cover"><Cover src={image(playlist.images)} /><i aria-hidden="true" /></span>
-                  <span className="lr-playlist__meta"><strong>{playlist.name}</strong><small className="lv-mono">{playlist.itemCount} tracks</small></span>
+        </div>
+        <p className="lr-scroll-note lv-mono">Scroll to move through the playlists</p>
+      </section>
+
+      <section className="lr-section lr-taste">
+        <div className="lr-section-head lr-section-head--row">
+          <div><h3>Artists and tracks</h3><p>The music I have returned to most.</p></div>
+          <div className="lr-period" aria-label="Ranking period">
+            {PERIODS.map((item) => (
+              <button key={item.id} type="button" className={period === item.id ? "is-active" : ""} onClick={() => setPeriod(item.id)}>{item.label}</button>
+            ))}
+          </div>
+        </div>
+        <div className="lr-taste__layout">
+          <div className="lr-artist-grid">
+            {artists.map((artist, index) => (
+              <a className="lr-artist" href={artist.url} target="_blank" rel="noreferrer" key={artist.id}>
+                <span className="lr-artist__art"><Cover src={image(artist.images)} alt={artist.name} /></span>
+                <span className="lr-artist__meta"><i className="lv-mono">{String(index + 1).padStart(2, "0")}</i><strong>{artist.name}</strong></span>
+              </a>
+            ))}
+          </div>
+          <ol className="lr-track-list">
+            {tracks.map((track, index) => (
+              <li className="lr-track-row" key={`${track.id}-${index}`}>
+                <a href={track.url} target="_blank" rel="noreferrer">
+                  <span className="lr-track-row__rank lv-mono">{String(index + 1).padStart(2, "0")}</span>
+                  <span className="lr-track-row__cover"><Cover src={image(track.album.images)} /></span>
+                  <span className="lr-track-row__copy"><strong>{track.name}</strong><small>{artistNames(track)}</small></span>
                   <ArrowUpRight aria-hidden="true" />
                 </a>
-              ))}
-            </div>
-          </div>
-          <p className="lr-draghint lv-mono" aria-hidden="true">scroll to move through the shelf</p>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
-      <section className="lr-radio">
-        <div className="lr-stage lr-radio__stage">
-          <div className="lr-chapter">
-            <p className="lr-index lv-mono">02 / artists and tracks</p>
-            <h3>What I keep coming back to.</h3>
-            <div className="lr-period" aria-label="Ranking period">
-              {PERIODS.map((item) => <button key={item.id} type="button" className={period === item.id ? "is-active" : ""} onClick={() => setPeriod(item.id)}>{item.label}</button>)}
-            </div>
-          </div>
-          <div className="lr-radio__layout">
-            <div className="lr-radio__machine">
-              <div className="lr-radio__rings" aria-hidden="true"><i /><i /><i /></div>
-              <span className="lr-radio__needle" aria-hidden="true"><i /></span>
-              <div className="lr-radio__nodes">
-                {artists.map((artist, index) => <RadioNode key={index} artist={artist} rank={index + 1} index={index} />)}
-              </div>
-              <div className="lr-radio__center"><span className="lv-mono">artists</span><strong>{PERIODS.find((item) => item.id === period)?.label}</strong></div>
-            </div>
-            <ol className="lr-track-stack">
-              {tracks.map((track, index) => (
-                <li className="lr-track-card" key={index}>
-                  <a href={track.url} target="_blank" rel="noreferrer">
-                    <span className="lr-track-card__rank lv-mono">{String(index + 1).padStart(2, "0")}</span>
-                    <span className="lr-track-card__cover"><Cover src={image(track.album.images)} /></span>
-                    <span><strong>{track.name}</strong><small>{artistNames(track)}</small></span>
-                    <ArrowUpRight aria-hidden="true" />
-                  </a>
-                </li>
+      <section className="lr-section lr-snapshot">
+        <div className="lr-section-head"><h3>The last 50 plays</h3><p>When I listened and what repeated.</p></div>
+        <div className="lr-snapshot__layout">
+          <div className="lr-hours" aria-label={`Most active listening hour: ${clockHour(data.snapshot.listeningHours)}`}>
+            <div className="lr-hours__plot">
+              {data.snapshot.listeningHours.map((count, hour) => (
+                <span className="lr-hour-bar" key={hour}>
+                  <i style={{ "--lr-level": Math.max(0.04, count / maxHour) } as CSSProperties} />
+                  <span className="lv-mono">{hour % 3 === 0 ? String(hour).padStart(2, "0") : ""}</span>
+                </span>
               ))}
-            </ol>
+            </div>
+            <div className="lr-hours__axis lv-mono"><span>Midnight</span><span>Noon</span><span>Midnight</span></div>
+          </div>
+          <div className="lr-insights">
+            <article className="lr-insight lr-insight--lead"><span>Prime listening hour</span><strong>{clockHour(data.snapshot.listeningHours)}</strong></article>
+            <article className="lr-insight"><span>Top artist</span><strong>{data.snapshot.topArtist?.name ?? "--"}</strong></article>
+            <article className="lr-insight"><span>Most repeated</span><strong>{data.snapshot.repeatedTracks[0]?.track.name ?? data.snapshot.topTrack?.name ?? "--"}</strong></article>
+            <article className="lr-insight"><span>Different artists</span><strong>{data.snapshot.uniqueArtists}</strong></article>
+            <article className="lr-insight"><span>Different albums</span><strong>{data.snapshot.uniqueAlbums}</strong></article>
           </div>
         </div>
       </section>
 
-      <section className="lr-snapshot">
-        <div className="lr-stage lr-snapshot__stage">
-          <div className="lr-chapter">
-            <p className="lr-index lv-mono">03 / listening lately</p>
-            <h3>The last 50 plays.</h3>
-          </div>
-          <div className="lr-snapshot__layout">
-            <div className="lr-clock" aria-label={`Most active listening hour: ${clockHour(data.snapshot.listeningHours)}`}>
-              <div className="lr-clock__bars" aria-hidden="true">
-                {data.snapshot.listeningHours.map((count, hour) => (
-                  <i key={hour} className="lr-clock__bar" style={{ "--lr-hour": hour, "--lr-level": Math.max(0.15, count / maxHour) } as CSSProperties} />
-                ))}
-              </div>
-              <div className="lr-clock__orbit" aria-hidden="true"><i /></div>
-              <div className="lr-clock__center">
-                <span className="lv-mono">prime hour</span>
-                <strong>{clockHour(data.snapshot.listeningHours)}</strong>
-                <small>Karachi</small>
-              </div>
-              <SignalLines />
-            </div>
-            <div className="lr-stats">
-              <article className="lr-stat lr-stat--wide"><span className="lv-mono">top artist</span><strong>{data.snapshot.topArtist?.name ?? "—"}</strong></article>
-              <article className="lr-stat"><span className="lv-mono">different artists</span><strong>{data.snapshot.uniqueArtists}</strong></article>
-              <article className="lr-stat"><span className="lv-mono">different albums</span><strong>{data.snapshot.uniqueAlbums}</strong></article>
-              <article className="lr-stat lr-stat--wide"><span className="lv-mono">most repeated</span><strong>{data.snapshot.repeatedTracks[0]?.track.name ?? data.snapshot.topTrack?.name ?? "—"}</strong></article>
-              <article className="lr-stat"><span className="lv-mono">moving up</span><strong>{data.snapshot.movers[0]?.artist.name ?? "—"}</strong></article>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="lr-recent">
-        <div className="lr-stage">
-          <div className="lr-chapter">
-            <p className="lr-index lv-mono">04 / recently played</p>
-            <h3>Recently played.</h3>
-          </div>
-          <div className="lr-recent__space">
-            <SignalLines className="lr-recent__beam" />
-            <span className="lr-recent__star" aria-hidden="true" />
-            <div className="lr-recent__trackline">
-              {recent.map((track, index) => (
-                <a className="lr-recent-card" href={track.url} target="_blank" rel="noreferrer" key={`${track.id}-${track.playedAt}`}>
-                  <span className="lr-recent-card__cover"><Cover src={image(track.album.images)} /></span>
-                  <span className="lr-recent-card__copy"><span className="lv-mono">{String(index + 1).padStart(2, "0")}</span><strong>{track.name}</strong><small>{artistNames(track)}</small></span>
-                  <ArrowUpRight aria-hidden="true" />
-                </a>
-              ))}
-            </div>
+      <section className="lr-section lr-recent">
+        <div className="lr-section-head"><h3>Recently played</h3></div>
+        <div className="lr-recent__viewport">
+          <div className="lr-recent__track">
+            {recent.map((track, index) => (
+              <a className="lr-recent-card" href={track.url} target="_blank" rel="noreferrer" key={`${track.id}-${track.playedAt}`}>
+                <span className="lr-recent-card__cover"><Cover src={image(track.album.images)} alt={track.album.name} /></span>
+                <span className="lr-recent-card__copy"><i className="lv-mono">{String(index + 1).padStart(2, "0")}</i><strong>{track.name}</strong><small>{artistNames(track)}</small></span>
+                <ArrowUpRight aria-hidden="true" />
+              </a>
+            ))}
           </div>
         </div>
       </section>
 
       <footer className="lr-footer">
-        <div className="lr-footer__orb" aria-hidden="true"><Groove /><i /></div>
-        <p className="lr-index lv-mono">spotify profile</p>
-        <a href={data.profile.url} target="_blank" rel="noreferrer">Open my Spotify <ArrowUpRight aria-hidden="true" /></a>
+        <p>More music on Spotify.</p>
+        <a href={data.profile.url} target="_blank" rel="noreferrer">Open my profile <ArrowUpRight aria-hidden="true" /></a>
       </footer>
 
-      <NowPlaying playback={playback.data} />
+      <NowPlaying playback={playback.data} visible={showNow} />
     </div>
   );
 }
