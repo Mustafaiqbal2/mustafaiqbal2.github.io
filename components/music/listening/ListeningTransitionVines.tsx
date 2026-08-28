@@ -1,123 +1,264 @@
+"use client";
+
+import { useLayoutEffect, useRef } from "react";
+import gsap from "gsap";
+
+type LeafProps = {
+  x: number;
+  y: number;
+  rotate: number;
+  scale?: number;
+};
+
+type RoseProps = {
+  x: number;
+  y: number;
+  scale?: number;
+};
+
+function Leaf({ x, y, rotate, scale = 1 }: LeafProps) {
+  return (
+    <g transform={`translate(${x} ${y}) rotate(${rotate}) scale(${scale})`}>
+      <g className="mu-botanical-leaf">
+        <path className="mu-botanical-leaf__shape" d="M0 0 C10-16 27-21 42-11 C36 6 18 14 0 0Z" />
+        <path className="mu-botanical-leaf__vein" d="M3 -1 C15 -2 27 -5 38 -9" />
+      </g>
+    </g>
+  );
+}
+
+function Rose({ x, y, scale = 1 }: RoseProps) {
+  return (
+    <g transform={`translate(${x} ${y}) scale(${scale})`}>
+      <g className="mu-botanical-rose">
+        <ellipse className="mu-botanical-rose__wash" cx="0" cy="0" rx="30" ry="28" />
+        <path
+          className="mu-botanical-rose__outline"
+          d="M-29 5 C-31-8-24-22-12-27 C-3-35 11-34 20-26 C31-22 38-10 34 2 C36 15 26 26 14 29 C3 36-12 32-19 23 C-26 19-30 12-29 5Z"
+        />
+        <path
+          className="mu-botanical-rose__petal"
+          d="M-18-7 C-12-19 2-24 14-18 C24-12 27 1 20 10 C13 20-2 22-12 14 C-20 8-22-1-18-7Z"
+        />
+        <path
+          className="mu-botanical-rose__petal"
+          d="M-7-10 C0-17 12-15 16-6 C20 3 13 12 4 12 C-5 13-11 6-10-2 C-9-6-7-8-4-10"
+        />
+        <path
+          className="mu-botanical-rose__petal"
+          d="M-2-5 C3-9 9-7 10-2 C11 3 7 6 3 5 C-1 5-3 2-2-1 C-1-3 1-4 4-3"
+        />
+        <path className="mu-botanical-rose__petal" d="M-25 7 C-14 5-6 10-2 19" />
+        <path className="mu-botanical-rose__petal" d="M22-18 C17-8 18 1 27 8" />
+      </g>
+    </g>
+  );
+}
+
 export function ListeningTransitionVines() {
+  const root = useRef<SVGSVGElement>(null);
+
+  useLayoutEffect(() => {
+    const svg = root.current;
+    if (!svg || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+    const stems = Array.from(svg.querySelectorAll<SVGPathElement>(".mu-botanical-stem"));
+    const leftBranches = Array.from(svg.querySelectorAll<SVGPathElement>(".mu-botanical-side--left .mu-botanical-branch"));
+    const rightBranches = Array.from(svg.querySelectorAll<SVGPathElement>(".mu-botanical-side--right .mu-botanical-branch"));
+    const leftLeaves = Array.from(svg.querySelectorAll<SVGGElement>(".mu-botanical-side--left .mu-botanical-leaf"));
+    const rightLeaves = Array.from(svg.querySelectorAll<SVGGElement>(".mu-botanical-side--right .mu-botanical-leaf"));
+    const roses = Array.from(svg.querySelectorAll<SVGGElement>(".mu-botanical-rose"));
+    let running = false;
+    let timeline: gsap.core.Timeline | null = null;
+
+    const resetArtwork = () => {
+      gsap.set(svg, { clipPath: "inset(100% 0 0 0)" });
+      gsap.set(stems, { strokeDashoffset: 1, opacity: 1 });
+      gsap.set([...leftBranches, ...rightBranches], { strokeDashoffset: 1, opacity: 1 });
+      gsap.set([...leftLeaves, ...rightLeaves], { autoAlpha: 0, scale: 0.35, rotate: -4 });
+      gsap.set(roses, { autoAlpha: 0, scale: 0.76, rotate: -3 });
+    };
+
+    const play = () => {
+      if (running) return;
+      running = true;
+      timeline?.kill();
+      resetArtwork();
+
+      timeline = gsap.timeline({
+        defaults: { overwrite: "auto" },
+        onComplete: () => {
+          running = false;
+        }
+      });
+
+      timeline
+        .to(svg, {
+          clipPath: "inset(0% 0 0 0)",
+          duration: 0.72,
+          ease: "power2.out"
+        }, 0.08)
+        .to(stems, {
+          strokeDashoffset: 0,
+          duration: 0.78,
+          ease: "power2.out"
+        }, 0.1)
+        .to(leftBranches, {
+          strokeDashoffset: 0,
+          duration: 0.46,
+          stagger: 0.09,
+          ease: "power2.out"
+        }, 0.31)
+        .to(rightBranches, {
+          strokeDashoffset: 0,
+          duration: 0.46,
+          stagger: 0.09,
+          ease: "power2.out"
+        }, 0.31)
+        .to(leftLeaves, {
+          autoAlpha: 0.96,
+          scale: 1,
+          rotate: 0,
+          duration: 0.3,
+          stagger: 0.045,
+          ease: "back.out(1.25)"
+        }, 0.39)
+        .to(rightLeaves, {
+          autoAlpha: 0.96,
+          scale: 1,
+          rotate: 0,
+          duration: 0.3,
+          stagger: 0.045,
+          ease: "back.out(1.25)"
+        }, 0.39)
+        .to(roses, {
+          autoAlpha: 0.96,
+          scale: 1,
+          rotate: 0,
+          duration: 0.36,
+          stagger: 0.08,
+          ease: "back.out(1.2)"
+        }, 0.58)
+        /* Exit with the title instead of lingering into the page reveal. */
+        .to([...leftLeaves, ...rightLeaves, ...roses], {
+          autoAlpha: 0,
+          scale: 0.92,
+          duration: 0.2,
+          ease: "power2.in"
+        }, 0.88)
+        .to([...stems, ...leftBranches, ...rightBranches], {
+          opacity: 0,
+          duration: 0.24,
+          ease: "power2.in"
+        }, 0.9)
+        .to(svg, {
+          opacity: 0,
+          duration: 0.24,
+          ease: "power2.in"
+        }, 0.9);
+    };
+
+    resetArtwork();
+
+    const observer = new MutationObserver(() => {
+      const opacity = Number.parseFloat(window.getComputedStyle(svg).opacity || "0");
+      if (opacity > 0.04 && !running) play();
+    });
+
+    observer.observe(svg, { attributes: true, attributeFilter: ["style"] });
+
+    return () => {
+      observer.disconnect();
+      timeline?.kill();
+    };
+  }, []);
+
   return (
     <svg
+      ref={root}
       className="mu-listening-vines"
       viewBox="0 0 1600 900"
       preserveAspectRatio="xMidYMid slice"
       aria-hidden="true"
     >
-      <g className="mu-listening-vines__ink">
+      <g className="mu-botanical-side mu-botanical-side--left">
         <path
-          className="mu-vine-stem"
+          className="mu-botanical-stem"
           pathLength="1"
-          d="M-42 910 C 48 830 86 754 110 678 C 141 581 209 540 278 511 C 360 476 362 408 438 371 C 505 338 529 283 620 247"
+          d="M-70 950 C10 870 42 800 90 730 C145 650 212 593 292 542 C375 489 445 437 510 382 C568 333 618 285 672 232"
         />
         <path
-          className="mu-vine-branch"
+          className="mu-botanical-branch"
           pathLength="1"
-          d="M111 676 C 82 626 73 577 91 526 C 107 481 141 458 172 439"
+          d="M90 730 C64 692 56 653 66 616 C72 591 85 570 104 550"
         />
         <path
-          className="mu-vine-branch"
+          className="mu-botanical-branch"
           pathLength="1"
-          d="M278 511 C 242 470 222 426 230 381 C 238 339 268 312 306 291"
+          d="M292 542 C260 508 250 471 258 438 C264 412 278 392 299 374"
         />
         <path
-          className="mu-vine-branch"
+          className="mu-botanical-branch"
           pathLength="1"
-          d="M438 371 C 402 341 384 306 393 269 C 402 234 431 211 470 196"
-        />
-        <path
-          className="mu-vine-branch"
-          pathLength="1"
-          d="M358 476 C 390 444 426 431 468 438 C 505 444 530 465 548 492"
+          d="M510 382 C480 352 470 319 478 290 C485 266 498 247 519 231"
         />
 
-        <path
-          className="mu-vine-stem"
-          pathLength="1"
-          d="M1643 -22 C 1558 34 1516 93 1488 160 C 1451 249 1385 276 1315 302 C 1235 331 1220 393 1147 427 C 1075 461 1048 514 950 544"
-        />
-        <path
-          className="mu-vine-branch"
-          pathLength="1"
-          d="M1488 160 C 1521 199 1538 242 1527 287 C 1517 326 1488 353 1452 374"
-        />
-        <path
-          className="mu-vine-branch"
-          pathLength="1"
-          d="M1315 302 C 1351 338 1371 379 1364 421 C 1358 459 1331 488 1293 509"
-        />
-        <path
-          className="mu-vine-branch"
-          pathLength="1"
-          d="M1147 427 C 1181 455 1198 489 1191 524 C 1184 556 1160 580 1122 599"
-        />
-        <path
-          className="mu-vine-branch"
-          pathLength="1"
-          d="M1221 392 C 1186 363 1148 354 1108 364 C 1070 373 1046 396 1028 426"
-        />
+        <Leaf x={90} y={730} rotate={-28} />
+        <Leaf x={66} y={616} rotate={192} scale={0.9} />
+        <Leaf x={292} y={542} rotate={24} />
+        <Leaf x={258} y={438} rotate={202} scale={0.92} />
+        <Leaf x={510} y={382} rotate={-22} />
+        <Leaf x={478} y={290} rotate={200} scale={0.88} />
+        <Leaf x={635} y={269} rotate={12} scale={0.92} />
+
+        <g transform="translate(299 374)">
+          <path className="mu-botanical-branch" pathLength="1" d="M0 0 C4-9 9-16 15-22" />
+          <Rose x={15} y={-22} />
+        </g>
+        <g transform="translate(519 231)">
+          <path className="mu-botanical-branch" pathLength="1" d="M0 0 C3-7 7-12 11-17" />
+          <Rose x={11} y={-17} scale={0.72} />
+        </g>
       </g>
 
-      <g className="mu-listening-vines__leaves">
-        <g transform="translate(105 645) rotate(-42)"><path className="mu-vine-leaf" d="M0 0 C18-34 52-39 70-22 C51 5 22 13 0 0Z" /></g>
-        <g transform="translate(145 574) rotate(18)"><path className="mu-vine-leaf" d="M0 0 C16-30 45-37 62-20 C46 3 20 11 0 0Z" /></g>
-        <g transform="translate(226 526) rotate(-28)"><path className="mu-vine-leaf" d="M0 0 C17-32 49-38 66-21 C49 4 21 12 0 0Z" /></g>
-        <g transform="translate(291 477) rotate(28)"><path className="mu-vine-leaf" d="M0 0 C15-29 43-35 60-18 C44 4 19 10 0 0Z" /></g>
-        <g transform="translate(385 410) rotate(-34)"><path className="mu-vine-leaf" d="M0 0 C17-32 48-38 65-21 C48 4 21 12 0 0Z" /></g>
-        <g transform="translate(468 340) rotate(24)"><path className="mu-vine-leaf" d="M0 0 C15-29 44-35 60-18 C44 3 19 10 0 0Z" /></g>
-        <g transform="translate(512 291) rotate(-22)"><path className="mu-vine-leaf" d="M0 0 C16-30 46-36 63-19 C46 4 20 11 0 0Z" /></g>
-        <g transform="translate(108 531) rotate(-78)"><path className="mu-vine-leaf" d="M0 0 C14-27 40-33 56-17 C42 3 18 9 0 0Z" /></g>
-        <g transform="translate(242 380) rotate(-70)"><path className="mu-vine-leaf" d="M0 0 C14-27 41-33 56-17 C41 3 18 9 0 0Z" /></g>
-        <g transform="translate(405 270) rotate(-68)"><path className="mu-vine-leaf" d="M0 0 C14-27 41-33 56-17 C41 3 18 9 0 0Z" /></g>
-        <g transform="translate(472 442) rotate(62)"><path className="mu-vine-leaf" d="M0 0 C14-27 41-33 56-17 C41 3 18 9 0 0Z" /></g>
+      <g className="mu-botanical-side mu-botanical-side--right">
+        <path
+          className="mu-botanical-stem"
+          pathLength="1"
+          d="M1675 948 C1595 874 1558 804 1511 735 C1456 655 1389 600 1308 550 C1225 499 1155 449 1089 396 C1030 348 980 302 928 252"
+        />
+        <path
+          className="mu-botanical-branch"
+          pathLength="1"
+          d="M1511 735 C1538 696 1547 657 1537 621 C1530 596 1517 575 1498 555"
+        />
+        <path
+          className="mu-botanical-branch"
+          pathLength="1"
+          d="M1308 550 C1340 516 1350 479 1342 446 C1336 420 1322 400 1301 382"
+        />
+        <path
+          className="mu-botanical-branch"
+          pathLength="1"
+          d="M1089 396 C1119 366 1129 333 1121 304 C1114 280 1101 261 1080 245"
+        />
 
-        <g transform="translate(1492 171) rotate(138)"><path className="mu-vine-leaf" d="M0 0 C18-34 52-39 70-22 C51 5 22 13 0 0Z" /></g>
-        <g transform="translate(1445 242) rotate(198)"><path className="mu-vine-leaf" d="M0 0 C16-30 45-37 62-20 C46 3 20 11 0 0Z" /></g>
-        <g transform="translate(1365 289) rotate(152)"><path className="mu-vine-leaf" d="M0 0 C17-32 49-38 66-21 C49 4 21 12 0 0Z" /></g>
-        <g transform="translate(1296 339) rotate(205)"><path className="mu-vine-leaf" d="M0 0 C15-29 43-35 60-18 C44 4 19 10 0 0Z" /></g>
-        <g transform="translate(1205 405) rotate(148)"><path className="mu-vine-leaf" d="M0 0 C17-32 48-38 65-21 C48 4 21 12 0 0Z" /></g>
-        <g transform="translate(1122 472) rotate(210)"><path className="mu-vine-leaf" d="M0 0 C15-29 44-35 60-18 C44 3 19 10 0 0Z" /></g>
-        <g transform="translate(1067 520) rotate(151)"><path className="mu-vine-leaf" d="M0 0 C16-30 46-36 63-19 C46 4 20 11 0 0Z" /></g>
-        <g transform="translate(1514 286) rotate(250)"><path className="mu-vine-leaf" d="M0 0 C14-27 40-33 56-17 C42 3 18 9 0 0Z" /></g>
-        <g transform="translate(1351 422) rotate(246)"><path className="mu-vine-leaf" d="M0 0 C14-27 41-33 56-17 C41 3 18 9 0 0Z" /></g>
-        <g transform="translate(1178 523) rotate(248)"><path className="mu-vine-leaf" d="M0 0 C14-27 41-33 56-17 C41 3 18 9 0 0Z" /></g>
-        <g transform="translate(1104 366) rotate(300)"><path className="mu-vine-leaf" d="M0 0 C14-27 41-33 56-17 C41 3 18 9 0 0Z" /></g>
-      </g>
+        <Leaf x={1511} y={735} rotate={208} />
+        <Leaf x={1537} y={621} rotate={-12} scale={0.9} />
+        <Leaf x={1308} y={550} rotate={156} />
+        <Leaf x={1342} y={446} rotate={-20} scale={0.92} />
+        <Leaf x={1089} y={396} rotate={202} />
+        <Leaf x={1121} y={304} rotate={-18} scale={0.88} />
+        <Leaf x={965} y={289} rotate={170} scale={0.92} />
 
-      <g className="mu-listening-vines__blooms">
-        <g transform="translate(173 438)"><g className="mu-vine-bloom">
-          <ellipse cx="0" cy="-18" rx="12" ry="20" /><ellipse cx="17" cy="-5" rx="12" ry="20" transform="rotate(70 17 -5)" />
-          <ellipse cx="10" cy="15" rx="12" ry="20" transform="rotate(145 10 15)" /><ellipse cx="-11" cy="14" rx="12" ry="20" transform="rotate(215 -11 14)" />
-          <ellipse cx="-17" cy="-6" rx="12" ry="20" transform="rotate(290 -17 -6)" /><circle className="mu-vine-bloom__heart" r="6" />
-        </g></g>
-        <g transform="translate(307 291)"><g className="mu-vine-bloom mu-vine-bloom--small">
-          <ellipse cx="0" cy="-16" rx="10" ry="17" /><ellipse cx="15" cy="-4" rx="10" ry="17" transform="rotate(72 15 -4)" />
-          <ellipse cx="9" cy="13" rx="10" ry="17" transform="rotate(145 9 13)" /><ellipse cx="-10" cy="12" rx="10" ry="17" transform="rotate(218 -10 12)" />
-          <ellipse cx="-15" cy="-5" rx="10" ry="17" transform="rotate(288 -15 -5)" /><circle className="mu-vine-bloom__heart" r="5" />
-        </g></g>
-        <g transform="translate(549 492)"><g className="mu-vine-bloom mu-vine-bloom--small">
-          <ellipse cx="0" cy="-15" rx="9" ry="16" /><ellipse cx="14" cy="-4" rx="9" ry="16" transform="rotate(72 14 -4)" />
-          <ellipse cx="8" cy="12" rx="9" ry="16" transform="rotate(145 8 12)" /><ellipse cx="-9" cy="11" rx="9" ry="16" transform="rotate(218 -9 11)" />
-          <ellipse cx="-14" cy="-5" rx="9" ry="16" transform="rotate(288 -14 -5)" /><circle className="mu-vine-bloom__heart" r="4" />
-        </g></g>
-
-        <g transform="translate(1452 374)"><g className="mu-vine-bloom">
-          <ellipse cx="0" cy="-18" rx="12" ry="20" /><ellipse cx="17" cy="-5" rx="12" ry="20" transform="rotate(70 17 -5)" />
-          <ellipse cx="10" cy="15" rx="12" ry="20" transform="rotate(145 10 15)" /><ellipse cx="-11" cy="14" rx="12" ry="20" transform="rotate(215 -11 14)" />
-          <ellipse cx="-17" cy="-6" rx="12" ry="20" transform="rotate(290 -17 -6)" /><circle className="mu-vine-bloom__heart" r="6" />
-        </g></g>
-        <g transform="translate(1293 509)"><g className="mu-vine-bloom mu-vine-bloom--small">
-          <ellipse cx="0" cy="-16" rx="10" ry="17" /><ellipse cx="15" cy="-4" rx="10" ry="17" transform="rotate(72 15 -4)" />
-          <ellipse cx="9" cy="13" rx="10" ry="17" transform="rotate(145 9 13)" /><ellipse cx="-10" cy="12" rx="10" ry="17" transform="rotate(218 -10 12)" />
-          <ellipse cx="-15" cy="-5" rx="10" ry="17" transform="rotate(288 -15 -5)" /><circle className="mu-vine-bloom__heart" r="5" />
-        </g></g>
-        <g transform="translate(1028 426)"><g className="mu-vine-bloom mu-vine-bloom--small">
-          <ellipse cx="0" cy="-15" rx="9" ry="16" /><ellipse cx="14" cy="-4" rx="9" ry="16" transform="rotate(72 14 -4)" />
-          <ellipse cx="8" cy="12" rx="9" ry="16" transform="rotate(145 8 12)" /><ellipse cx="-9" cy="11" rx="9" ry="16" transform="rotate(218 -9 11)" />
-          <ellipse cx="-14" cy="-5" rx="9" ry="16" transform="rotate(288 -14 -5)" /><circle className="mu-vine-bloom__heart" r="4" />
-        </g></g>
+        <g transform="translate(1301 382)">
+          <path className="mu-botanical-branch" pathLength="1" d="M0 0 C-4-9-9-16-15-22" />
+          <Rose x={-15} y={-22} />
+        </g>
+        <g transform="translate(1080 245)">
+          <path className="mu-botanical-branch" pathLength="1" d="M0 0 C-3-7-7-12-11-17" />
+          <Rose x={-11} y={-17} scale={0.72} />
+        </g>
       </g>
     </svg>
   );

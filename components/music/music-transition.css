@@ -1,9 +1,9 @@
 /*
  * Music tab transition
  *
- * The motion stays anchored by one white cover rising from the bottom and a
- * second white layer retreating upward. Listening Room adds a botanical SVG
- * choreography on top of that white sheet without changing the base curtain.
+ * The white curtain remains the dominant transition. Listening Room adds a
+ * restrained botanical drawing on top: two continuous climbing vines, with
+ * branches and foliage physically anchored to the stem geometry.
  */
 .mu-tab-transition {
   position: fixed;
@@ -37,8 +37,6 @@
   transform-origin: 50% 0%;
 }
 
-/* A very soft moving edge helps the eye track the sheet without turning it
-   into a coloured graphic. */
 .mu-tab-transition__cover::after,
 .mu-tab-transition__reveal::after {
   content: "";
@@ -71,13 +69,14 @@
   overflow: visible;
   opacity: 0;
   pointer-events: none;
-  will-change: opacity, transform;
+  clip-path: inset(100% 0 0 0);
+  shape-rendering: geometricPrecision;
+  will-change: opacity, transform, clip-path;
 }
 
-.mu-vine-stem,
-.mu-vine-branch {
+.mu-botanical-stem,
+.mu-botanical-branch {
   fill: none;
-  stroke: #35483d;
   stroke-linecap: round;
   stroke-linejoin: round;
   vector-effect: non-scaling-stroke;
@@ -85,45 +84,70 @@
   stroke-dashoffset: 1;
 }
 
-.mu-vine-stem {
-  stroke-width: 2.2;
-  opacity: 0.9;
+.mu-botanical-stem {
+  stroke: #33463b;
+  stroke-width: 2.05;
+  opacity: 0.93;
 }
 
-.mu-vine-branch {
-  stroke-width: 1.55;
-  opacity: 0.72;
+.mu-botanical-branch {
+  stroke: #405349;
+  stroke-width: 1.4;
+  opacity: 0.78;
 }
 
-.mu-vine-leaf {
-  fill: #425949;
+.mu-botanical-leaf {
   opacity: 0;
-  transform: scale(0.2) rotate(-10deg);
   transform-box: fill-box;
   transform-origin: 0% 50%;
   will-change: transform, opacity;
 }
 
-.mu-vine-bloom {
-  fill: #925963;
+.mu-botanical-leaf__shape {
+  fill: rgba(64, 89, 74, 0.12);
+  stroke: #3b5144;
+  stroke-width: 1.28;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.mu-botanical-leaf__vein {
+  fill: none;
+  stroke: #536a5c;
+  stroke-width: 0.85;
+  stroke-linecap: round;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.9;
+}
+
+.mu-botanical-rose {
   opacity: 0;
-  transform: scale(0.5) rotate(-12deg);
   transform-box: fill-box;
   transform-origin: center;
   will-change: transform, opacity;
 }
 
-.mu-vine-bloom ellipse {
-  opacity: 0.86;
+.mu-botanical-rose__wash {
+  fill: rgba(166, 107, 118, 0.075);
 }
 
-.mu-vine-bloom--small {
-  opacity: 0;
+.mu-botanical-rose__outline,
+.mu-botanical-rose__petal {
+  fill: none;
+  stroke: #83505a;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
 }
 
-.mu-vine-bloom__heart {
-  fill: #5e343c;
+.mu-botanical-rose__outline {
+  stroke-width: 1.4;
   opacity: 0.92;
+}
+
+.mu-botanical-rose__petal {
+  stroke-width: 1.08;
+  opacity: 0.84;
 }
 
 .mu-tab-transition__label {
@@ -149,8 +173,8 @@
 
 @media (max-width: 1180px) {
   .mu-listening-vines {
-    width: 112%;
-    left: -6%;
+    width: 108%;
+    left: -4%;
   }
 }
 
