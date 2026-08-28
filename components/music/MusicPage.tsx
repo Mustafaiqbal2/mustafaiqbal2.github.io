@@ -183,7 +183,7 @@ export function MusicPage() {
       transitionTimelineRef.current = null;
       gsap.set(cover, { scaleY: 0 });
 
-      label.animate(
+      const labelAnimation = label.animate(
         [
           { opacity: 1, transform: "translateY(0px) scale(1)" },
           { opacity: 0, transform: "translateY(-12px) scale(0.985)" }
@@ -215,8 +215,16 @@ export function MusicPage() {
         }
       );
 
-      revealAnimation.onfinish = finishTransition;
-      revealAnimation.oncancel = finishTransition;
+      const settleListeningReveal = () => {
+        revealAnimation.onfinish = null;
+        revealAnimation.oncancel = null;
+        labelAnimation.cancel();
+        revealAnimation.cancel();
+        finishTransition();
+      };
+
+      revealAnimation.onfinish = settleListeningReveal;
+      revealAnimation.oncancel = settleListeningReveal;
     };
 
     const timeline = gsap.timeline({
