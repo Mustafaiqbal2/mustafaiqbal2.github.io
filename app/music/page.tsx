@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 // override kit defaults like .mu-bubble geometry
 import "@/app/landing.css";
 import "@/app/music.css";
+import "@/app/music-fit.css";
 import { MusicPage } from "@/components/music/MusicPage";
 import { siteUrl } from "@/data/portfolio";
 
