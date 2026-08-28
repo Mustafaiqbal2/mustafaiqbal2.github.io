@@ -23,6 +23,7 @@ const TABS: { id: TabId; label: string; desc: string }[] = [
 
 export function MusicPage() {
   const [active, setActive] = useState<TabId>("story");
+  const [selected, setSelected] = useState<TabId>("story");
   const [panelReady, setPanelReady] = useState(false);
   const lenisRef = useRef<Lenis | null>(null);
   const transitionRef = useRef<HTMLDivElement>(null);
@@ -32,7 +33,7 @@ export function MusicPage() {
   /* boot gate release: the story tab calls this once its pins exist */
   const releaseBoot = useCallback(() => {
     document.documentElement.classList.remove("lv-boot");
-    lenisRef.current?.start();
+    if (!transitionBusyRef.current) lenisRef.current?.start();
   }, []);
 
   /* adaptive smooth scroll, same gate as the landing (weak machines skip it) */
@@ -75,6 +76,7 @@ export function MusicPage() {
           ? "melodymind"
           : "story";
       setActive(next);
+      setSelected(next);
       setPanelReady(true);
       if (next !== "story") document.documentElement.classList.remove("lv-boot");
     };
@@ -103,6 +105,7 @@ export function MusicPage() {
       document.documentElement.classList.remove("lv-boot");
     }
     setActive(id);
+    setSelected(id);
     history.replaceState(null, "", id === "story" ? "#story" : `#${id}`);
 
     /* Wait for React to mount the destination and for its pin spacers to
@@ -110,13 +113,19 @@ export function MusicPage() {
     window.requestAnimationFrame(() => {
       ScrollTrigger.refresh();
       resetToTop();
-      if (resumeScroll && id === "listening") lenisRef.current?.start();
+      if (resumeScroll && id !== "melodymind" && !document.documentElement.classList.contains("lv-boot")) {
+        lenisRef.current?.start();
+      }
       onCommitted?.();
     });
   }, []);
 
   const pick = (id: TabId) => {
-    if (id === active || transitionBusyRef.current) return;
+    if (id === selected || transitionBusyRef.current) return;
+
+    /* The control responds on the click itself. The heavy page content only
+       changes later, underneath a fully-covered viewport. */
+    setSelected(id);
 
     const transition = transitionRef.current;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -134,7 +143,6 @@ export function MusicPage() {
     }
 
     const tab = TABS.find((item) => item.id === id);
-    transition.dataset.target = id;
     label.textContent = tab?.label ?? "Music";
     transitionBusyRef.current = true;
     lenisRef.current?.stop();
@@ -144,16 +152,16 @@ export function MusicPage() {
     gsap.set(transition, { visibility: "visible", pointerEvents: "auto" });
     gsap.set(cover, { scaleY: 0, transformOrigin: "50% 100%", force3D: true });
     gsap.set(reveal, { scaleY: 0, transformOrigin: "50% 0%", force3D: true });
-    gsap.set(label, { opacity: 0, y: 8 });
+    gsap.set(label, { opacity: 0, y: 18, scale: 0.965 });
 
     const timeline = gsap.timeline({
       onComplete: () => {
         gsap.set(transition, { visibility: "hidden", pointerEvents: "none" });
         gsap.set([cover, reveal], { scaleY: 0 });
-        gsap.set(label, { opacity: 0, y: 8 });
+        gsap.set(label, { opacity: 0, y: 18, scale: 0.965 });
         transitionBusyRef.current = false;
         transitionTimelineRef.current = null;
-        if (id === "listening" && !document.documentElement.classList.contains("lv-boot")) {
+        if (id !== "melodymind" && !document.documentElement.classList.contains("lv-boot")) {
           lenisRef.current?.start();
         }
       }
@@ -162,43 +170,62 @@ export function MusicPage() {
     transitionTimelineRef.current = timeline;
 
     timeline
-      /* Cover: the lower edge stays anchored while the sheet grows upward. */
+      /* Slow, continuous rise. The tiny overshoot is outside the viewport,
+         so it reads as softness rather than an elastic/cartoon bounce. */
+      .to(cover, {
+        scaleY: 1.018,
+        duration: 0.96,
+        ease: "power3.inOut",
+        force3D: true
+      }, 0)
       .to(cover, {
         scaleY: 1,
-        duration: 0.78,
-        ease: "power4.inOut",
+        duration: 0.15,
+        ease: "sine.out",
         force3D: true
-      })
+      }, 0.96)
       .to(label, {
         opacity: 1,
         y: 0,
-        duration: 0.2,
-        ease: "power2.out"
-      }, "-=0.18")
-      /* Handoff under complete coverage. The reveal layer takes ownership
-         before the old cover layer is ever reset, so there is no flash frame. */
+        scale: 1.012,
+        duration: 0.36,
+        ease: "power3.out"
+      }, 0.5)
+      .to(label, {
+        scale: 1,
+        duration: 0.18,
+        ease: "back.out(1.35)"
+      }, 0.82)
+      /* Both white sheets are fully covering before React swaps the panel. */
       .add(() => {
-        gsap.set(reveal, { scaleY: 1 });
+        gsap.set(reveal, { scaleY: 1.018 });
         timeline.pause();
         commitTab(id, false, () => {
           window.requestAnimationFrame(() => timeline.resume());
         });
-      }, "+=0.1")
+      }, 1.11)
       .to(label, {
         opacity: 0,
-        y: -8,
-        duration: 0.16,
+        y: -12,
+        scale: 0.985,
+        duration: 0.22,
         ease: "power2.in"
-      }, "+=0.06")
+      }, "+=0.04")
       .set(cover, { scaleY: 0 })
-      /* Reveal: top edge stays anchored while the bottom edge rises away,
-         uncovering the destination from the bottom upward. */
+      /* The lower edge now travels upward, revealing the new page from the
+         bottom. A soft tail keeps the last few pixels from snapping away. */
+      .to(reveal, {
+        scaleY: 0.018,
+        duration: 1.02,
+        ease: "power3.inOut",
+        force3D: true
+      }, "-=0.01")
       .to(reveal, {
         scaleY: 0,
-        duration: 0.82,
-        ease: "power4.inOut",
+        duration: 0.14,
+        ease: "sine.out",
         force3D: true
-      }, "-=0.01");
+      });
   };
 
   /* Only the unfinished search tab owns the viewport. Listening Room is a page. */
@@ -213,7 +240,7 @@ export function MusicPage() {
 
   return (
     <main id="main" className="mu lv-space">
-      <div ref={transitionRef} className="mu-tab-transition" data-target="story" aria-hidden="true">
+      <div ref={transitionRef} className="mu-tab-transition" aria-hidden="true">
         <div className="mu-tab-transition__cover" />
         <div className="mu-tab-transition__reveal" />
         <strong className="mu-tab-transition__label">The story</strong>
@@ -259,9 +286,9 @@ export function MusicPage() {
           <button
             key={t.id}
             type="button"
-            className={`mu-tab ${active === t.id ? "mu-tab--active" : ""}`}
+            className={`mu-tab ${selected === t.id ? "mu-tab--active" : ""}`}
             onClick={() => pick(t.id)}
-            aria-pressed={active === t.id}
+            aria-pressed={selected === t.id}
           >
             <span className="mu-tab__label lv-mono">{t.label}</span>
             <span className="mu-tab__more" aria-hidden="true">

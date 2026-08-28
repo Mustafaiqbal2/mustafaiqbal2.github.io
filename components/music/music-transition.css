@@ -1,18 +1,12 @@
 /*
  * Music tab transition
  *
- * Two independent sheets make the hand-off deterministic:
- * - cover grows from the bottom until the viewport is completely hidden
- * - reveal is snapped to fully-covered behind it
- * - the destination mounts while both sheets cover the page
- * - reveal collapses toward the top, uncovering the new page from the bottom
- *
- * Keeping the two phases on separate elements avoids the single-frame flash
- * that can happen when one translated viewport sheet is reset between phases.
+ * The motion is intentionally plain: one white cover rises from the bottom,
+ * the destination swaps while the viewport is fully covered, then a second
+ * white layer retreats upward. The polish comes from timing and easing rather
+ * than colour changes or decorative effects.
  */
 .mu-tab-transition {
-  --mu-curtain-bg: #f2f2ee;
-  --mu-curtain-fg: #07080d;
   position: fixed;
   inset: 0;
   z-index: 100;
@@ -24,26 +18,11 @@
   isolation: isolate;
 }
 
-.mu-tab-transition[data-target="story"] {
-  --mu-curtain-bg: #f2f2ee;
-  --mu-curtain-fg: #07080d;
-}
-
-.mu-tab-transition[data-target="melodymind"] {
-  --mu-curtain-bg: #17111f;
-  --mu-curtain-fg: #f2f2ee;
-}
-
-.mu-tab-transition[data-target="listening"] {
-  --mu-curtain-bg: #6d28d9;
-  --mu-curtain-fg: #f2f2ee;
-}
-
 .mu-tab-transition__cover,
 .mu-tab-transition__reveal {
   position: absolute;
-  inset: -1px 0;
-  background: var(--mu-curtain-bg);
+  inset: -2px 0;
+  background: #f7f7f4;
   backface-visibility: hidden;
   transform: translateZ(0) scaleY(0);
   will-change: transform;
@@ -59,26 +38,29 @@
   transform-origin: 50% 0%;
 }
 
-/* Fine moving-edge definition. There is deliberately no texture or glow;
-   the motion should feel expensive because of timing, not decoration. */
+/* A very soft moving edge helps the eye track the sheet without turning it
+   into a coloured graphic. */
 .mu-tab-transition__cover::after,
 .mu-tab-transition__reveal::after {
   content: "";
   position: absolute;
   left: 0;
   right: 0;
-  height: 1px;
-  background: var(--mu-curtain-fg);
-  opacity: 0.11;
+  height: 18px;
   pointer-events: none;
+  opacity: 0.18;
 }
 
 .mu-tab-transition__cover::after {
   top: 0;
+  transform: translateY(-100%);
+  box-shadow: 0 10px 22px rgba(7, 8, 13, 0.12);
 }
 
 .mu-tab-transition__reveal::after {
   bottom: 0;
+  transform: translateY(100%);
+  box-shadow: 0 -10px 22px rgba(7, 8, 13, 0.1);
 }
 
 .mu-tab-transition__label {
@@ -86,8 +68,8 @@
   z-index: 3;
   display: block;
   margin: 0;
-  color: var(--mu-curtain-fg);
-  font-size: clamp(16px, 1.35vw, 22px);
+  color: #111116;
+  font-size: clamp(16px, 1.3vw, 21px);
   font-weight: 650;
   line-height: 1;
   letter-spacing: -0.02em;
@@ -99,15 +81,7 @@
 
 .mu-tab-transition__label::after {
   content: ".";
-  color: #b79cff;
-}
-
-.mu-tab-transition[data-target="listening"] .mu-tab-transition__label::after {
-  color: #8bd8ff;
-}
-
-.mu-tab-transition[data-target="melodymind"] .mu-tab-transition__label::after {
-  color: #b79cff;
+  color: currentColor;
 }
 
 @media (prefers-reduced-motion: reduce) {
