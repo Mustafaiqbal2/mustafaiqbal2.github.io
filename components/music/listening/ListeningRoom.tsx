@@ -12,8 +12,9 @@ import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { ArrowDown, ArrowUpRight, Headphones, RefreshCw } from "lucide-react";
 import { useListeningRoom } from "./useListeningRoom";
-import type { Art, Playback, TimeRange, Track } from "./types";
+import type { Art, Artist, Playback, TimeRange, Track } from "./types";
 import "./listening-room.css";
+import "./listening-room-motion.css";
 
 gsap.registerPlugin(ScrollTrigger);
 ScrollTrigger.config({ ignoreMobileResize: true });
@@ -44,6 +45,46 @@ function Cover({ src, alt = "" }: { src?: string; alt?: string }) {
     <img src={src} alt={alt} loading="eager" decoding="async" />
   ) : (
     <span className="lr-cover-fallback" aria-hidden="true">M</span>
+  );
+}
+
+function TastePanel({
+  period,
+  artists,
+  tracks
+}: {
+  period: TimeRange;
+  artists: Artist[];
+  tracks: Track[];
+}) {
+  return (
+    <div className={`lr-taste__panel lr-taste__panel--${period}`} data-period={period}>
+      <div className="lr-taste__layout">
+        <div className="lr-artist-grid">
+          {artists.map((artist, index) => (
+            <a className="lr-artist" href={artist.url} target="_blank" rel="noreferrer" key={artist.id}>
+              <span className="lr-artist__art"><Cover src={image(artist.images)} alt={artist.name} /></span>
+              <span className="lr-artist__meta">
+                <i className="lv-mono">{String(index + 1).padStart(2, "0")}</i>
+                <strong>{artist.name}</strong>
+              </span>
+            </a>
+          ))}
+        </div>
+        <ol className="lr-track-list">
+          {tracks.map((track, index) => (
+            <li className="lr-track-row" key={`${period}-${track.id}-${index}`}>
+              <a href={track.url} target="_blank" rel="noreferrer">
+                <span className="lr-track-row__rank lv-mono">{String(index + 1).padStart(2, "0")}</span>
+                <span className="lr-track-row__cover"><Cover src={image(track.album.images)} /></span>
+                <span className="lr-track-row__copy"><strong>{track.name}</strong><small>{artistNames(track)}</small></span>
+                <ArrowUpRight aria-hidden="true" />
+              </a>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </div>
   );
 }
 
@@ -107,12 +148,9 @@ function NowPlaying({ playback, visible }: { playback: Playback | null; visible:
 
 export function ListeningRoom({ active }: { active: boolean }) {
   const root = useRef<HTMLDivElement>(null);
-  const [period, setPeriod] = useState<TimeRange>("short");
   const [showNow, setShowNow] = useState(false);
   const { room, playback, refresh } = useListeningRoom(active);
   const data = room.data;
-  const artists = data?.topArtists[period].slice(0, 7) ?? [];
-  const tracks = data?.topTracks[period].slice(0, 8) ?? [];
   const recent = useMemo(() => data?.recent.slice(0, 12) ?? [], [data]);
   const heroTrack = playback.data?.track ?? data?.topTracks.short[0] ?? null;
 
@@ -184,18 +222,92 @@ export function ListeningRoom({ active }: { active: boolean }) {
       }
 
       if (taste) {
-        gsap.timeline({
-          scrollTrigger: { trigger: taste, start: "top top", end: "+=230%", pin: true, scrub: 0.85 }
-        })
-          .fromTo(".lr-taste .lr-section-head > *", { y: 36 }, {
-            y: 0, duration: 0.32, stagger: 0.05, ease: "expo.out"
+        const panels = gsap.utils.toArray<HTMLElement>(taste.querySelectorAll(".lr-taste__panel"));
+        const periodItems = gsap.utils.toArray<HTMLElement>(taste.querySelectorAll(".lr-period__item"));
+        const shortPanel = panels[0];
+
+        const activatePanel = (index: number) => {
+          panels.forEach((panel, panelIndex) => {
+            const activePanel = panelIndex === index;
+            panel.style.pointerEvents = activePanel ? "auto" : "none";
+            panel.setAttribute("aria-hidden", activePanel ? "false" : "true");
+          });
+        };
+
+        activatePanel(0);
+        gsap.set(panels.slice(1), {
+          autoAlpha: 0,
+          y: 26,
+          clipPath: "inset(8% 0 0 0)"
+        });
+        gsap.set(periodItems, { opacity: 0.34 });
+        gsap.set(periodItems[0], { opacity: 1 });
+
+        const tasteTimeline = gsap.timeline({
+          scrollTrigger: {
+            trigger: taste,
+            start: "top top",
+            end: "+=390%",
+            pin: true,
+            scrub: 0.9,
+            onUpdate: (self) => {
+              const index = self.progress < 0.42 ? 0 : self.progress < 0.72 ? 1 : 2;
+              activatePanel(index);
+            }
+          }
+        });
+
+        tasteTimeline
+          .fromTo(".lr-taste .lr-section-head > *", { y: 30, opacity: 0 }, {
+            y: 0, opacity: 1, duration: 0.3, stagger: 0.045, ease: "power3.out"
           }, 0)
-          .fromTo(".lr-artist", { y: 80 }, {
-            y: 0, duration: 0.42, stagger: 0.07, ease: "expo.out"
-          }, 0.18)
-          .fromTo(".lr-track-row", { x: 70 }, {
-            x: 0, duration: 0.36, stagger: 0.055, ease: "expo.out"
-          }, 0.42);
+          .fromTo(shortPanel.querySelectorAll(".lr-artist"), { y: 54, opacity: 0 }, {
+            y: 0, opacity: 1, duration: 0.42, stagger: 0.055, ease: "power3.out"
+          }, 0.16)
+          .fromTo(shortPanel.querySelectorAll(".lr-track-row"), { x: 38, opacity: 0 }, {
+            x: 0, opacity: 1, duration: 0.36, stagger: 0.04, ease: "power3.out"
+          }, 0.24)
+          .to(panels[0], {
+            autoAlpha: 0,
+            y: -18,
+            clipPath: "inset(0 0 7% 0)",
+            duration: 0.26,
+            ease: "power2.inOut"
+          }, 1.04)
+          .to(periodItems[0], { opacity: 0.34, duration: 0.18 }, 1.0)
+          .to(periodItems[1], { opacity: 1, duration: 0.18 }, 1.0)
+          .fromTo(panels[1], {
+            autoAlpha: 0,
+            y: 26,
+            clipPath: "inset(8% 0 0 0)"
+          }, {
+            autoAlpha: 1,
+            y: 0,
+            clipPath: "inset(0% 0 0 0)",
+            duration: 0.32,
+            ease: "power3.out"
+          }, 1.1)
+          .to(panels[1], {
+            autoAlpha: 0,
+            y: -18,
+            clipPath: "inset(0 0 7% 0)",
+            duration: 0.26,
+            ease: "power2.inOut"
+          }, 1.78)
+          .to(periodItems[1], { opacity: 0.34, duration: 0.18 }, 1.74)
+          .to(periodItems[2], { opacity: 1, duration: 0.18 }, 1.74)
+          .fromTo(panels[2], {
+            autoAlpha: 0,
+            y: 26,
+            clipPath: "inset(8% 0 0 0)"
+          }, {
+            autoAlpha: 1,
+            y: 0,
+            clipPath: "inset(0% 0 0 0)",
+            duration: 0.32,
+            ease: "power3.out"
+          }, 1.84)
+          .to(taste, { opacity: 1, duration: 0.58 }, 2.16);
       }
 
       if (snapshot) {
@@ -242,16 +354,6 @@ export function ListeningRoom({ active }: { active: boolean }) {
 
     return () => context.revert();
   }, [active, data?.generatedAt]);
-
-  useLayoutEffect(() => {
-    const element = root.current;
-    if (!element || !data || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    gsap.fromTo(
-      element.querySelectorAll(".lr-artist, .lr-track-row"),
-      { opacity: 0, y: 18 },
-      { opacity: 1, y: 0, duration: 0.38, stagger: 0.025, ease: "expo.out", overwrite: true }
-    );
-  }, [period, data]);
 
   if (room.status === "idle" || (room.status === "loading" && !data)) {
     return (
@@ -318,33 +420,21 @@ export function ListeningRoom({ active }: { active: boolean }) {
       <section className="lr-section lr-taste">
         <div className="lr-section-head lr-section-head--row">
           <div><h3>Artists and tracks</h3><p>The music I have returned to most.</p></div>
-          <div className="lr-period" aria-label="Ranking period">
+          <div className="lr-period" aria-label="Ranking period changes as you scroll">
             {PERIODS.map((item) => (
-              <button key={item.id} type="button" className={period === item.id ? "is-active" : ""} onClick={() => setPeriod(item.id)}>{item.label}</button>
+              <span key={item.id} className={`lr-period__item lr-period__item--${item.id}`}>{item.label}</span>
             ))}
           </div>
         </div>
-        <div className="lr-taste__layout">
-          <div className="lr-artist-grid">
-            {artists.map((artist, index) => (
-              <a className="lr-artist" href={artist.url} target="_blank" rel="noreferrer" key={artist.id}>
-                <span className="lr-artist__art"><Cover src={image(artist.images)} alt={artist.name} /></span>
-                <span className="lr-artist__meta"><i className="lv-mono">{String(index + 1).padStart(2, "0")}</i><strong>{artist.name}</strong></span>
-              </a>
-            ))}
-          </div>
-          <ol className="lr-track-list">
-            {tracks.map((track, index) => (
-              <li className="lr-track-row" key={`${track.id}-${index}`}>
-                <a href={track.url} target="_blank" rel="noreferrer">
-                  <span className="lr-track-row__rank lv-mono">{String(index + 1).padStart(2, "0")}</span>
-                  <span className="lr-track-row__cover"><Cover src={image(track.album.images)} /></span>
-                  <span className="lr-track-row__copy"><strong>{track.name}</strong><small>{artistNames(track)}</small></span>
-                  <ArrowUpRight aria-hidden="true" />
-                </a>
-              </li>
-            ))}
-          </ol>
+        <div className="lr-taste__stage">
+          {PERIODS.map((item) => (
+            <TastePanel
+              key={item.id}
+              period={item.id}
+              artists={data.topArtists[item.id].slice(0, 7)}
+              tracks={data.topTracks[item.id].slice(0, 8)}
+            />
+          ))}
         </div>
       </section>
 
