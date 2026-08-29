@@ -228,6 +228,32 @@ html.mu-page .site-footer {
     background: #090a10;
   }
 }
+.mu--melodymind {
+  background: #090909;
+}
+.mu--melodymind::before,
+.mu--melodymind::after {
+  display: none;
+}
+.mu--melodymind .mu-top {
+  background: #090909;
+}
+.mu--melodymind .mu-top .lv-topbar__brand i {
+  background: #ff5a47;
+}
+.mu--melodymind .mu-hero {
+  display: none;
+}
+.mu--melodymind .mu-tabs {
+  position: sticky;
+  top: 14px;
+  margin-top: 24px;
+  margin-bottom: 18px;
+  background: #090909;
+}
+.mu--melodymind .mu-tab--active {
+  border-color: #ff5a47;
+}
 @keyframes mu-wave {
   0%,
   100% {
