@@ -8,6 +8,7 @@ import { ArrowUpRight } from "lucide-react";
 import { TypedBrand } from "@/components/TypedBrand";
 import { StickMan } from "./sceneKit";
 import { StoryTab } from "./StoryTab";
+import { MelodyMindSearch } from "./MelodyMindSearch";
 import { ListeningRoom } from "./listening/ListeningRoom";
 import { ListeningRoomChoreography } from "./listening/ListeningRoomChoreography";
 import "./music-transition.css";
@@ -115,7 +116,7 @@ export function MusicPage() {
     window.requestAnimationFrame(() => {
       ScrollTrigger.refresh();
       resetToTop();
-      if (resumeScroll && id !== "melodymind" && !document.documentElement.classList.contains("lv-boot")) {
+      if (resumeScroll && !document.documentElement.classList.contains("lv-boot")) {
         lenisRef.current?.start();
       }
       onCommitted?.();
@@ -167,7 +168,7 @@ export function MusicPage() {
       transitionBusyRef.current = false;
       transitionTimelineRef.current = null;
 
-      if (id !== "melodymind" && !document.documentElement.classList.contains("lv-boot")) {
+      if (!document.documentElement.classList.contains("lv-boot")) {
         lenisRef.current?.start();
       }
 
@@ -294,17 +295,8 @@ export function MusicPage() {
       }, 2.32);
   };
 
-  useEffect(() => {
-    document.documentElement.classList.toggle("mu-overlay-open", active === "melodymind");
-    if (active === "melodymind") lenisRef.current?.stop();
-    else if (!transitionBusyRef.current && !document.documentElement.classList.contains("lv-boot")) {
-      lenisRef.current?.start();
-    }
-    return () => document.documentElement.classList.remove("mu-overlay-open");
-  }, [active]);
-
   return (
-    <main id="main" className="mu lv-space">
+    <main id="main" className={`mu lv-space mu--${active}`}>
       <div ref={transitionRef} className="mu-tab-transition" aria-hidden="true">
         <div className="mu-tab-transition__cover" />
         <div className="mu-tab-transition__reveal" />
@@ -384,6 +376,7 @@ export function MusicPage() {
       </nav>
 
       {panelReady && active === "story" && <StoryTab onBuilt={releaseBoot} />}
+      {panelReady && active === "melodymind" && <MelodyMindSearch />}
       {panelReady && active === "listening" && (
         <>
           <ListeningRoom active />
@@ -391,18 +384,6 @@ export function MusicPage() {
         </>
       )}
 
-      {active === "melodymind" && (
-        <div className="mu-stub" role="dialog" aria-label="MelodyMind">
-          <div className="mu-stub__card">
-            <p className="lv-mono mu-stub__eyebrow">MelodyMind</p>
-            <h2>MelodyMind search</h2>
-            <p>You&apos;ll type a situation and get songs that fit it. This tab is being built now.</p>
-            <button type="button" className="mu-stub__back lv-mono" onClick={() => pick("story")}>
-              back to the story
-            </button>
-          </div>
-        </div>
-      )}
     </main>
   );
 }

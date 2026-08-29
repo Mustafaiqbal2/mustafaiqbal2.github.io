@@ -22,10 +22,6 @@ html.mu-page .cta-band,
 html.mu-page .site-footer {
   display: none;
 }
-html.mu-overlay-open {
-  overflow: hidden;
-}
-
 .mu {
   color: var(--lv-bone);
   font-family: var(--font-sans), "Helvetica Neue", Arial, sans-serif;
@@ -224,6 +220,14 @@ html.mu-overlay-open {
 .mu-tab--active {
   border-color: var(--lv-accent-bright);
 }
+.mu--melodymind .mu-tab {
+  background: #090a10;
+}
+@supports (backdrop-filter: blur(8px)) {
+  .mu--melodymind .mu-tab {
+    background: #090a10;
+  }
+}
 @keyframes mu-wave {
   0%,
   100% {
@@ -257,55 +261,6 @@ html.mu-overlay-open {
   .mu-eqbar {
     animation: none !important;
   }
-}
-
-/* ---------- stub overlays ---------- */
-.mu-stub {
-  position: fixed;
-  inset: 0;
-  z-index: 60;
-  display: grid;
-  place-items: center;
-  padding: var(--lv-pad);
-  background: rgba(7, 8, 13, 0.72);
-}
-@supports (backdrop-filter: blur(10px)) {
-  .mu-stub {
-    backdrop-filter: blur(10px);
-  }
-}
-.mu-stub__card {
-  max-width: 460px;
-  text-align: center;
-  border: 1px solid rgba(242, 242, 238, 0.3);
-  border-radius: 18px;
-  padding: 42px 36px;
-  background: rgba(7, 8, 13, 0.55);
-}
-.mu-stub__eyebrow {
-  color: var(--lv-accent-bright);
-  margin-bottom: 14px;
-}
-.mu-stub__card h2 {
-  font-size: clamp(26px, 3.4vw, 40px);
-  margin: 0 0 12px;
-}
-.mu-stub__card p {
-  color: var(--lv-grey-light);
-  line-height: 1.6;
-  margin: 0 0 26px;
-}
-.mu-stub__back {
-  border: 1px solid rgba(242, 242, 238, 0.4);
-  border-radius: 999px;
-  background: none;
-  color: var(--lv-bone);
-  padding: 10px 20px;
-  cursor: pointer;
-}
-.mu-stub__back:hover {
-  border-color: var(--lv-accent-bright);
-  color: var(--lv-accent-bright);
 }
 
 /* ---------- shared scene primitives (the kit's CSS half) ---------- */
