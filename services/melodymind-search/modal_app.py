@@ -1,21 +1,21 @@
 """Modal deployment wrapper for the MelodyMind CLaMP3 search service.
 
-The search implementation stays in ``main.py``. This module only gives the
-existing FastAPI app a serverless Modal runtime with enough memory for the
-frozen XLM-R/CLaMP3 text tower.
+The search implementation stays in ``main.py``. This module gives the existing
+FastAPI app a serverless Modal runtime and adds a private telemetry execute route
+used by the portfolio Worker. The browser never receives retrieval telemetry.
 """
 
+from contextvars import ContextVar
 from pathlib import Path
 import sys
+import time
+from typing import Annotated
 
 import modal
 
 
 SERVICE_DIR = Path(__file__).resolve().parent
 
-# Reuse the same multi-stage image already used by Railway. The final image
-# contains only the frozen CLaMP3 text tower/projection, not the 2.57 GB source
-# checkpoint used during the export stage.
 image = modal.Image.from_dockerfile(
     SERVICE_DIR / "Dockerfile",
     context_dir=SERVICE_DIR,
@@ -28,20 +28,136 @@ service_secret = modal.Secret.from_name(
 )
 
 
+def install_telemetry(search_main) -> None:
+    """Install one ContextVar-backed telemetry route without cross-request state."""
+    if getattr(search_main, "_portfolio_telemetry_installed", False):
+        return
+
+    telemetry_context: ContextVar[dict | None] = ContextVar(
+        "melodymind_retrieval_telemetry", default=None
+    )
+
+    original_query_views = search_main._query_views
+    original_hybrid_fuse = search_main._hybrid_fuse
+    original_experiential_order = search_main._experiential_order
+
+    def query_views(*args, **kwargs):
+        views = original_query_views(*args, **kwargs)
+        telemetry = telemetry_context.get()
+        if telemetry is not None:
+            telemetry["views"] = [
+                {
+                    "label": view.label,
+                    "weight": round(float(view.weight), 3),
+                    "text": str(view.text)[:360],
+                }
+                for view in views
+            ]
+        return views
+
+    def hybrid_fuse(*args, **kwargs):
+        candidates = original_hybrid_fuse(*args, **kwargs)
+        telemetry = telemetry_context.get()
+        if telemetry is not None:
+            telemetry["candidate_count"] = len(candidates)
+        return candidates
+
+    def experiential_order(candidates, judgments):
+        ordered = original_experiential_order(candidates, judgments)
+        telemetry = telemetry_context.get()
+        if telemetry is not None:
+            diagnostic = [
+                candidate
+                for candidate in candidates
+                if candidate.fused_rank <= 15 or candidate.final_rank <= 15
+            ]
+            diagnostic.sort(key=lambda candidate: candidate.final_rank)
+            telemetry["ranking"] = [
+                {
+                    "track_id": candidate.match.track_id,
+                    "spotify_id": candidate.match.spotify_id,
+                    "title": candidate.match.title,
+                    "artist": candidate.match.artist,
+                    "fused_rank": candidate.fused_rank,
+                    "final_rank": candidate.final_rank,
+                    "fit": candidate.fit,
+                    "confidence": candidate.confidence,
+                    "fusion": round(float(candidate.fusion_score), 6),
+                    "final_score": round(float(candidate.final_score), 6),
+                    "source_ranks": candidate.source_ranks,
+                    "source_scores": {
+                        label: round(float(score), 5)
+                        for label, score in candidate.source_scores.items()
+                    },
+                }
+                for candidate in diagnostic
+            ]
+        return ordered
+
+    search_main._query_views = query_views
+    search_main._hybrid_fuse = hybrid_fuse
+    search_main._experiential_order = experiential_order
+
+    from fastapi import Header
+
+    @search_main.app.post("/internal/execute-telemetry")
+    async def execute_with_telemetry(
+        request: search_main.ExecuteRequest,
+        authorization: Annotated[str | None, Header()] = None,
+        x_analytics_search: Annotated[str | None, Header()] = None,
+    ) -> dict:
+        search_main.authorize(authorization)
+        current = search_main.active_runtime()
+        payload = search_main._read_plan(current, request.plan_token)
+        telemetry: dict = {
+            "resolved_request": str(payload["search_text"])[:1000],
+            "generated_views": list(payload["retrieval_views"]),
+        }
+        token = telemetry_context.set(telemetry)
+        started = time.perf_counter()
+        try:
+            results, query_count = await search_main._retrieve(
+                current=current,
+                original_text=str(payload["original"]),
+                resolved_text=str(payload["search_text"]),
+                retrieval_views=list(payload["retrieval_views"]),
+                limit=request.limit,
+            )
+            telemetry["retrieve_total_ms"] = round(
+                (time.perf_counter() - started) * 1000
+            )
+        finally:
+            telemetry_context.reset(token)
+
+        if x_analytics_search:
+            print(
+                "MELODYMIND_SEARCH_ID "
+                + str(x_analytics_search)[:96]
+                + " candidates="
+                + str(telemetry.get("candidate_count", 0)),
+                flush=True,
+            )
+
+        return {
+            "type": "results",
+            "query": str(payload["original"]),
+            "message": str(payload.get("message", "")),
+            "results": [result.model_dump() for result in results],
+            "total": len(results),
+            "model": current.settings.model_version,
+            "retrieval_queries": query_count,
+            "telemetry": telemetry,
+        }
+
+    search_main._portfolio_telemetry_installed = True
+
+
 @app.function(
     image=image,
     secrets=[service_secret],
-    # Two CPUs keeps the portfolio search comfortably within the free-credit
-    # use case while making XLM-R startup/inference a little less sluggish.
     cpu=2.0,
-    # Request 2 GiB for normal operation but allow a larger startup peak while
-    # Transformers materializes the model. This avoids the Railway OOM loop
-    # without paying for a permanently reserved 6 GiB container.
     memory=(2048, 6144),
     max_containers=1,
-    # Keep the large text tower warm for the full Modal idle window. This costs
-    # more than the old five-minute window, but avoids repeated model cold starts
-    # while someone is actively trying several MelodyMind searches.
     scaledown_window=1200,
     timeout=300,
     startup_timeout=180,
@@ -49,12 +165,10 @@ service_secret = modal.Secret.from_name(
 @modal.concurrent(max_inputs=4)
 @modal.asgi_app()
 def api():
-    # The Dockerfile places main.py and the exported model under /app and
-    # /model. Modal adds this wrapper separately, so make /app importable and
-    # return the existing FastAPI application unchanged.
     if "/app" not in sys.path:
         sys.path.insert(0, "/app")
 
-    from main import app as fastapi_app
+    import main as search_main
 
-    return fastapi_app
+    install_telemetry(search_main)
+    return search_main.app
