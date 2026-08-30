@@ -1,3 +1,4 @@
+import { renderFullAnalyticsDashboard } from "./analytics-dashboard";
 import { createRouter, type ResponseCache, type WorkerContext, type WorkerEnv } from "./router";
 
 const workerCaches = caches as CacheStorage & { default: Cache };
@@ -14,6 +15,10 @@ const router = createRouter({ cache: responseCache });
 
 export default {
   fetch(request: Request, env: WorkerEnv, ctx: WorkerContext): Promise<Response> {
+    const path = new URL(request.url).pathname;
+    if (path === "/analytics" || path === "/analytics/") {
+      return renderFullAnalyticsDashboard(request, env);
+    }
     return router(request, env, ctx);
   }
 };
