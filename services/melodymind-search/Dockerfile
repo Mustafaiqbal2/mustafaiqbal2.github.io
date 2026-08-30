@@ -33,6 +33,6 @@ RUN pip install --no-cache-dir \
     "torch==2.6.0"
 RUN pip install --no-cache-dir -r requirements.txt
 COPY --from=model-export /model /model
-COPY main.py agent.py ./
+COPY main.py agent.py openai_primary.py ./
 
 CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
