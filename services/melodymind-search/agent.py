@@ -25,10 +25,22 @@ You receive the ACTUAL conversation between the user and MelodyMind. Decide whet
 clarification would materially improve the recommendations, or whether search can begin.
 
 PROBING
+- A probe is optional, not a required onboarding step. Search by default when the user's
+  situation is already expressive enough to produce meaningful recommendations.
 - Ask at most ONE clarification in the whole conversation.
-- Probe when the request leaves materially different listening goals plausible.
-- A useful question usually asks what the music should do: stay with the feeling, offer
-  comfort, release it, move forward, change the energy, focus, or celebrate.
+- Probe only when there is a SPECIFIC unresolved ambiguity in this conversation and the
+  answer would materially change the candidate songs.
+- Before probing, consider whether two meaningfully different playlists could both satisfy
+  everything the user has already said. If not, search.
+- The question must target that specific ambiguity. It should make sense because of details
+  in THIS conversation, rather than being a question that could be asked after almost any
+  music request.
+- Rich scene-setting is useful semantic information. Do not probe merely because the user
+  did not explicitly provide a mood, energy level, genre, or "what the music should do".
+- Do not default to generic questions such as "What do you want the music to do for you?",
+  "How do you want to feel?", "What kind of vibe do you want?", or equivalents.
+- If you cannot formulate a genuinely context-specific question whose answer would change
+  the recommendations, search immediately.
 - Do not make the user repeat information already present.
 - If probe_used=true, search. Never ask a second question.
 - If the user has already said what they want from the music, search immediately.
@@ -57,6 +69,8 @@ IMPORTANT
   song can feel right after a friendship ends. Judge the listening experience.
 - Preserve every explicit part of the request, including tensions such as wanting to feel
   sadness while also becoming more optimistic.
+- A clarification refines the original situation; it never replaces or outweighs the rest
+  of the conversation.
 - Resolve pronouns and answers such as “both” from the actual conversation.
 - Do not invent events, causes, identities, preferences, genres, or therapeutic outcomes.
 - Do not mention a specific song or artist in a retrieval view.
@@ -74,6 +88,16 @@ Return JSON only:
 {"action":"probe","message":"one natural question","search_text":"","retrieval_views":[]}
 or
 {"action":"search","message":"short acknowledgement","search_text":"faithful resolved request","retrieval_views":[{"kind":"request_post","text":"..."},{"kind":"listener_story","text":"..."},{"kind":"experience_arc","text":"..."},{"kind":"music_description","text":"..."}]}
+"""
+
+
+PROBE_REPAIR_SUFFIX = """
+A previous proposed clarification was rejected because it was generic. Decide again from
+the conversation itself. Either SEARCH NOW, or ask a clarification whose uncertainty comes
+from concrete details in this particular request. The question should not make sense as a
+generic follow-up to an unrelated music request. Do not ask what the user wants the music
+to do, how they want to feel, what mood they want, or what vibe they want in generic terms.
+If there is no such specific ambiguity, search.
 """
 
 
@@ -151,12 +175,36 @@ def _fallback_views(search_text: str) -> list[RetrievalDraft]:
     ]
 
 
-def _conversation_prompt(history: Sequence[dict[str, str]], probe_used: bool) -> str:
+def _conversation_prompt(
+    history: Sequence[dict[str, str]],
+    probe_used: bool,
+    rejected_probe: str | None = None,
+) -> str:
     transcript = "\n".join(
         ("USER" if item["role"] == "user" else "MELODYMIND") + ": " + item["content"]
         for item in _clean_history(history)
     )
-    return f"probe_used: {'true' if probe_used else 'false'}\n\nCONVERSATION:\n{transcript}"
+    prompt = f"probe_used: {'true' if probe_used else 'false'}\n\nCONVERSATION:\n{transcript}"
+    if rejected_probe:
+        prompt += "\n\nREJECTED_GENERIC_PROBE:\n" + rejected_probe
+    return prompt
+
+
+def _probe_is_generic(message: str) -> bool:
+    """Catch generic fallback questions that should never reach the user."""
+    normalized = re.sub(r"\s+", " ", message.casefold()).strip(" ?.!:,;")
+    generic_fragments = (
+        "what do you want the music to do",
+        "what would you like the music to do",
+        "what are you looking for from the music",
+        "what kind of music are you looking for",
+        "what kind of vibe do you want",
+        "what vibe are you looking for",
+        "how do you want the music to make you feel",
+        "how do you want to feel",
+        "what mood are you looking for",
+    )
+    return any(fragment in normalized for fragment in generic_fragments)
 
 
 class GeminiAgent:
@@ -256,7 +304,32 @@ class GeminiAgent:
             message = str(raw.get("message", "")).strip()[:1000]
             if probe_used:
                 action = "search"
+
+            if action == "probe" and not probe_used and message and _probe_is_generic(message):
+                raw = await self._generate_json(
+                    model=self.plan_model,
+                    system_prompt=AGENT_SYSTEM_PROMPT + PROBE_REPAIR_SUFFIX,
+                    user_prompt=_conversation_prompt(
+                        history,
+                        probe_used,
+                        rejected_probe=message,
+                    ),
+                    temperature=0.1,
+                    max_tokens=1100,
+                )
+                if not isinstance(raw, dict):
+                    raise ValueError("Agent repair response was not an object")
+                action = str(raw.get("action", "search")).strip().lower()
+                message = str(raw.get("message", "")).strip()[:1000]
+
             if action == "probe" and not probe_used and message:
+                if _probe_is_generic(message):
+                    return AgentDecision(
+                        action="search",
+                        message="",
+                        search_text=fallback_text,
+                        retrieval_views=_fallback_views(fallback_text),
+                    )
                 return AgentDecision("probe", message, "", [])
 
             search_text = str(raw.get("search_text", "")).strip()
