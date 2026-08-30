@@ -49,7 +49,7 @@ def install_telemetry(search_main) -> None:
                 {
                     "label": view.label,
                     "weight": round(float(view.weight), 3),
-                    "text": str(view.text)[:360],
+                    "text": str(view.text)[:320],
                 }
                 for view in views
             ]
@@ -69,7 +69,7 @@ def install_telemetry(search_main) -> None:
             diagnostic = [
                 candidate
                 for candidate in candidates
-                if candidate.fused_rank <= 15 or candidate.final_rank <= 15
+                if candidate.fused_rank <= 10 or candidate.final_rank <= 10
             ]
             diagnostic.sort(key=lambda candidate: candidate.final_rank)
             telemetry["ranking"] = [
@@ -110,8 +110,7 @@ def install_telemetry(search_main) -> None:
         current = search_main.active_runtime()
         payload = search_main._read_plan(current, request.plan_token)
         telemetry: dict = {
-            "resolved_request": str(payload["search_text"])[:1000],
-            "generated_views": list(payload["retrieval_views"]),
+            "resolved_request": str(payload["search_text"])[:800],
         }
         token = telemetry_context.set(telemetry)
         started = time.perf_counter()
