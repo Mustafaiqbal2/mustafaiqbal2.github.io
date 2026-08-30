@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
+import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { SiteFooter } from "@/components/SiteFooter";
 import { profile, siteUrl } from "@/data/portfolio";
 import "./globals.css";
@@ -172,6 +173,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <script dangerouslySetInnerHTML={{ __html: siteScript }} />
       </head>
       <body className={`${displaySans.variable} ${monoFont.variable}`}>
+        <AnalyticsTracker />
         <a className="skip-link" href="#main">Skip to content</a>
         {children}
         <SiteFooter />
