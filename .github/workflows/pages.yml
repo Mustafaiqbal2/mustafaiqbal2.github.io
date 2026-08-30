@@ -34,7 +34,7 @@ jobs:
         run: npm run build
         env:
           NEXT_PUBLIC_SITE_URL: ${{ vars.NEXT_PUBLIC_SITE_URL || 'https://mustafaiqbal2.github.io' }}
-          NEXT_PUBLIC_MUSIC_API_URL: ${{ vars.NEXT_PUBLIC_MUSIC_API_URL }}
+          NEXT_PUBLIC_MUSIC_API_URL: ${{ vars.NEXT_PUBLIC_MUSIC_API_URL || 'https://mustafa-music-api.mustafaiqbal2-portfolio.workers.dev' }}
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
