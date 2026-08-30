@@ -211,12 +211,22 @@ export function AnalyticsTracker() {
 
       if (category === "spotify") {
         const row = anchor.closest(".mm-result");
+        const product = anchor.closest(".mm-product") as HTMLElement | null;
         const rank = Number(row?.querySelector(".mm-result__number")?.textContent || 0) || undefined;
         const title = row?.querySelector(".mm-result__track strong")?.textContent?.trim() || anchor.getAttribute("aria-label") || "";
         const artist = row?.querySelector(".mm-result__track small")?.textContent?.trim() || "";
+        const searchId = product?.dataset.searchId || "";
+        const shownAt = Number(product?.dataset.resultsShownAt || 0);
         sendEvent({
           event: "melodymind_spotify_click",
-          data: { href: destination.toString(), rank, title, artist }
+          data: {
+            search_id: searchId,
+            href: destination.toString(),
+            rank,
+            title,
+            artist,
+            since_results_ms: shownAt ? Math.max(0, Date.now() - shownAt) : 0
+          }
         });
         return;
       }
