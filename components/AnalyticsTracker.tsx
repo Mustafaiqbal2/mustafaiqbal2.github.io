@@ -13,6 +13,7 @@ type Identity = { visitorId: string; sessionId: string };
 
 type AnalyticsPayload = {
   event: string;
+  path?: string;
   data?: Record<string, unknown>;
 };
 
@@ -79,7 +80,7 @@ function sendEvent(payload: AnalyticsPayload) {
     event: payload.event,
     visitor_id: identity.visitorId,
     session_id: identity.sessionId,
-    path: window.location.pathname,
+    path: payload.path || window.location.pathname,
     title: document.title,
     referrer: document.referrer,
     language: navigator.language,
@@ -141,10 +142,12 @@ export function AnalyticsTracker() {
   useEffect(() => {
     if (!pathname || lastPathRef.current === pathname) return;
     lastPathRef.current = pathname;
-    sendEvent({ event: "page_view" });
+    const trackedPath = pathname;
+    sendEvent({ event: "page_view", path: trackedPath });
 
     const startedAt = Date.now();
     let maxScroll = 0;
+    let finished = false;
     const fired = new Set<number>();
     const thresholds = [25, 50, 75, 100];
 
@@ -156,20 +159,25 @@ export function AnalyticsTracker() {
       for (const threshold of thresholds) {
         if (percent >= threshold && !fired.has(threshold)) {
           fired.add(threshold);
-          sendEvent({ event: "scroll_depth", data: { percent: threshold } });
+          sendEvent({ event: "scroll_depth", path: trackedPath, data: { percent: threshold } });
         }
       }
     };
 
     const finish = () => {
+      if (finished) return;
+      finished = true;
       sendEvent({
         event: "page_engagement",
+        path: trackedPath,
         data: { duration_ms: Date.now() - startedAt, max_scroll: maxScroll }
       });
     };
 
     const engagedTimer = window.setTimeout(() => {
-      if (document.visibilityState === "visible") sendEvent({ event: "engaged_30s" });
+      if (document.visibilityState === "visible") {
+        sendEvent({ event: "engaged_30s", path: trackedPath });
+      }
     }, 30_000);
 
     window.addEventListener("scroll", updateScroll, { passive: true });
