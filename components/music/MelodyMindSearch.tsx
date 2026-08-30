@@ -3,9 +3,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import gsap from "gsap";
-import { ArrowRight, RotateCcw, Search, X } from "lucide-react";
+import { ArrowRight, ExternalLink, RotateCcw, Search, X } from "lucide-react";
 import "./melodymind-search.css";
-import "./melodymind-results.css";
 
 type SongResult = {
   track_id: string;
@@ -41,31 +40,6 @@ function searchUrl(): string | null {
 
 function spotifyUrl(song: SongResult): string {
   return song.spotify_url || `https://open.spotify.com/track/${song.spotify_id}`;
-}
-
-function ResultArtwork({ song }: { song: SongResult }) {
-  return (
-    <span className="mm-result__art" aria-hidden="true">
-      {song.artwork ? (
-        <img src={song.artwork} alt="" loading="eager" decoding="async" />
-      ) : (
-        <span className="mm-result__art-fallback">M</span>
-      )}
-    </span>
-  );
-}
-
-function SpotifyMark() {
-  return (
-    <span className="mm-result__spotify" aria-hidden="true">
-      <svg viewBox="0 0 24 24" fill="none">
-        <circle cx="12" cy="12" r="11" fill="currentColor" />
-        <path d="M6.7 9.1c3.6-1.05 7.7-.72 10.75.86" stroke="#0b0b0b" strokeWidth="1.45" strokeLinecap="round" />
-        <path d="M7.35 12.15c3.05-.82 6.45-.55 9.1.74" stroke="#0b0b0b" strokeWidth="1.35" strokeLinecap="round" />
-        <path d="M7.95 15.05c2.5-.6 5.2-.38 7.45.68" stroke="#0b0b0b" strokeWidth="1.25" strokeLinecap="round" />
-      </svg>
-    </span>
-  );
 }
 
 export function MelodyMindSearch() {
@@ -113,25 +87,13 @@ export function MelodyMindSearch() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const context = gsap.context(() => {
-      const timeline = gsap.timeline({ defaults: { ease: "power3.out" } });
-      timeline
-        .fromTo(".mm-results-query > *", { opacity: 0, y: 14 }, {
-          opacity: 1,
-          y: 0,
-          duration: 0.34,
-          stagger: 0.035
-        }, 0)
-        .fromTo(".mm-results-panel > header", { opacity: 0, y: 10 }, {
-          opacity: 1,
-          y: 0,
-          duration: 0.32
-        }, 0.05)
-        .fromTo(".mm-result", { opacity: 0, y: 10 }, {
-          opacity: 1,
-          y: 0,
-          duration: 0.3,
-          stagger: 0.024
-        }, 0.1);
+      gsap.fromTo(".mm-result", { opacity: 0, y: 13 }, {
+        opacity: 1,
+        y: 0,
+        duration: 0.4,
+        stagger: 0.045,
+        ease: "power3.out"
+      });
     }, rootRef);
 
     return () => context.revert();
@@ -331,52 +293,27 @@ export function MelodyMindSearch() {
                   <span className="lv-mono">MATCHING TRACKS</span>
                   <strong>{results.length}</strong>
                 </div>
-                <span className="mm-results-panel__hint lv-mono">SCROLL RESULTS ↓</span>
+                <span className="lv-mono">TITLE / ARTIST / ALBUM</span>
               </header>
 
               {results.length > 0 ? (
-                <ol
-                  className="mm-result-list"
-                  tabIndex={0}
-                  data-lenis-prevent
-                  data-lenis-prevent-wheel
-                  aria-label="Matching tracks. Scroll to see all results."
-                >
-                  {results.map((song, index) => {
-                    const canOpen = Boolean(song.spotify_url || song.spotify_id);
-                    const content = (
-                      <>
-                        <span className="mm-result__number lv-mono">{String(index + 1).padStart(2, "0")}</span>
-                        <ResultArtwork song={song} />
-                        <span className="mm-result__track">
-                          <strong>{song.title}</strong>
-                          <span className="mm-result__meta">
-                            <small>{song.artist}</small>
-                            {song.album && <><i aria-hidden="true">·</i><small>{song.album}</small></>}
-                          </span>
-                        </span>
-                        {canOpen ? <SpotifyMark /> : <span className="mm-result__spotify mm-result__spotify--disabled" aria-hidden="true" />}
-                      </>
-                    );
-
-                    return (
-                      <li className="mm-result" key={song.track_id}>
-                        {canOpen ? (
-                          <a
-                            className="mm-result__link"
-                            href={spotifyUrl(song)}
-                            target="_blank"
-                            rel="noreferrer"
-                            aria-label={`Open ${song.title} by ${song.artist} in Spotify`}
-                          >
-                            {content}
-                          </a>
-                        ) : (
-                          <div className="mm-result__link mm-result__link--disabled">{content}</div>
-                        )}
-                      </li>
-                    );
-                  })}
+                <ol className="mm-result-list">
+                  {results.map((song, index) => (
+                    <li className="mm-result" key={song.track_id}>
+                      <span className="mm-result__number lv-mono">{String(index + 1).padStart(2, "0")}</span>
+                      <span className="mm-result__record" aria-hidden="true"><i /></span>
+                      <span className="mm-result__track">
+                        <strong>{song.title}</strong>
+                        <small>{song.artist}</small>
+                      </span>
+                      <span className="mm-result__album">{song.album || "—"}</span>
+                      {song.spotify_id ? (
+                        <a href={spotifyUrl(song)} target="_blank" rel="noreferrer" aria-label={`Open ${song.title} on Spotify`}>
+                          <ExternalLink aria-hidden="true" />
+                        </a>
+                      ) : <span />}
+                    </li>
+                  ))}
                 </ol>
               ) : (
                 <div className="mm-no-results">
