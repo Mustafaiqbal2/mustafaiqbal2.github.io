@@ -1,14 +1,12 @@
-"""Lightweight MelodyMind agent for the portfolio search service.
+"""Lightweight conversational planning and verification for MelodyMind.
 
-This keeps the useful conversational behavior from the original MelodyMind
-backend without importing its database/auth/Spotify/web-search stack.
+The portfolio service deliberately keeps the useful agent behavior from the original
+MelodyMind demo while leaving its database/auth/Spotify/web-search stack behind.
 
-The agent has two jobs only:
-1. Decide whether one clarification is genuinely needed before searching.
-2. When ready, produce a few strictly meaning-preserving paraphrases for
-   multi-query CLaMP3 retrieval.
-
-The original user wording is never replaced by an LLM-generated query.
+The agent sees the actual conversation turns. It may ask at most one clarification.
+When it searches, it resolves references in that conversation into one faithful,
+self-contained retrieval sentence and a small number of meaning-preserving variants.
+It never replaces Model A with an LLM-authored musical interpretation.
 """
 
 from __future__ import annotations
@@ -23,75 +21,79 @@ import httpx
 
 
 AGENT_SYSTEM_PROMPT = """You are MelodyMind, an emotionally intelligent music curator.
-Your job is to decide whether ONE useful clarification would materially improve the
-recommendation before searching. The point of the clarification is usually to learn
-what the user wants the music to DO for them, not to make them repeat facts they
-already gave you.
+You are given the ACTUAL conversation between the user and MelodyMind. Decide whether one
+clarification would materially improve the recommendations, or whether the system is ready
+to search.
 
-PROBE FIRST when:
-- the request is vague (for example: "I need music", "play something", "I'm bored")
-- the user gives an emotion but has not said whether they want to match it, shift it,
-  release it, sit with it, be comforted, focus it, celebrate it, etc.
-- the user gives a concrete emotionally significant situation but several meaningfully
-  different musical directions are still plausible
-- knowing one preference would substantially change which songs you should return
+PROBING:
+- Ask at most ONE clarification question in the whole conversation.
+- Probe when the request leaves materially different musical goals plausible.
+- The most useful probe often asks what the user wants the music to do: reflect/match the
+  feeling, provide comfort, help release it, help move on, shift the mood, focus, celebrate,
+  etc. Do not make the user repeat facts already present.
+- A concrete life event does NOT automatically mean the goal is clear. "My dog died" can
+  still need one question about what the user wants from the music.
+- If probe_used=true, you MUST search. Never ask a second clarification.
+- If the user already stated the desired direction/function, search immediately.
 
-A CONCRETE LIFE EVENT IS NOT, BY ITSELF, A REASON TO SKIP THE PROBE.
-Examples:
-- "I'm sad" should usually probe for whether they want to match or change the mood.
-- "My dog died" should usually probe for what they want from the music: to sit with the
-  grief, find comfort, remember their dog, or move away from the feeling.
-- "A close friendship ended quietly. Neither of us said goodbye." should usually probe
-  if the user has not said whether they want unresolved-goodbye music, comfort, release,
-  or something that helps them move on.
+SEARCH PREPARATION:
+When ready to search, return one `search_text` plus 0 to 2 `paraphrases`.
+`search_text` is NOT an interpretation or an ontology. It is a concise, self-contained,
+faithful resolution of what the conversation explicitly establishes.
 
-SEARCH IMMEDIATELY when:
-- the user already states the desired musical direction or function clearly
-- the request is operationally specific enough that another question would not change
-  the search much (for example a clear workout/focus/artist-similarity request)
-- a clarification has already been supplied
+You MAY:
+- resolve pronouns and references using the preceding assistant question
+- resolve answers such as "both", "the first one", or "more of the latter" using the exact
+  alternatives the assistant presented
+- combine the original situation with the user's explicit preference into one readable
+  sentence
 
-GOLDEN RULE: at most one clarification question. If clarification_text is present, you MUST search.
-Ask one concise, natural question. Do not interrogate the user or give them a questionnaire.
+You MUST NOT:
+- invent emotions, motivations, causes, consequences, therapeutic goals, genre,
+  instrumentation, tempo, lyrical themes, era, or production style
+- collapse relationship/subject types: friendship is not romance; pet loss is not partner
+  loss; work, family, grief, conflict, celebration, etc. remain distinct when stated
+- silently drop one side of a multi-part answer such as "a little bit of both"
+- make the situation more dramatic, sentimental, specific, or musical than the conversation
+- turn a life event into generic sonic language
 
-When searching, create 0 to 3 alternate phrasings that are STRICTLY semantically equivalent
-to the user's own wording plus any clarification they supplied. They are retrieval views,
-not interpretations.
+PARAPHRASES:
+- strictly preserve the meaning of `search_text`
+- add no facts or musical attributes
+- return fewer or none when a safe alternative is not possible
 
-PARAPHRASE RULES:
-- preserve every explicit person/entity, relationship, event, negation, time, and constraint
-- preserve the user's stated desired direction exactly
-- do not invent emotions, motivations, causes, consequences, genre, instrumentation, tempo,
-  lyrical themes, or desired mood unless the user explicitly said them
-- do not translate a life situation into generic musical language
-- do not make the request more dramatic, therapeutic, sentimental, or specific than it is
-- if a safe alternate phrasing is not possible, return fewer paraphrases or none
-- never return the original wording itself as a paraphrase
+The acknowledgement `message` must also preserve the user's explicit selected direction. If
+someone chose both options, acknowledge both rather than mentioning only one.
 
 Return JSON only in one of these forms:
-{"action":"probe","message":"one concise natural clarifying question","paraphrases":[]}
-{"action":"search","message":"one short natural acknowledgement","paraphrases":["...","..."]}
+{"action":"probe","message":"one concise natural clarifying question","search_text":"","paraphrases":[]}
+{"action":"search","message":"one short faithful acknowledgement","search_text":"self-contained faithful request","paraphrases":["...","..."]}
 """
 
 
-RERANK_SYSTEM_PROMPT = """You are the second-stage curator in a semantic music retrieval system.
-The audio model produced the candidate pool. Use your own RELIABLE knowledge of songs,
-artists, themes, lyrics, and common listening context to improve the ordering.
+RERANK_SYSTEM_PROMPT = """You are a conservative verification layer after an audio-semantic
+retriever. Model A produced the candidate pool. Do NOT create a new ranking from scratch.
+For each candidate, classify only what you can judge from RELIABLE knowledge of the song,
+artist, lyrics/themes, and common listening context.
+
+Allowed labels:
+- strong: you reliably know it is a precise fit for the user's stated situation/direction
+- credible: you reliably know it is a reasonable broader fit
+- mismatch: you reliably know it conflicts with an explicit situation, relationship type,
+  subject, mood direction, or activity
+- unknown: you do not know enough to make a reliable judgment
 
 Rules:
-- prioritize the user's actual situation and any clarification they gave
-- preserve explicit relationship type and subject: friendship is not the same as a romantic
-  breakup; pet loss is not the same as losing a partner; family, work, celebration, grief,
-  conflict, and other stated contexts should not be collapsed into a generic emotion
-- do not promote a candidate merely because its title or album name sounds relevant; title
-  wording alone is weak evidence
-- do not prefer a song merely because it is famous
-- if you do not know a song well enough, do not penalize it; preserve its relative retrieval order
-- confidently demote clear thematic, relationship-type, mood, or activity mismatches
-- prefer precise situational fits over generic songs that merely share a broad emotion
-- select exactly the requested number when possible
+- preserve explicit relationship and subject types: friendship != romantic breakup; pet loss
+  != partner loss; family/work/celebration/grief/conflict remain distinct when stated
+- title or album wording alone is NOT evidence of relevance
+- fame is NOT evidence of relevance
+- unfamiliar/obscure songs MUST be `unknown`, not penalized
+- candidate IDs and presentation order carry no quality signal
+- use `mismatch` only when you are genuinely confident
 
-Return ONLY a JSON array of candidate IDs in best-first order, e.g. ["c03","c11","c01"].
+Return ONLY one JSON object mapping candidate IDs to labels, for example:
+{"c00":"unknown","c01":"strong","c02":"mismatch"}
 """
 
 
@@ -99,11 +101,45 @@ Return ONLY a JSON array of candidate IDs in best-first order, e.g. ["c03","c11"
 class AgentDecision:
     action: str
     message: str
+    search_text: str
     paraphrases: list[str]
 
 
+def _clean_history(history: Sequence[dict[str, str]]) -> list[dict[str, str]]:
+    cleaned: list[dict[str, str]] = []
+    for item in history:
+        role = str(item.get("role", "")).strip().lower()
+        content = str(item.get("content", "")).strip()
+        if role not in {"user", "assistant"} or not content:
+            continue
+        cleaned.append({"role": role, "content": content[:1000]})
+    return cleaned[-6:]
+
+
+def _fallback_search_text(history: Sequence[dict[str, str]]) -> str:
+    """Preserve exact dialogue when the planner is unavailable; never invent intent."""
+    cleaned = _clean_history(history)
+    user_messages = [item["content"] for item in cleaned if item["role"] == "user"]
+    if len(cleaned) == 1 and user_messages:
+        return user_messages[0][:1600]
+    transcript = "\n".join(
+        ("User" if item["role"] == "user" else "MelodyMind") + ": " + item["content"]
+        for item in cleaned
+    )
+    return transcript[:1600] or (user_messages[-1][:1600] if user_messages else "music request")
+
+
+def _conversation_prompt(history: Sequence[dict[str, str]], probe_used: bool) -> str:
+    cleaned = _clean_history(history)
+    transcript = "\n".join(
+        ("USER" if item["role"] == "user" else "MELODYMIND") + ": " + item["content"]
+        for item in cleaned
+    )
+    return f"probe_used: {'true' if probe_used else 'false'}\n\nCONVERSATION:\n{transcript}"
+
+
 class GeminiAgent:
-    """Small Gemini REST client used only for planning and reranking."""
+    """Small Gemini REST client used only for planning and bounded verification."""
 
     def __init__(self) -> None:
         self.api_key = os.environ.get("GEMINI_API_KEY", "").strip()
@@ -136,11 +172,7 @@ class GeminiAgent:
         if not self.api_key:
             raise RuntimeError("GEMINI_API_KEY is not configured")
         if self._client is None:
-            # Fail fast enough that optional agent work cannot make the portfolio
-            # appear hung. Search still has deterministic fallbacks below.
-            self._client = httpx.AsyncClient(
-                timeout=httpx.Timeout(20.0, connect=5.0)
-            )
+            self._client = httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0))
 
         url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -152,9 +184,6 @@ class GeminiAgent:
             "maxOutputTokens": max_tokens,
             "responseMimeType": "application/json",
         }
-        # Gemini 2.5 Flash supports disabling thinking. Planning/reranking here
-        # are tightly constrained ranking/control tasks, so extra reasoning tokens
-        # add latency without being useful to the portfolio interaction.
         if model.startswith("gemini-2.5"):
             generation_config["thinkingConfig"] = {"thinkingBudget": 0}
 
@@ -163,12 +192,7 @@ class GeminiAgent:
             params={"key": self.api_key},
             json={
                 "system_instruction": {"parts": [{"text": system_prompt}]},
-                "contents": [
-                    {
-                        "role": "user",
-                        "parts": [{"text": user_prompt}],
-                    }
-                ],
+                "contents": [{"role": "user", "parts": [{"text": user_prompt}]}],
                 "generationConfig": generation_config,
             },
         )
@@ -186,40 +210,50 @@ class GeminiAgent:
 
     async def plan(
         self,
-        query: str,
-        clarification: str | None = None,
+        history: Sequence[dict[str, str]],
+        probe_used: bool = False,
     ) -> AgentDecision:
-        """Return either one probe question or a search plan."""
+        """Return either one probe question or a faithful search plan."""
+        fallback_text = _fallback_search_text(history)
         if not self.configured:
-            return AgentDecision(action="search", message="", paraphrases=[])
+            return AgentDecision(
+                action="search",
+                message="",
+                search_text=fallback_text,
+                paraphrases=[],
+            )
 
-        prompt = (
-            "original_request:\n"
-            + query.strip()
-            + "\n\nclarification_text:\n"
-            + (clarification.strip() if clarification else "<none>")
-        )
         try:
             raw = await self._generate_json(
                 model=self.plan_model,
                 system_prompt=AGENT_SYSTEM_PROMPT,
-                user_prompt=prompt,
+                user_prompt=_conversation_prompt(history, probe_used),
                 temperature=0.1,
-                max_tokens=420,
+                max_tokens=520,
             )
             if not isinstance(raw, dict):
                 raise ValueError("Agent response was not an object")
+
             action = str(raw.get("action", "search")).strip().lower()
-            message = str(raw.get("message", "")).strip()
-            if clarification:
+            message = str(raw.get("message", "")).strip()[:1000]
+            if probe_used:
                 action = "search"
-            if action == "probe" and not clarification and message:
-                return AgentDecision(action="probe", message=message, paraphrases=[])
+            if action == "probe" and not probe_used and message:
+                return AgentDecision(
+                    action="probe",
+                    message=message,
+                    search_text="",
+                    paraphrases=[],
+                )
+
+            search_text = str(raw.get("search_text", "")).strip()
+            if len(search_text) < 4 or len(search_text) > 1600:
+                search_text = fallback_text
 
             variants: list[str] = []
-            seen = {query.strip().casefold()}
-            if clarification:
-                seen.add(clarification.strip().casefold())
+            seen = {search_text.casefold()}
+            for item in _clean_history(history):
+                seen.add(item["content"].casefold())
             raw_variants = raw.get("paraphrases", [])
             if isinstance(raw_variants, list):
                 for item in raw_variants:
@@ -227,27 +261,35 @@ class GeminiAgent:
                         continue
                     text = item.strip()
                     key = text.casefold()
-                    if len(text) < 4 or key in seen:
+                    if not 4 <= len(text) <= 1600 or key in seen:
                         continue
                     seen.add(key)
                     variants.append(text)
-                    if len(variants) == 3:
+                    if len(variants) == 2:
                         break
-            return AgentDecision(action="search", message=message, paraphrases=variants)
-        except Exception:
-            # Search must remain available even if the planning model is down.
-            return AgentDecision(action="search", message="", paraphrases=[])
 
-    async def rerank(
+            return AgentDecision(
+                action="search",
+                message=message,
+                search_text=search_text,
+                paraphrases=variants,
+            )
+        except Exception:
+            return AgentDecision(
+                action="search",
+                message="",
+                search_text=fallback_text,
+                paraphrases=[],
+            )
+
+    async def judge_candidates(
         self,
         request: str,
         candidates: Sequence[object],
-        keep: int,
-    ) -> list[int]:
-        """Return candidate indices in preferred order, falling back safely."""
-        fallback = list(range(min(keep, len(candidates))))
-        if not self.configured or len(candidates) <= keep:
-            return fallback
+    ) -> dict[int, str]:
+        """Classify candidates; unknown/missing judgments leave retrieval untouched."""
+        if not self.configured or not candidates:
+            return {}
 
         lines: list[str] = []
         for index, candidate in enumerate(candidates):
@@ -255,14 +297,14 @@ class GeminiAgent:
             artist = str(getattr(candidate, "artist", "Unknown"))
             album = getattr(candidate, "album", None)
             suffix = f" — {album}" if album else ""
-            lines.append(f'c{index:02d}: {title} — {artist}{suffix}')
+            lines.append(f"c{index:02d}: {title} — {artist}{suffix}")
 
         prompt = (
             "USER REQUEST:\n"
             + request.strip()
-            + "\n\nCANDIDATES (current order is the audio-retrieval order):\n"
+            + "\n\nCANDIDATES:\n"
             + "\n".join(lines)
-            + f"\n\nSelect the best {keep}."
+            + "\n\nClassify every candidate you can judge reliably. Use unknown when uncertain."
         )
         try:
             raw = await self._generate_json(
@@ -270,29 +312,21 @@ class GeminiAgent:
                 system_prompt=RERANK_SYSTEM_PROMPT,
                 user_prompt=prompt,
                 temperature=0.0,
-                max_tokens=320,
+                max_tokens=760,
             )
-            if not isinstance(raw, list):
-                raise ValueError("Reranker response was not an array")
-            selected: list[int] = []
-            seen: set[int] = set()
-            for item in raw:
-                match = re.fullmatch(r"c(\d{1,3})", str(item).strip(), re.IGNORECASE)
-                if not match:
+            if not isinstance(raw, dict):
+                raise ValueError("Verifier response was not an object")
+
+            allowed = {"strong", "credible", "mismatch", "unknown"}
+            judgments: dict[int, str] = {}
+            for key, value in raw.items():
+                match = re.fullmatch(r"c(\d{1,3})", str(key).strip(), re.IGNORECASE)
+                label = str(value).strip().lower()
+                if not match or label not in allowed:
                     continue
                 index = int(match.group(1))
-                if 0 <= index < len(candidates) and index not in seen:
-                    seen.add(index)
-                    selected.append(index)
-                if len(selected) == keep:
-                    break
-            # If the model returns fewer than requested, preserve retrieval order
-            # for the remaining slots rather than hallucinating a penalty.
-            for index in range(len(candidates)):
-                if index not in seen:
-                    selected.append(index)
-                if len(selected) == keep:
-                    break
-            return selected[:keep]
+                if 0 <= index < len(candidates):
+                    judgments[index] = label
+            return judgments
         except Exception:
-            return fallback
+            return {}
