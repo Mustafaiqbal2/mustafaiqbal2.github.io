@@ -42,6 +42,7 @@ type ResultsResponse = {
 type PlanResponse = ProbeResponse | SearchReadyResponse;
 type LegacySearchResponse = ProbeResponse | ResultsResponse;
 type SearchState = "idle" | "thinking" | "probe" | "searching" | "success" | "error";
+type Feedback = "hit" | "miss" | "";
 
 const EXAMPLES = [
   "A close friendship ended quietly. Neither of us said goodbye.",
@@ -51,10 +52,15 @@ const EXAMPLES = [
 
 const API_BASE = process.env.NEXT_PUBLIC_MUSIC_API_URL?.replace(/\/$/, "");
 
-function apiUrl(path: "plan" | "search"): string | null {
+function apiUrl(path: "plan" | "search" | "analytics/event"): string | null {
   if (!API_BASE) return null;
   const root = API_BASE.endsWith("/api") ? API_BASE : `${API_BASE}/api`;
   return `${root}/${path}`;
+}
+
+function newSearchId(): string {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `search_${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}`;
 }
 
 function spotifyUrl(song: SongResult): string {
@@ -90,6 +96,13 @@ export function MelodyMindSearch() {
   const threadRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLElement>(null);
   const requestRef = useRef<AbortController | null>(null);
+  const previousSearchIdRef = useRef("");
+  const attemptRef = useRef(0);
+  const startedAtRef = useRef(0);
+  const probeShownAtRef = useRef(0);
+  const stateRef = useRef<SearchState>("idle");
+  const searchIdRef = useRef("");
+  const querySourceRef = useRef("typed");
 
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
@@ -101,6 +114,20 @@ export function MelodyMindSearch() {
   const [results, setResults] = useState<SongResult[]>([]);
   const [error, setError] = useState("");
   const [busySeconds, setBusySeconds] = useState(0);
+  const [searchId, setSearchId] = useState("");
+  const [resultsShownAt, setResultsShownAt] = useState(0);
+  const [feedback, setFeedback] = useState<Feedback>("");
+
+  const trackClientEvent = (event: string, data: Record<string, unknown>) => {
+    const endpoint = apiUrl("analytics/event");
+    if (!endpoint) return;
+    void fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ event, path: window.location.pathname, data }),
+      keepalive: true
+    }).catch(() => undefined);
+  };
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -150,6 +177,29 @@ export function MelodyMindSearch() {
   }, [state, results]);
 
   useEffect(() => () => requestRef.current?.abort(), []);
+
+  useEffect(() => {
+    stateRef.current = state;
+  }, [state]);
+
+  useEffect(() => {
+    searchIdRef.current = searchId;
+  }, [searchId]);
+
+  useEffect(() => {
+    const onPageHide = () => {
+      const currentState = stateRef.current;
+      const currentSearchId = searchIdRef.current;
+      if (!currentSearchId || !["thinking", "probe", "searching"].includes(currentState)) return;
+      trackClientEvent("melodymind_abandon", {
+        search_id: currentSearchId,
+        stage: currentState,
+        elapsed_ms: startedAtRef.current ? Date.now() - startedAtRef.current : 0
+      });
+    };
+    window.addEventListener("pagehide", onPageHide);
+    return () => window.removeEventListener("pagehide", onPageHide);
+  }, []);
 
   useEffect(() => {
     const busy = state === "thinking" || state === "searching";
@@ -205,6 +255,14 @@ export function MelodyMindSearch() {
 
   const beginAgain = () => {
     requestRef.current?.abort();
+    if (searchId) {
+      trackClientEvent("melodymind_restart", {
+        search_id: searchId,
+        stage: state,
+        elapsed_ms: startedAtRef.current ? Date.now() - startedAtRef.current : 0
+      });
+      previousSearchIdRef.current = searchId;
+    }
     setQuery("");
     setSubmittedQuery("");
     setClarification("");
@@ -213,6 +271,12 @@ export function MelodyMindSearch() {
     setAgentMessage("");
     setResults([]);
     setError("");
+    setSearchId("");
+    setResultsShownAt(0);
+    setFeedback("");
+    probeShownAtRef.current = 0;
+    startedAtRef.current = 0;
+    querySourceRef.current = "typed";
     setState("idle");
     window.requestAnimationFrame(() => {
       resizeInitialTextarea();
@@ -221,25 +285,35 @@ export function MelodyMindSearch() {
   };
 
   const showProbe = (payload: ProbeResponse) => {
+    probeShownAtRef.current = Date.now();
     setProbeQuestion(payload.message);
     setConversationToken(payload.conversation_token?.trim() || "");
     setClarification("");
     setState("probe");
   };
 
-  const showResults = (payload: ResultsResponse) => {
+  const showResults = (payload: ResultsResponse, currentSearchId: string) => {
+    const shownAt = Date.now();
     setAgentMessage(
       payload.message?.trim() || "These are the closest matches I found for what you described."
     );
     setResults(Array.isArray(payload.results) ? payload.results : []);
+    setResultsShownAt(shownAt);
     setState("success");
+    trackClientEvent("melodymind_results_rendered", {
+      search_id: currentSearchId,
+      total: Array.isArray(payload.results) ? payload.results.length : 0,
+      time_to_results_ms: startedAtRef.current ? shownAt - startedAtRef.current : 0
+    });
   };
 
   const runLegacyOneShot = async (
     searchEndpoint: string,
     cleanQuery: string,
     cleanClarification: string,
-    controller: AbortController
+    controller: AbortController,
+    analytics: Record<string, unknown>,
+    currentSearchId: string
   ) => {
     const response = await fetch(searchEndpoint, {
       method: "POST",
@@ -247,6 +321,7 @@ export function MelodyMindSearch() {
       body: JSON.stringify({
         query: cleanQuery,
         limit: 10,
+        analytics,
         ...(cleanClarification ? { clarification: cleanClarification } : {})
       }),
       signal: controller.signal
@@ -257,7 +332,7 @@ export function MelodyMindSearch() {
       showProbe(payload);
       return;
     }
-    showResults(payload);
+    showResults(payload, currentSearchId);
   };
 
   const submit = async (event?: FormEvent<HTMLFormElement>) => {
@@ -284,25 +359,43 @@ export function MelodyMindSearch() {
     const controller = new AbortController();
     requestRef.current = controller;
 
+    let currentSearchId = searchId;
     if (!answeringProbe) {
+      currentSearchId = newSearchId();
+      attemptRef.current += 1;
+      startedAtRef.current = Date.now();
+      setSearchId(currentSearchId);
+      searchIdRef.current = currentSearchId;
       setSubmittedQuery(cleanQuery);
       setProbeQuestion("");
       setConversationToken("");
       setClarification("");
+      setFeedback("");
+      setResultsShownAt(0);
     }
+
+    const analytics: Record<string, unknown> = {
+      search_id: currentSearchId,
+      previous_search_id: previousSearchIdRef.current,
+      attempt_index: attemptRef.current,
+      query_source: querySourceRef.current,
+      client_started_at_ms: startedAtRef.current
+    };
+    if (answeringProbe && probeShownAtRef.current) {
+      analytics.probe_response_ms = Date.now() - probeShownAtRef.current;
+    }
+
     setAgentMessage("");
     setResults([]);
     setError("");
-
-    // This state is only the agent decision/planning phase. Catalogue retrieval
-    // cannot begin until the backend explicitly returns search_ready.
     setState("thinking");
 
     try {
       const planBody = answeringProbe && conversationToken
-        ? { conversation_token: conversationToken, message: cleanClarification }
+        ? { conversation_token: conversationToken, message: cleanClarification, analytics }
         : {
             query: cleanQuery,
+            analytics,
             ...(answeringProbe ? { clarification: cleanClarification } : {})
           };
       const planResponse = await fetch(planEndpoint, {
@@ -312,14 +405,14 @@ export function MelodyMindSearch() {
         signal: controller.signal
       });
 
-      // During rollout an older Worker may not have /api/plan yet. Stay in the
-      // neutral planning state and use its one-shot route without claiming search.
       if (planResponse.status === 404) {
         await runLegacyOneShot(
           searchEndpoint,
           cleanQuery,
           cleanClarification,
-          controller
+          controller,
+          analytics,
+          currentSearchId
         );
         return;
       }
@@ -336,19 +429,18 @@ export function MelodyMindSearch() {
         throw new Error("Invalid MelodyMind plan response");
       }
 
-      // Only a real search_ready response may transition into retrieval.
       setState("searching");
       const searchResponse = await fetch(searchEndpoint, {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ plan_token: plan.plan_token, limit: 10 }),
+        body: JSON.stringify({ plan_token: plan.plan_token, limit: 10, analytics }),
         signal: controller.signal
       });
       if (!searchResponse.ok) {
         throw new Error(`Search failed with status ${searchResponse.status}`);
       }
       const resultsPayload = await searchResponse.json() as ResultsResponse;
-      showResults(resultsPayload);
+      showResults(resultsPayload, currentSearchId);
     } catch (reason) {
       if (reason instanceof DOMException && reason.name === "AbortError") return;
       setError("I couldn’t complete that search. Try again in a moment.");
@@ -356,6 +448,16 @@ export function MelodyMindSearch() {
     } finally {
       if (requestRef.current === controller) requestRef.current = null;
     }
+  };
+
+  const sendFeedback = (value: Exclude<Feedback, "">) => {
+    if (!searchId || feedback) return;
+    setFeedback(value);
+    trackClientEvent("melodymind_feedback", {
+      search_id: searchId,
+      value,
+      since_results_ms: resultsShownAt ? Date.now() - resultsShownAt : 0
+    });
   };
 
   const handleInitialKey = (event: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -378,7 +480,13 @@ export function MelodyMindSearch() {
     : "Understanding your request…";
 
   return (
-    <section ref={rootRef} className="mm-product" aria-label="MelodyMind search">
+    <section
+      ref={rootRef}
+      className="mm-product"
+      aria-label="MelodyMind search"
+      data-search-id={searchId || undefined}
+      data-results-shown-at={resultsShownAt || undefined}
+    >
       <div className="mm-console" data-state={state}>
         <header className="mm-console__topbar">
           <div className="mm-wordmark" aria-label="MelodyMind">
@@ -421,6 +529,7 @@ export function MelodyMindSearch() {
                 rows={6}
                 placeholder="A sad song about losing a friend feels different from a sad song about a breakup. Tell MelodyMind what actually happened."
                 onChange={(event) => {
+                  querySourceRef.current = "typed";
                   setQuery(event.target.value);
                   resizeInitialTextarea();
                 }}
@@ -443,7 +552,12 @@ export function MelodyMindSearch() {
                       type="button"
                       key={example}
                       onClick={() => {
+                        querySourceRef.current = `example_${index + 1}`;
                         setQuery(example);
+                        trackClientEvent("melodymind_example_selected", {
+                          example_index: index + 1,
+                          example
+                        });
                         window.requestAnimationFrame(() => {
                           resizeInitialTextarea();
                           initialTextareaRef.current?.focus();
@@ -524,31 +638,42 @@ export function MelodyMindSearch() {
                       </header>
 
                       {results.length > 0 ? (
-                        <ol className="mm-result-list" aria-label="Matching tracks">
-                          {results.map((song, index) => (
-                            <li className="mm-result" key={song.track_id}>
-                              <span className="mm-result__number lv-mono">{String(index + 1).padStart(2, "0")}</span>
-                              <ResultArtwork song={song} />
-                              <span className="mm-result__track">
-                                <strong>{song.title}</strong>
-                                <small>{song.artist}</small>
-                              </span>
-                              <span className="mm-result__album">{song.album || "—"}</span>
-                              {song.spotify_id ? (
-                                <a
-                                  className="mm-result__open"
-                                  href={spotifyUrl(song)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  aria-label={`Open ${song.title} on Spotify`}
-                                  title="Open on Spotify"
-                                >
-                                  <ExternalLink aria-hidden="true" />
-                                </a>
-                              ) : <span />}
-                            </li>
-                          ))}
-                        </ol>
+                        <>
+                          <ol className="mm-result-list" aria-label="Matching tracks">
+                            {results.map((song, index) => (
+                              <li className="mm-result" key={song.track_id}>
+                                <span className="mm-result__number lv-mono">{String(index + 1).padStart(2, "0")}</span>
+                                <ResultArtwork song={song} />
+                                <span className="mm-result__track">
+                                  <strong>{song.title}</strong>
+                                  <small>{song.artist}</small>
+                                </span>
+                                <span className="mm-result__album">{song.album || "—"}</span>
+                                {song.spotify_id ? (
+                                  <a
+                                    className="mm-result__open"
+                                    href={spotifyUrl(song)}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                    aria-label={`Open ${song.title} on Spotify`}
+                                    title="Open on Spotify"
+                                  >
+                                    <ExternalLink aria-hidden="true" />
+                                  </a>
+                                ) : <span />}
+                              </li>
+                            ))}
+                          </ol>
+                          <div className="mm-feedback" aria-label="Recommendation feedback">
+                            <span>{feedback ? "Thanks — that helps." : "Did this hit?"}</span>
+                            {!feedback && (
+                              <div>
+                                <button type="button" onClick={() => sendFeedback("hit")}>Yeah</button>
+                                <button type="button" onClick={() => sendFeedback("miss")}>Not really</button>
+                              </div>
+                            )}
+                          </div>
+                        </>
                       ) : (
                         <div className="mm-no-results">
                           <p>No songs came back for this wording.</p>
