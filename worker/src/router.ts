@@ -1,6 +1,9 @@
 import { createSpotifyClient, type SpotifyClient, type SpotifyEnv } from "./spotify";
 import {
+  executeCataloguePlan,
+  planCatalogue,
   searchCatalogue,
+  type CatalogueResultsResponse,
   type MelodyMindEnv
 } from "./melodymind";
 
@@ -64,6 +67,73 @@ function json(
   return new Response(JSON.stringify(body), { status, headers });
 }
 
+async function requestBody(request: Request): Promise<Record<string, unknown>> {
+  const raw = await request.text();
+  if (raw.length > 12_000) throw new Error("request_too_large");
+  const parsed = JSON.parse(raw) as unknown;
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+    throw new Error("invalid_json");
+  }
+  return parsed as Record<string, unknown>;
+}
+
+function readQuery(body: Record<string, unknown>): string {
+  const query = typeof body.query === "string" ? body.query.trim() : "";
+  if (query.length < 4 || query.length > 500) throw new Error("invalid_query");
+  return query;
+}
+
+function readClarification(body: Record<string, unknown>): string | undefined {
+  if (body.clarification === undefined || body.clarification === null) return undefined;
+  if (typeof body.clarification !== "string") throw new Error("invalid_clarification");
+  const clarification = body.clarification.trim();
+  if (!clarification || clarification.length > 500) throw new Error("invalid_clarification");
+  return clarification;
+}
+
+function readLimit(body: Record<string, unknown>): number {
+  if (body.limit === undefined) return 10;
+  if (!Number.isInteger(body.limit) || Number(body.limit) < 1 || Number(body.limit) > 20) {
+    throw new Error("invalid_limit");
+  }
+  return Number(body.limit);
+}
+
+async function enrichCatalogue(
+  catalogue: CatalogueResultsResponse,
+  env: WorkerEnv,
+  spotify: SpotifyClient
+) {
+  const tracks = await spotify.getTracks(
+    catalogue.results.map((result) => result.spotifyId)
+  );
+  const byId = new Map(
+    tracks.flatMap((track) => track ? [[track.id, track] as const] : [])
+  );
+  const results = catalogue.results.map((result) => {
+    const track = byId.get(result.spotifyId);
+    return {
+      track_id: result.trackId,
+      spotify_id: result.spotifyId,
+      title: track?.name ?? result.title,
+      artist: track?.artists.map((artist) => artist.name).join(", ") ?? result.artist,
+      album: track?.album.name ?? result.album,
+      artwork: track?.album.images[0]?.url ?? null,
+      spotify_url: track?.url ?? "https://open.spotify.com/track/" + result.spotifyId,
+      duration_ms: track?.durationMs ?? null,
+      explicit: track?.explicit ?? null,
+      score: result.score
+    };
+  });
+  return {
+    type: "results" as const,
+    query: catalogue.query,
+    message: catalogue.message,
+    results,
+    total: results.length
+  };
+}
+
 export function createRouter(deps: RouterDeps = {}) {
   let activeEnv: WorkerEnv | null = null;
   let activeClient: SpotifyClient | null = null;
@@ -84,6 +154,7 @@ export function createRouter(deps: RouterDeps = {}) {
     const originHeader = request.headers.get("Origin");
     const origin = allowedOrigin(originHeader, env.ALLOWED_ORIGIN);
     const isHealth = url.pathname === "/health";
+    const isPlan = url.pathname === "/api/plan";
     const isSearch = url.pathname === "/api/search";
 
     if (request.method === "OPTIONS") {
@@ -94,90 +165,85 @@ export function createRouter(deps: RouterDeps = {}) {
     if (isHealth) return json({ status: "ok" }, 200, origin);
     if (!origin) return json({ error: "forbidden" }, 403, null);
 
-    if (isSearch) {
+    if (isPlan) {
       if (request.method !== "POST") {
         return json({ error: "method_not_allowed" }, 405, origin);
       }
-      let query = "";
-      let clarification: string | undefined;
-      let limit = 10;
       try {
-        const raw = await request.text();
-        if (raw.length > 3_072) return json({ error: "request_too_large" }, 413, origin);
-        const body = JSON.parse(raw) as Record<string, unknown>;
-        query = typeof body.query === "string" ? body.query.trim() : "";
-        if (query.length < 4 || query.length > 500) {
-          return json({ error: "invalid_query" }, 400, origin);
-        }
-        if (body.clarification !== undefined && body.clarification !== null) {
-          if (typeof body.clarification !== "string") {
-            return json({ error: "invalid_clarification" }, 400, origin);
-          }
-          clarification = body.clarification.trim();
-          if (!clarification || clarification.length > 500) {
-            return json({ error: "invalid_clarification" }, 400, origin);
-          }
-        }
-        if (body.limit !== undefined) {
-          if (!Number.isInteger(body.limit) || Number(body.limit) < 1 || Number(body.limit) > 20) {
-            return json({ error: "invalid_limit" }, 400, origin);
-          }
-          limit = Number(body.limit);
-        }
-      } catch {
-        return json({ error: "invalid_json" }, 400, origin);
-      }
-
-      try {
-        const catalogue = await searchCatalogue(
-          query,
-          limit,
-          env,
-          deps.fetchImpl,
-          clarification
-        );
-        if (catalogue.type === "probe") {
+        const body = await requestBody(request);
+        const query = readQuery(body);
+        const clarification = readClarification(body);
+        const plan = await planCatalogue(query, env, deps.fetchImpl, clarification);
+        if (plan.type === "probe") {
           return json(
-            { type: "probe", query: catalogue.query, message: catalogue.message },
+            { type: "probe", query: plan.query, message: plan.message },
             200,
             origin
           );
         }
-
-        const spotify = client(env);
-        const tracks = await spotify.getTracks(
-          catalogue.results.map((result) => result.spotifyId)
-        );
-        const byId = new Map(
-          tracks.flatMap((track) => track ? [[track.id, track] as const] : [])
-        );
-        const results = catalogue.results.map((result) => {
-          const track = byId.get(result.spotifyId);
-          return {
-            track_id: result.trackId,
-            spotify_id: result.spotifyId,
-            title: track?.name ?? result.title,
-            artist: track?.artists.map((artist) => artist.name).join(", ") ?? result.artist,
-            album: track?.album.name ?? result.album,
-            artwork: track?.album.images[0]?.url ?? null,
-            spotify_url: track?.url ?? "https://open.spotify.com/track/" + result.spotifyId,
-            duration_ms: track?.durationMs ?? null,
-            explicit: track?.explicit ?? null,
-            score: result.score
-          };
-        });
         return json(
           {
-            type: "results",
-            query: catalogue.query,
-            message: catalogue.message,
-            results,
-            total: results.length
+            type: "search_ready",
+            query: plan.query,
+            message: plan.message,
+            plan_token: plan.planToken
           },
           200,
           origin
         );
-      } catch {
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (message === "request_too_large") return json({ error: message }, 413, origin);
+        if (message.startsWith("invalid_")) return json({ error: message }, 400, origin);
+        return json({ error: "plan_unavailable" }, 502, origin);
+      }
+    }
+
+    if (isSearch) {
+      if (request.method !== "POST") {
+        return json({ error: "method_not_allowed" }, 405, origin);
+      }
+      try {
+        const body = await requestBody(request);
+        const limit = readLimit(body);
+        let catalogue: CatalogueResultsResponse;
+
+        if (typeof body.plan_token === "string" && body.plan_token.trim()) {
+          const planToken = body.plan_token.trim();
+          if (planToken.length > 8192) return json({ error: "invalid_plan" }, 400, origin);
+          catalogue = await executeCataloguePlan(
+            planToken,
+            limit,
+            env,
+            deps.fetchImpl
+          );
+        } else {
+          // Backward-compatible one-shot mode for older Pages builds.
+          const query = readQuery(body);
+          const clarification = readClarification(body);
+          const legacy = await searchCatalogue(
+            query,
+            limit,
+            env,
+            deps.fetchImpl,
+            clarification
+          );
+          if (legacy.type === "probe") {
+            return json(
+              { type: "probe", query: legacy.query, message: legacy.message },
+              200,
+              origin
+            );
+          }
+          catalogue = legacy;
+        }
+
+        const enriched = await enrichCatalogue(catalogue, env, client(env));
+        return json(enriched, 200, origin);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (message === "request_too_large") return json({ error: message }, 413, origin);
+        if (message.startsWith("invalid_")) return json({ error: message }, 400, origin);
         return json({ error: "search_unavailable" }, 502, origin);
       }
     }
