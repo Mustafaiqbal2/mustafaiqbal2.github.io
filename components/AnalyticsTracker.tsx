@@ -7,7 +7,9 @@ const API_BASE = process.env.NEXT_PUBLIC_MUSIC_API_URL?.replace(/\/$/, "");
 const VISITOR_KEY = "portfolio_visitor_id";
 const SESSION_KEY = "portfolio_session_id";
 const SESSION_LAST_KEY = "portfolio_session_last";
+const OWNER_KEY = "portfolio_analytics_owner";
 const SESSION_TIMEOUT_MS = 30 * 60 * 1000;
+const OBVIOUS_BOT_RE = /(?:googlebot|bingbot|duckduckbot|yandexbot|baiduspider|slurp|facebookexternalhit|facebot|twitterbot|linkedinbot|slackbot|discordbot|telegrambot|applebot|crawler|spider)/i;
 
 type Identity = { visitorId: string; sessionId: string };
 
@@ -22,8 +24,44 @@ function uuid(): string {
   return `${Date.now().toString(36)}_${Math.random().toString(36).slice(2)}_${Math.random().toString(36).slice(2)}`;
 }
 
+function isObviousBot(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return OBVIOUS_BOT_RE.test(navigator.userAgent || "");
+}
+
+function analyticsOptedOut(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    const params = new URLSearchParams(window.location.search);
+    const ownerMarker = params.get("analytics_owner");
+
+    if (ownerMarker === "1" || ownerMarker === "0") {
+      if (ownerMarker === "1") {
+        window.localStorage.setItem(OWNER_KEY, "1");
+      } else {
+        window.localStorage.removeItem(OWNER_KEY);
+      }
+
+      // Reset any old analytics identity when toggling owner mode so an owner
+      // browser cannot later be stitched back onto its pre-opt-out sessions.
+      window.localStorage.removeItem(VISITOR_KEY);
+      window.localStorage.removeItem(SESSION_KEY);
+      window.localStorage.removeItem(SESSION_LAST_KEY);
+
+      params.delete("analytics_owner");
+      const search = params.toString();
+      const cleanUrl = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
+      window.history.replaceState(window.history.state, "", cleanUrl);
+    }
+
+    return window.localStorage.getItem(OWNER_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
 function getIdentity(): Identity | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined" || isObviousBot() || analyticsOptedOut()) return null;
   try {
     let visitorId = window.localStorage.getItem(VISITOR_KEY) || "";
     if (!visitorId) {
