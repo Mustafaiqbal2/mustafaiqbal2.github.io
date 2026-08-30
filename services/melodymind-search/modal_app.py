@@ -24,7 +24,11 @@ image = modal.Image.from_dockerfile(
 app = modal.App("melodymind-search")
 service_secret = modal.Secret.from_name(
     "melodymind-search",
-    required_keys=["PINECONE_API_KEY", "MELODYMIND_SERVICE_TOKEN", "OPENAI_API_KEY"],
+    required_keys=["PINECONE_API_KEY", "MELODYMIND_SERVICE_TOKEN"],
+)
+openai_secret = modal.Secret.from_name(
+    "melodymind-openai",
+    required_keys=["OPENAI_API_KEY"],
 )
 
 
@@ -160,7 +164,7 @@ def install_telemetry(search_main) -> None:
 
 @app.function(
     image=image,
-    secrets=[service_secret],
+    secrets=[service_secret, openai_secret],
     cpu=2.0,
     memory=(2048, 6144),
     max_containers=5,
