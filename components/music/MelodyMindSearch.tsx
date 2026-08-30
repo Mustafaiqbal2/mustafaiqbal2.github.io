@@ -42,6 +42,18 @@ function spotifyUrl(song: SongResult): string {
   return song.spotify_url || `https://open.spotify.com/track/${song.spotify_id}`;
 }
 
+function ResultArtwork({ song }: { song: SongResult }) {
+  return (
+    <span className="mm-result__art" aria-hidden="true">
+      {song.artwork ? (
+        <img src={song.artwork} alt="" loading="lazy" decoding="async" />
+      ) : (
+        <span className="mm-result__art-fallback">—</span>
+      )}
+    </span>
+  );
+}
+
 export function MelodyMindSearch() {
   const rootRef = useRef<HTMLElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -297,18 +309,29 @@ export function MelodyMindSearch() {
               </header>
 
               {results.length > 0 ? (
-                <ol className="mm-result-list">
+                <ol
+                  className="mm-result-list"
+                  tabIndex={0}
+                  data-lenis-prevent
+                  data-lenis-prevent-wheel
+                  aria-label="Matching tracks"
+                >
                   {results.map((song, index) => (
                     <li className="mm-result" key={song.track_id}>
                       <span className="mm-result__number lv-mono">{String(index + 1).padStart(2, "0")}</span>
-                      <span className="mm-result__record" aria-hidden="true"><i /></span>
+                      <ResultArtwork song={song} />
                       <span className="mm-result__track">
                         <strong>{song.title}</strong>
                         <small>{song.artist}</small>
                       </span>
                       <span className="mm-result__album">{song.album || "—"}</span>
                       {song.spotify_id ? (
-                        <a href={spotifyUrl(song)} target="_blank" rel="noreferrer" aria-label={`Open ${song.title} on Spotify`}>
+                        <a
+                          href={spotifyUrl(song)}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Open ${song.title} on Spotify`}
+                        >
                           <ExternalLink aria-hidden="true" />
                         </a>
                       ) : <span />}

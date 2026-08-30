@@ -646,3 +646,152 @@
     animation: none;
   }
 }
+.mm-results-panel {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+  padding: clamp(28px, 3.8vw, 50px);
+  background: var(--mm-panel);
+}
+
+.mm-results-panel > header {
+  display: flex;
+  flex: 0 0 auto;
+  min-height: 64px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  border-bottom: 1px solid var(--mm-line);
+}
+
+.mm-results-panel > header > div {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+.mm-result-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  margin: 0;
+  padding: 0 6px 0 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  list-style: none;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(241, 239, 231, 0.24) transparent;
+}
+
+.mm-result-list::-webkit-scrollbar {
+  width: 8px;
+}
+
+.mm-result-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.mm-result-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(241, 239, 231, 0.24);
+}
+
+.mm-result {
+  display: grid;
+  grid-template-columns: 35px 54px minmax(180px, 1.15fr) minmax(140px, 0.85fr) 32px;
+  min-height: 76px;
+  align-items: center;
+  gap: 14px;
+  border-bottom: 1px solid var(--mm-line);
+}
+
+.mm-result__number {
+  color: #74736f;
+  font-size: 9px;
+}
+
+.mm-result__art {
+  display: block;
+  width: 54px;
+  height: 54px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: #222220;
+}
+
+.mm-result__art img,
+.mm-result__art-fallback {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mm-result__art img {
+  object-fit: cover;
+}
+
+.mm-result__art-fallback {
+  display: grid;
+  place-items: center;
+  color: rgba(241, 239, 231, 0.55);
+  font: 700 12px/1 var(--font-sans), sans-serif;
+  background: #222220;
+}
+
+.mm-result__track {
+  min-width: 0;
+}
+
+.mm-result__track strong {
+  display: block;
+  overflow: hidden;
+  color: var(--mm-paper);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mm-result__track small {
+  display: block;
+  overflow: hidden;
+  margin-top: 4px;
+  color: #a19f99;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mm-result__album {
+  overflow: hidden;
+  color: #8e8c86;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mm-result a {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  justify-self: end;
+  color: var(--mm-paper);
+  opacity: 0.7;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.mm-result a:hover {
+  opacity: 1;
+  transform: translateY(-1px);
+}
+
+@media (max-height: 790px) and (min-width: 1024px) {
+  .mm-result {
+    grid-template-columns: 30px 46px minmax(160px, 1.2fr) minmax(120px, 0.8fr) 28px;
+    min-height: 64px;
+    gap: 12px;
+  }
+
+  .mm-result__art {
+    width: 46px;
+    height: 46px;
+  }
+}
