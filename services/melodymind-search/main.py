@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 import asyncio
+import base64
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
+import hashlib
+import hmac
 import json
 import os
 from pathlib import Path
@@ -70,6 +73,16 @@ class SearchRequest(BaseModel):
     limit: int = Field(default=10, ge=1, le=20)
 
 
+class PlanRequest(BaseModel):
+    query: str = Field(min_length=4, max_length=500)
+    clarification: str | None = Field(default=None, max_length=500)
+
+
+class ExecuteRequest(BaseModel):
+    plan_token: str = Field(min_length=16, max_length=8192)
+    limit: int = Field(default=10, ge=1, le=20)
+
+
 class SearchMatch(BaseModel):
     track_id: str
     spotify_id: str
@@ -83,6 +96,14 @@ class ProbeResponse(BaseModel):
     type: str = "probe"
     query: str
     message: str
+    model: str
+
+
+class SearchReadyResponse(BaseModel):
+    type: str = "search_ready"
+    query: str
+    message: str = ""
+    plan_token: str
     model: str
 
 
@@ -314,6 +335,66 @@ def _combined_request(query: str, clarification: str | None) -> str:
     return query.strip() + "\n" + clarification.strip()
 
 
+def _b64encode(value: bytes) -> str:
+    return base64.urlsafe_b64encode(value).decode("ascii").rstrip("=")
+
+
+def _b64decode(value: str) -> bytes:
+    return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
+
+
+def _sign_plan(current: Runtime, payload: dict[str, Any]) -> str:
+    encoded = _b64encode(
+        json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
+    )
+    signature = hmac.new(
+        current.settings.service_token.encode("utf-8"),
+        encoded.encode("ascii"),
+        hashlib.sha256,
+    ).digest()
+    return encoded + "." + _b64encode(signature)
+
+
+def _read_plan(current: Runtime, token: str) -> dict[str, Any]:
+    try:
+        encoded, signature_text = token.split(".", 1)
+        supplied = _b64decode(signature_text)
+        expected = hmac.new(
+            current.settings.service_token.encode("utf-8"),
+            encoded.encode("ascii"),
+            hashlib.sha256,
+        ).digest()
+        if not hmac.compare_digest(supplied, expected):
+            raise ValueError("bad signature")
+        payload = json.loads(_b64decode(encoded).decode("utf-8"))
+        if not isinstance(payload, dict) or payload.get("v") != 1:
+            raise ValueError("bad payload")
+        issued_at = int(payload.get("iat", 0))
+        now = int(time.time())
+        if issued_at <= 0 or issued_at > now + 30 or now - issued_at > 900:
+            raise ValueError("expired plan")
+        query = payload.get("q")
+        search_text = payload.get("s")
+        paraphrases = payload.get("p")
+        message = payload.get("m", "")
+        if not isinstance(query, str) or not 4 <= len(query) <= 500:
+            raise ValueError("bad query")
+        if not isinstance(search_text, str) or not 4 <= len(search_text) <= 1100:
+            raise ValueError("bad search text")
+        if not isinstance(paraphrases, list) or len(paraphrases) > 3:
+            raise ValueError("bad paraphrases")
+        if not all(isinstance(item, str) and 4 <= len(item) <= 1100 for item in paraphrases):
+            raise ValueError("bad paraphrase")
+        if not isinstance(message, str) or len(message) > 1000:
+            raise ValueError("bad message")
+        return payload
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired search plan",
+        ) from exc
+
+
 def _rrf_fuse(result_sets: list[list[SearchMatch]], limit: int) -> list[SearchMatch]:
     """Fuse independent retrieval views using standard reciprocal-rank fusion."""
     if not result_sets:
@@ -412,6 +493,28 @@ async def _retrieve(
     return results[:limit], len(queries)
 
 
+async def _plan(
+    current: Runtime,
+    query: str,
+    clarification: str | None,
+):
+    started = time.perf_counter()
+    decision = await current.agent.plan(query=query, clarification=clarification)
+    print(
+        "MELODYMIND_PLAN "
+        + json.dumps(
+            {
+                "action": decision.action,
+                "plan_ms": round((time.perf_counter() - started) * 1000),
+                "paraphrases": len(decision.paraphrases),
+                "has_clarification": bool(clarification),
+            }
+        ),
+        flush=True,
+    )
+    return decision
+
+
 @app.get("/health")
 async def health() -> dict[str, object]:
     current = active_runtime()
@@ -426,6 +529,71 @@ async def health() -> dict[str, object]:
 
 
 @app.post(
+    "/internal/plan",
+    response_model=ProbeResponse | SearchReadyResponse,
+)
+async def plan_search(
+    request: PlanRequest,
+    authorization: Annotated[str | None, Header()] = None,
+) -> ProbeResponse | SearchReadyResponse:
+    authorize(authorization)
+    current = active_runtime()
+    query = request.query.strip()
+    clarification = request.clarification.strip() if request.clarification else None
+    decision = await _plan(current, query, clarification)
+
+    if decision.action == "probe" and not clarification:
+        return ProbeResponse(
+            query=query,
+            message=decision.message,
+            model=current.settings.model_version,
+        )
+
+    search_text = _combined_request(query, clarification)
+    plan_token = _sign_plan(
+        current,
+        {
+            "v": 1,
+            "q": query,
+            "s": search_text,
+            "p": decision.paraphrases[:3],
+            "m": decision.message,
+            "iat": int(time.time()),
+        },
+    )
+    return SearchReadyResponse(
+        query=query,
+        message=decision.message,
+        plan_token=plan_token,
+        model=current.settings.model_version,
+    )
+
+
+@app.post("/internal/execute", response_model=SearchResponse)
+async def execute_search(
+    request: ExecuteRequest,
+    authorization: Annotated[str | None, Header()] = None,
+) -> SearchResponse:
+    authorize(authorization)
+    current = active_runtime()
+    payload = _read_plan(current, request.plan_token)
+    results, query_count = await _retrieve(
+        current=current,
+        search_text=str(payload["s"]),
+        paraphrases=list(payload["p"]),
+        limit=request.limit,
+    )
+    return SearchResponse(
+        query=str(payload["q"]),
+        message=str(payload.get("m", "")),
+        results=results,
+        total=len(results),
+        model=current.settings.model_version,
+        retrieval_queries=query_count,
+    )
+
+
+@app.post(
     "/internal/search",
     response_model=ProbeResponse | SearchResponse,
 )
@@ -433,31 +601,12 @@ async def search(
     request: SearchRequest,
     authorization: Annotated[str | None, Header()] = None,
 ) -> ProbeResponse | SearchResponse:
+    """Backward-compatible one-shot endpoint for older Worker deployments."""
     authorize(authorization)
     current = active_runtime()
     query = request.query.strip()
     clarification = request.clarification.strip() if request.clarification else None
-    if len(query) < 4:
-        raise HTTPException(
-            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
-            detail="Query is too short",
-        )
-
-    plan_started = time.perf_counter()
-    decision = await current.agent.plan(query=query, clarification=clarification)
-    plan_ms = round((time.perf_counter() - plan_started) * 1000)
-    print(
-        "MELODYMIND_PLAN "
-        + json.dumps(
-            {
-                "action": decision.action,
-                "plan_ms": plan_ms,
-                "paraphrases": len(decision.paraphrases),
-                "has_clarification": bool(clarification),
-            }
-        ),
-        flush=True,
-    )
+    decision = await _plan(current, query, clarification)
 
     if decision.action == "probe" and not clarification:
         return ProbeResponse(
