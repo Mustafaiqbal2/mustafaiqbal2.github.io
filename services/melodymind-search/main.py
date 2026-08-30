@@ -5,7 +5,7 @@ from __future__ import annotations
 import asyncio
 import base64
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import hmac
 import json
@@ -68,14 +68,20 @@ class Settings:
 
 
 class SearchRequest(BaseModel):
+    """Backward-compatible one-shot request used during Worker rollouts."""
+
     query: str = Field(min_length=4, max_length=500)
     clarification: str | None = Field(default=None, max_length=500)
     limit: int = Field(default=10, ge=1, le=20)
 
 
 class PlanRequest(BaseModel):
-    query: str = Field(min_length=4, max_length=500)
+    """Initial planning request or a continuation of one signed probe."""
+
+    query: str | None = Field(default=None, max_length=500)
     clarification: str | None = Field(default=None, max_length=500)
+    conversation_token: str | None = Field(default=None, max_length=8192)
+    message: str | None = Field(default=None, max_length=500)
 
 
 class ExecuteRequest(BaseModel):
@@ -96,6 +102,7 @@ class ProbeResponse(BaseModel):
     type: str = "probe"
     query: str
     message: str
+    conversation_token: str = ""
     model: str
 
 
@@ -115,6 +122,23 @@ class SearchResponse(BaseModel):
     total: int
     model: str
     retrieval_queries: int
+
+
+@dataclass(frozen=True)
+class QueryView:
+    label: str
+    text: str
+    weight: float
+
+
+@dataclass
+class FusedCandidate:
+    match: SearchMatch
+    rrf_score: float
+    source_ranks: dict[str, int] = field(default_factory=dict)
+    fused_rank: int = 0
+    judgment: str = "unknown"
+    final_rank: int = 0
 
 
 class Clamp3TextEncoder:
@@ -329,12 +353,6 @@ def authorize(authorization: str | None) -> None:
         )
 
 
-def _combined_request(query: str, clarification: str | None) -> str:
-    if not clarification:
-        return query.strip()
-    return query.strip() + "\n" + clarification.strip()
-
-
 def _b64encode(value: bytes) -> str:
     return base64.urlsafe_b64encode(value).decode("ascii").rstrip("=")
 
@@ -343,7 +361,7 @@ def _b64decode(value: str) -> bytes:
     return base64.urlsafe_b64decode(value + "=" * (-len(value) % 4))
 
 
-def _sign_plan(current: Runtime, payload: dict[str, Any]) -> str:
+def _sign_token(current: Runtime, payload: dict[str, Any]) -> str:
     encoded = _b64encode(
         json.dumps(payload, separators=(",", ":"), ensure_ascii=False).encode("utf-8")
     )
@@ -355,7 +373,7 @@ def _sign_plan(current: Runtime, payload: dict[str, Any]) -> str:
     return encoded + "." + _b64encode(signature)
 
 
-def _read_plan(current: Runtime, token: str) -> dict[str, Any]:
+def _read_token(current: Runtime, token: str, max_age_seconds: int = 900) -> dict[str, Any]:
     try:
         encoded, signature_text = token.split(".", 1)
         supplied = _b64decode(signature_text)
@@ -367,27 +385,93 @@ def _read_plan(current: Runtime, token: str) -> dict[str, Any]:
         if not hmac.compare_digest(supplied, expected):
             raise ValueError("bad signature")
         payload = json.loads(_b64decode(encoded).decode("utf-8"))
-        if not isinstance(payload, dict) or payload.get("v") != 1:
+        if not isinstance(payload, dict):
             raise ValueError("bad payload")
         issued_at = int(payload.get("iat", 0))
         now = int(time.time())
-        if issued_at <= 0 or issued_at > now + 30 or now - issued_at > 900:
-            raise ValueError("expired plan")
-        query = payload.get("q")
-        search_text = payload.get("s")
-        paraphrases = payload.get("p")
-        message = payload.get("m", "")
-        if not isinstance(query, str) or not 4 <= len(query) <= 500:
-            raise ValueError("bad query")
-        if not isinstance(search_text, str) or not 4 <= len(search_text) <= 1100:
+        if issued_at <= 0 or issued_at > now + 30 or now - issued_at > max_age_seconds:
+            raise ValueError("expired token")
+        return payload
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired MelodyMind token",
+        ) from exc
+
+
+def _validate_history(value: object) -> list[dict[str, str]]:
+    if not isinstance(value, list) or not 1 <= len(value) <= 6:
+        raise ValueError("bad history")
+    history: list[dict[str, str]] = []
+    for item in value:
+        if not isinstance(item, dict):
+            raise ValueError("bad history item")
+        role = item.get("role")
+        content = item.get("content")
+        if role not in {"user", "assistant"} or not isinstance(content, str):
+            raise ValueError("bad history item")
+        content = content.strip()
+        if not content or len(content) > 1000:
+            raise ValueError("bad history content")
+        history.append({"role": str(role), "content": content})
+    return history
+
+
+def _read_conversation(current: Runtime, token: str) -> list[dict[str, str]]:
+    try:
+        payload = _read_token(current, token)
+        if payload.get("v") != 2 or payload.get("kind") != "conversation":
+            raise ValueError("bad conversation token")
+        history = _validate_history(payload.get("h"))
+        if not any(item["role"] == "assistant" for item in history):
+            raise ValueError("conversation contains no probe")
+        return history
+    except HTTPException:
+        raise
+    except Exception as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired conversation token",
+        ) from exc
+
+
+def _read_plan(current: Runtime, token: str) -> dict[str, Any]:
+    try:
+        payload = _read_token(current, token)
+        version = payload.get("v")
+        if version == 1:
+            # Accept plans minted by the immediately previous deployment so
+            # in-flight searches survive a Modal rollout.
+            original = payload.get("q")
+            search_text = payload.get("s")
+            paraphrases = payload.get("p")
+            message = payload.get("m", "")
+        elif version == 2 and payload.get("kind") == "search":
+            original = payload.get("o")
+            search_text = payload.get("s")
+            paraphrases = payload.get("p")
+            message = payload.get("m", "")
+        else:
+            raise ValueError("bad plan payload")
+
+        if not isinstance(original, str) or not 4 <= len(original) <= 500:
+            raise ValueError("bad original query")
+        if not isinstance(search_text, str) or not 4 <= len(search_text) <= 1600:
             raise ValueError("bad search text")
         if not isinstance(paraphrases, list) or len(paraphrases) > 3:
             raise ValueError("bad paraphrases")
-        if not all(isinstance(item, str) and 4 <= len(item) <= 1100 for item in paraphrases):
+        if not all(isinstance(item, str) and 4 <= len(item) <= 1600 for item in paraphrases):
             raise ValueError("bad paraphrase")
         if not isinstance(message, str) or len(message) > 1000:
             raise ValueError("bad message")
-        return payload
+        return {
+            "original": original,
+            "search_text": search_text,
+            "paraphrases": paraphrases,
+            "message": message,
+        }
+    except HTTPException:
+        raise
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -395,59 +479,157 @@ def _read_plan(current: Runtime, token: str) -> dict[str, Any]:
         ) from exc
 
 
-def _rrf_fuse(result_sets: list[list[SearchMatch]], limit: int) -> list[SearchMatch]:
-    """Fuse independent retrieval views using standard reciprocal-rank fusion."""
+def _original_query(history: list[dict[str, str]]) -> str:
+    for item in history:
+        if item["role"] == "user":
+            return item["content"][:500]
+    raise HTTPException(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        detail="Conversation contains no user request",
+    )
+
+
+def _legacy_history(query: str, clarification: str | None) -> tuple[list[dict[str, str]], bool]:
+    history = [{"role": "user", "content": query.strip()}]
+    if clarification:
+        # Transitional support for an older Worker. New clients use the signed
+        # conversation token so the assistant probe is never lost.
+        history.append({"role": "user", "content": clarification.strip()})
+    return history, bool(clarification)
+
+
+def _query_views(
+    original_text: str,
+    resolved_text: str,
+    paraphrases: list[str],
+) -> list[QueryView]:
+    """Keep human/core views stronger than correlated LLM expansions."""
+    views: list[QueryView] = []
+    seen: set[str] = set()
+
+    def add(label: str, text: str, weight: float) -> None:
+        clean = text.strip()
+        key = clean.casefold()
+        if len(clean) < 4 or key in seen:
+            return
+        seen.add(key)
+        views.append(QueryView(label=label, text=clean, weight=weight))
+
+    add("original", original_text, 2.0)
+    add("resolved", resolved_text, 1.5)
+    for index, variant in enumerate(paraphrases[:2], start=1):
+        add(f"expansion_{index}", variant, 0.75)
+    return views
+
+
+def _rrf_fuse(
+    result_sets: list[tuple[QueryView, list[SearchMatch]]],
+    limit: int,
+) -> list[FusedCandidate]:
     if not result_sets:
         return []
+
     scores: dict[str, float] = {}
     best: dict[str, SearchMatch] = {}
+    ranks: dict[str, dict[str, int]] = {}
     rrf_k = 60.0
-    for results in result_sets:
+
+    for view, results in result_sets:
         for rank, item in enumerate(results, start=1):
             key = item.spotify_id or item.track_id
-            scores[key] = scores.get(key, 0.0) + 1.0 / (rrf_k + rank)
+            scores[key] = scores.get(key, 0.0) + view.weight / (rrf_k + rank)
+            ranks.setdefault(key, {})[view.label] = rank
             current = best.get(key)
             if current is None or item.score > current.score:
                 best[key] = item
-    ordered = sorted(
+
+    ordered_keys = sorted(
         scores,
         key=lambda key: (scores[key], best[key].score),
         reverse=True,
-    )
-    return [best[key] for key in ordered[:limit]]
+    )[:limit]
+    candidates: list[FusedCandidate] = []
+    for rank, key in enumerate(ordered_keys, start=1):
+        candidates.append(
+            FusedCandidate(
+                match=best[key],
+                rrf_score=scores[key],
+                source_ranks=ranks.get(key, {}),
+                fused_rank=rank,
+            )
+        )
+    return candidates
+
+
+def _bounded_verifier_order(
+    candidates: list[FusedCandidate],
+    judgments: dict[int, str],
+) -> list[FusedCandidate]:
+    """Let Gemini correct clear mistakes without replacing Model A's ranking."""
+    offsets = {
+        "strong": -2,
+        "credible": -1,
+        "unknown": 0,
+        "mismatch": 10,
+    }
+    scored: list[tuple[int, int, FusedCandidate]] = []
+    for index, candidate in enumerate(candidates):
+        label = judgments.get(index, "unknown")
+        if label not in offsets:
+            label = "unknown"
+        candidate.judgment = label
+        scored.append((candidate.fused_rank + offsets[label], candidate.fused_rank, candidate))
+
+    scored.sort(key=lambda item: (item[0], item[1]))
+    ordered = [item[2] for item in scored]
+    for rank, candidate in enumerate(ordered, start=1):
+        candidate.final_rank = rank
+    return ordered
 
 
 async def _retrieve(
     current: Runtime,
-    search_text: str,
+    original_text: str,
+    resolved_text: str,
     paraphrases: list[str],
     limit: int,
 ) -> tuple[list[SearchMatch], int]:
     started = time.perf_counter()
-    queries = [search_text]
-    seen = {search_text.casefold()}
-    for variant in paraphrases:
-        text = variant.strip()
-        key = text.casefold()
-        if len(text) >= 4 and key not in seen:
-            seen.add(key)
-            queries.append(text)
-        if len(queries) == 4:
-            break
+    views = _query_views(original_text, resolved_text, paraphrases)
+    if not views:
+        return [], 0
+
+    print(
+        "MELODYMIND_QUERY_PLAN "
+        + json.dumps(
+            {
+                "views": [
+                    {"label": view.label, "weight": view.weight, "text": view.text}
+                    for view in views
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        flush=True,
+    )
 
     embed_started = time.perf_counter()
     async with current.inference_lock:
-        vectors = await asyncio.to_thread(current.encoder.embed_many, queries)
+        vectors = await asyncio.to_thread(
+            current.encoder.embed_many,
+            [view.text for view in views],
+        )
     embed_ms = round((time.perf_counter() - embed_started) * 1000)
 
     pinecone_started = time.perf_counter()
-    result_sets = await asyncio.gather(
+    raw_sets = await asyncio.gather(
         *[
             asyncio.to_thread(current.catalogue.query, vector, 50)
             for vector in vectors
         ]
     )
     pinecone_ms = round((time.perf_counter() - pinecone_started) * 1000)
+    result_sets = list(zip(views, raw_sets))
 
     candidates = _rrf_fuse(result_sets, limit=30)
     if not candidates:
@@ -455,51 +637,72 @@ async def _retrieve(
             "MELODYMIND_TIMING "
             + json.dumps(
                 {
-                    "queries": len(queries),
+                    "queries": len(views),
                     "embed_ms": embed_ms,
                     "pinecone_ms": pinecone_ms,
-                    "rerank_ms": 0,
+                    "verifier_ms": 0,
                     "retrieve_total_ms": round((time.perf_counter() - started) * 1000),
                     "candidates": 0,
                 }
             ),
             flush=True,
         )
-        return [], len(queries)
+        return [], len(views)
 
-    rerank_started = time.perf_counter()
-    selected_indices = await current.agent.rerank(
-        request=search_text,
-        candidates=candidates,
-        keep=limit,
+    verifier_started = time.perf_counter()
+    judgments = await current.agent.judge_candidates(
+        request=resolved_text,
+        candidates=[candidate.match for candidate in candidates],
     )
-    rerank_ms = round((time.perf_counter() - rerank_started) * 1000)
-    results = [candidates[index] for index in selected_indices if 0 <= index < len(candidates)]
+    verifier_ms = round((time.perf_counter() - verifier_started) * 1000)
+    ordered = _bounded_verifier_order(candidates, judgments)
+    results = [candidate.match for candidate in ordered[:limit]]
 
+    print(
+        "MELODYMIND_RANKING "
+        + json.dumps(
+            {
+                "candidates": [
+                    {
+                        "title": candidate.match.title,
+                        "artist": candidate.match.artist,
+                        "fused_rank": candidate.fused_rank,
+                        "final_rank": candidate.final_rank,
+                        "judgment": candidate.judgment,
+                        "source_ranks": candidate.source_ranks,
+                        "rrf": round(candidate.rrf_score, 6),
+                    }
+                    for candidate in candidates
+                ]
+            },
+            ensure_ascii=False,
+        ),
+        flush=True,
+    )
     print(
         "MELODYMIND_TIMING "
         + json.dumps(
             {
-                "queries": len(queries),
+                "queries": len(views),
                 "embed_ms": embed_ms,
                 "pinecone_ms": pinecone_ms,
-                "rerank_ms": rerank_ms,
+                "verifier_ms": verifier_ms,
                 "retrieve_total_ms": round((time.perf_counter() - started) * 1000),
                 "candidates": len(candidates),
             }
         ),
         flush=True,
     )
-    return results[:limit], len(queries)
+    return results, len(views)
 
 
 async def _plan(
     current: Runtime,
-    query: str,
-    clarification: str | None,
+    history: list[dict[str, str]],
+    probe_used: bool,
 ):
     started = time.perf_counter()
-    decision = await current.agent.plan(query=query, clarification=clarification)
+    decision = await current.agent.plan(history=history, probe_used=probe_used)
     print(
         "MELODYMIND_PLAN "
         + json.dumps(
@@ -507,12 +710,64 @@ async def _plan(
                 "action": decision.action,
                 "plan_ms": round((time.perf_counter() - started) * 1000),
                 "paraphrases": len(decision.paraphrases),
-                "has_clarification": bool(clarification),
-            }
+                "probe_used": probe_used,
+                "turns": len(history),
+                "search_text": decision.search_text if decision.action == "search" else "",
+            },
+            ensure_ascii=False,
         ),
         flush=True,
     )
     return decision
+
+
+def _probe_response(
+    current: Runtime,
+    history: list[dict[str, str]],
+    query: str,
+    message: str,
+) -> ProbeResponse:
+    signed_history = history + [{"role": "assistant", "content": message}]
+    conversation_token = _sign_token(
+        current,
+        {
+            "v": 2,
+            "kind": "conversation",
+            "h": signed_history,
+            "iat": int(time.time()),
+        },
+    )
+    return ProbeResponse(
+        query=query,
+        message=message,
+        conversation_token=conversation_token,
+        model=current.settings.model_version,
+    )
+
+
+def _search_ready_response(
+    current: Runtime,
+    original: str,
+    decision,
+) -> SearchReadyResponse:
+    plan_token = _sign_token(
+        current,
+        {
+            "v": 2,
+            "kind": "search",
+            "o": original,
+            "s": decision.search_text,
+            "p": decision.paraphrases[:2],
+            "m": decision.message,
+            "iat": int(time.time()),
+        },
+    )
+    return SearchReadyResponse(
+        query=original,
+        message=decision.message,
+        plan_token=plan_token,
+        model=current.settings.model_version,
+    )
 
 
 @app.get("/health")
@@ -538,35 +793,33 @@ async def plan_search(
 ) -> ProbeResponse | SearchReadyResponse:
     authorize(authorization)
     current = active_runtime()
-    query = request.query.strip()
-    clarification = request.clarification.strip() if request.clarification else None
-    decision = await _plan(current, query, clarification)
 
-    if decision.action == "probe" and not clarification:
-        return ProbeResponse(
-            query=query,
-            message=decision.message,
-            model=current.settings.model_version,
-        )
+    if request.conversation_token:
+        message = request.message.strip() if request.message else ""
+        if not message:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Continuation message is required",
+            )
+        history = _read_conversation(current, request.conversation_token)
+        history.append({"role": "user", "content": message})
+        probe_used = True
+    else:
+        query = request.query.strip() if request.query else ""
+        if len(query) < 4:
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                detail="Query is too short",
+            )
+        clarification = request.clarification.strip() if request.clarification else None
+        history, probe_used = _legacy_history(query, clarification)
 
-    search_text = _combined_request(query, clarification)
-    plan_token = _sign_plan(
-        current,
-        {
-            "v": 1,
-            "q": query,
-            "s": search_text,
-            "p": decision.paraphrases[:3],
-            "m": decision.message,
-            "iat": int(time.time()),
-        },
-    )
-    return SearchReadyResponse(
-        query=query,
-        message=decision.message,
-        plan_token=plan_token,
-        model=current.settings.model_version,
-    )
+    original = _original_query(history)
+    decision = await _plan(current, history, probe_used)
+
+    if decision.action == "probe" and not probe_used:
+        return _probe_response(current, history, original, decision.message)
+    return _search_ready_response(current, original, decision)
 
 
 @app.post("/internal/execute", response_model=SearchResponse)
@@ -579,13 +832,14 @@ async def execute_search(
     payload = _read_plan(current, request.plan_token)
     results, query_count = await _retrieve(
         current=current,
-        search_text=str(payload["s"]),
-        paraphrases=list(payload["p"]),
+        original_text=str(payload["original"]),
+        resolved_text=str(payload["search_text"]),
+        paraphrases=list(payload["paraphrases"]),
         limit=request.limit,
     )
     return SearchResponse(
-        query=str(payload["q"]),
-        message=str(payload.get("m", "")),
+        query=str(payload["original"]),
+        message=str(payload.get("message", "")),
         results=results,
         total=len(results),
         model=current.settings.model_version,
@@ -606,19 +860,16 @@ async def search(
     current = active_runtime()
     query = request.query.strip()
     clarification = request.clarification.strip() if request.clarification else None
-    decision = await _plan(current, query, clarification)
+    history, probe_used = _legacy_history(query, clarification)
+    decision = await _plan(current, history, probe_used)
 
-    if decision.action == "probe" and not clarification:
-        return ProbeResponse(
-            query=query,
-            message=decision.message,
-            model=current.settings.model_version,
-        )
+    if decision.action == "probe" and not probe_used:
+        return _probe_response(current, history, query, decision.message)
 
-    search_text = _combined_request(query, clarification)
     results, query_count = await _retrieve(
         current=current,
-        search_text=search_text,
+        original_text=query,
+        resolved_text=decision.search_text,
         paraphrases=decision.paraphrases,
         limit=request.limit,
     )
