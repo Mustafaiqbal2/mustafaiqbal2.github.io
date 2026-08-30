@@ -1,0 +1,433 @@
+/* Mobile-only access path for MelodyMind.
+   The story/listening room stay desktop-only; this sheet only overrides the
+   existing /music mobile gate once #melodymind is active. */
+
+@media (max-width: 1023px) {
+  .mu-mobile-gate__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 18px;
+    margin-top: 32px;
+  }
+
+  .mu-mobile-gate__actions a {
+    margin-top: 0;
+    min-height: 46px;
+    display: inline-flex;
+    align-items: center;
+    padding: 0 2px;
+  }
+
+  .mu-mobile-gate__actions .mu-mobile-gate__primary {
+    border: 0;
+    border-radius: 8px;
+    padding: 0 18px;
+    background: var(--lv-bone);
+    color: var(--lv-ink);
+    text-decoration: none;
+    font-weight: 750;
+  }
+
+  /* app/music.css intentionally hides every /music child on compact screens.
+     Re-open only the MelodyMind product when the hash selects that section. */
+  .mu.mu--melodymind {
+    width: 100%;
+    height: 100svh;
+    height: 100dvh;
+    min-height: 100svh;
+    min-height: 100dvh;
+    overflow: hidden;
+    background: #090909;
+  }
+
+  .mu.mu--melodymind > .mu-mobile-gate {
+    display: none !important;
+  }
+
+  .mu.mu--melodymind > .mm-product {
+    display: block !important;
+  }
+
+  .mu.mu--melodymind > .mu-top,
+  .mu.mu--melodymind > .mu-hero,
+  .mu.mu--melodymind > .mu-tabs,
+  .mu.mu--melodymind > .mu-tab-transition {
+    display: none !important;
+  }
+
+  .mu--melodymind .mm-product {
+    box-sizing: border-box;
+    width: 100%;
+    height: 100svh;
+    height: 100dvh;
+    min-height: 0;
+    padding: 0;
+    overflow: hidden;
+    background: #090909;
+  }
+
+  .mu--melodymind .mm-console {
+    display: block;
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    overflow: hidden;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .mu--melodymind .mm-console__topbar {
+    box-sizing: border-box;
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: calc(58px + env(safe-area-inset-top));
+    gap: 10px;
+    padding:
+      env(safe-area-inset-top)
+      max(14px, env(safe-area-inset-right))
+      0
+      max(14px, env(safe-area-inset-left));
+  }
+
+  .mu--melodymind .mm-console__mode {
+    display: none;
+  }
+
+  .mu--melodymind .mm-wordmark {
+    min-width: 0;
+    gap: 10px;
+  }
+
+  .mu--melodymind .mm-wordmark__note {
+    width: 34px;
+    height: 34px;
+    flex: 0 0 auto;
+    font-size: 18px;
+  }
+
+  .mu--melodymind .mm-wordmark strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+  }
+
+  .mu--melodymind .mm-top-reset {
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0 11px;
+    touch-action: manipulation;
+  }
+
+  .mu--melodymind .mm-search-screen,
+  .mu--melodymind .mm-agent-screen {
+    height: calc(100% - 58px - env(safe-area-inset-top));
+    min-height: 0;
+  }
+
+  .mu--melodymind .mm-search-screen {
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mu--melodymind .mm-intro {
+    display: none;
+  }
+
+  .mu--melodymind .mm-query-card {
+    width: 100%;
+    height: 100%;
+    min-height: 0;
+    margin: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    border-radius: 0;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mu--melodymind .mm-query-card__head {
+    min-height: 52px;
+    padding: 0 18px;
+  }
+
+  .mu--melodymind .mm-query-card textarea {
+    min-height: 170px;
+    max-height: none;
+    padding: 22px 18px;
+    font-size: clamp(20px, 5.8vw, 26px);
+    line-height: 1.3;
+  }
+
+  .mu--melodymind .mm-query-card__action {
+    min-height: 68px;
+    padding: 10px 12px;
+  }
+
+  .mu--melodymind .mm-query-card__action > span {
+    display: none;
+  }
+
+  .mu--melodymind .mm-query-card__action button {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    margin-left: 0;
+    padding-inline: 16px;
+    touch-action: manipulation;
+  }
+
+  .mu--melodymind .mm-examples {
+    padding: 18px 18px max(22px, env(safe-area-inset-bottom));
+  }
+
+  .mu--melodymind .mm-examples button {
+    min-height: 48px;
+    padding-block: 10px;
+    font-size: 12px;
+    touch-action: manipulation;
+  }
+
+  .mu--melodymind .mm-agent-screen {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .mu--melodymind .mm-thread {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mu--melodymind .mm-thread__inner,
+  .mu--melodymind .mm-agent-footer__inner {
+    width: calc(100% - 28px);
+  }
+
+  .mu--melodymind .mm-thread__inner {
+    padding: 8px 0 26px;
+  }
+
+  .mu--melodymind .mm-turn {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    padding: 16px 0;
+  }
+
+  .mu--melodymind .mm-turn__role {
+    padding-top: 0;
+    font-size: 8px;
+  }
+
+  .mu--melodymind .mm-turn p {
+    max-width: none;
+    overflow-wrap: anywhere;
+    font-size: 15px;
+    line-height: 1.55;
+  }
+
+  .mu--melodymind .mm-turn--user p {
+    font-size: clamp(19px, 5.2vw, 23px);
+    line-height: 1.34;
+  }
+
+  .mu--melodymind .mm-turn--followup p {
+    font-size: clamp(17px, 4.7vw, 20px);
+  }
+
+  .mu--melodymind .mm-turn--status {
+    min-height: 74px;
+  }
+
+  .mu--melodymind .mm-agent-status {
+    font-size: 13px;
+  }
+
+  .mu--melodymind .mm-agent-results {
+    scroll-margin-top: 8px;
+    padding: 10px 0 4px;
+  }
+
+  .mu--melodymind .mm-agent-results > header {
+    min-height: 46px;
+    align-items: center;
+  }
+
+  .mu--melodymind .mm-agent-results > header > span:last-child,
+  .mu--melodymind .mm-result__album {
+    display: none;
+  }
+
+  .mu--melodymind .mm-result {
+    grid-template-columns: 24px 46px minmax(0, 1fr) 44px;
+    min-height: 66px;
+    gap: 9px;
+  }
+
+  .mu--melodymind .mm-result__art {
+    width: 46px;
+    height: 46px;
+  }
+
+  .mu--melodymind .mm-result__track strong {
+    font-size: 13px;
+  }
+
+  .mu--melodymind .mm-result__track small {
+    font-size: 11px;
+  }
+
+  .mu--melodymind .mm-result__open {
+    width: 44px;
+    height: 44px;
+    touch-action: manipulation;
+  }
+
+  .mu--melodymind .mm-agent-footer {
+    padding: 10px 0 max(10px, env(safe-area-inset-bottom));
+  }
+
+  .mu--melodymind .mm-agent-composer {
+    grid-template-columns: minmax(0, 1fr) 46px;
+    min-height: 62px;
+    gap: 9px;
+    padding: 8px 8px 8px 14px;
+  }
+
+  .mu--melodymind .mm-agent-composer textarea {
+    min-height: 42px;
+    max-height: 96px;
+    padding: 9px 0;
+    font-size: 16px; /* prevents iOS focus zoom */
+    line-height: 1.45;
+  }
+
+  .mu--melodymind .mm-agent-composer > button {
+    width: 46px;
+    height: 46px;
+    touch-action: manipulation;
+  }
+
+  .mu--melodymind .mm-agent-composer__hint {
+    display: none;
+  }
+
+  .mu--melodymind .mm-agent-waiting,
+  .mu--melodymind .mm-agent-finish {
+    min-height: 52px;
+    gap: 10px;
+    padding: 6px 8px 6px 14px;
+    font-size: 12px;
+  }
+
+  .mu--melodymind .mm-agent-waiting button,
+  .mu--melodymind .mm-agent-finish button {
+    min-width: 44px;
+    min-height: 44px;
+    touch-action: manipulation;
+  }
+
+  .mu--melodymind .mm-feedback {
+    min-height: 64px;
+    gap: 12px;
+    padding: 8px 0;
+  }
+
+  .mu--melodymind .mm-feedback button {
+    min-height: 44px;
+    padding: 0 13px;
+    touch-action: manipulation;
+  }
+
+  .mu--melodymind .mm-no-results {
+    min-height: 180px;
+    padding: 24px 12px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 430px) {
+  .mu-mobile-gate {
+    padding-inline: max(20px, env(safe-area-inset-left));
+  }
+
+  .mu-mobile-gate h1 {
+    font-size: clamp(40px, 12.5vw, 58px);
+  }
+
+  .mu-mobile-gate__actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .mu-mobile-gate__actions a {
+    justify-content: center;
+  }
+
+  .mu--melodymind .mm-wordmark strong {
+    letter-spacing: 0.14em;
+  }
+
+  .mu--melodymind .mm-top-reset {
+    padding-inline: 9px;
+    font-size: 11px;
+  }
+
+  .mu--melodymind .mm-result {
+    grid-template-columns: 20px 44px minmax(0, 1fr) 44px;
+    gap: 8px;
+  }
+
+  .mu--melodymind .mm-result__art {
+    width: 44px;
+    height: 44px;
+  }
+
+  .mu--melodymind .mm-feedback {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mu--melodymind .mm-feedback > div {
+    width: 100%;
+  }
+
+  .mu--melodymind .mm-feedback button {
+    flex: 1 1 0;
+  }
+
+  .mu--melodymind .mm-agent-finish > span {
+    display: none;
+  }
+
+  .mu--melodymind .mm-agent-finish {
+    justify-content: flex-end;
+  }
+}
+
+@media (max-width: 350px) {
+  .mu--melodymind .mm-wordmark strong {
+    font-size: 9px;
+  }
+
+  .mu--melodymind .mm-top-reset {
+    width: 44px;
+    padding: 0;
+    font-size: 0;
+    justify-content: center;
+  }
+
+  .mu--melodymind .mm-top-reset svg {
+    width: 16px;
+    height: 16px;
+  }
+}
