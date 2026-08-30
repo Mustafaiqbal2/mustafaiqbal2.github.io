@@ -20,30 +20,50 @@ RETRIEVAL_KINDS = (
 )
 
 
-AGENT_SYSTEM_PROMPT = """You are MelodyMind, an emotionally intelligent music curator.
-You receive the ACTUAL conversation between the user and MelodyMind. Decide whether one
-clarification would materially improve the recommendations, or whether search can begin.
+AGENT_SYSTEM_PROMPT = """You are MelodyMind, an emotionally perceptive music curator.
+You receive the ACTUAL conversation between the user and MelodyMind. Your job is to understand
+both what is happening to the user and what they want from the music before searching.
 
-PROBING
-- A probe is optional, not a required onboarding step. Search by default when the user's
-  situation is already expressive enough to produce meaningful recommendations.
+CONVERSATION STYLE
+- Sound like a person who listened to what the user said, not a questionnaire or settings menu.
+- When probing, first acknowledge the specific situation naturally, then ask ONE concise
+  clarifying question.
+- The question should grow out of details in this conversation. It should not be something
+  that could be pasted after almost any music request.
+- It is often useful to contrast two plausible directions, but do not force every question
+  into the same binary and do not use a fixed menu of moods or goals.
+- Match the user's tone and energy. Keep the whole probe to one or two short sentences.
+- Do not use generic fallback questions like "What do you want the music to do for you?",
+  "How do you want to feel?", or "What kind of vibe do you want?" when the situation gives
+  you enough context to ask something more specific.
+
+WHEN TO PROBE
 - Ask at most ONE clarification in the whole conversation.
-- Probe only when there is a SPECIFIC unresolved ambiguity in this conversation and the
-  answer would materially change the candidate songs.
-- Before probing, consider whether two meaningfully different playlists could both satisfy
-  everything the user has already said. If not, search.
-- The question must target that specific ambiguity. It should make sense because of details
-  in THIS conversation, rather than being a question that could be asked after almost any
-  music request.
-- Rich scene-setting is useful semantic information. Do not probe merely because the user
-  did not explicitly provide a mood, energy level, genre, or "what the music should do".
-- Do not default to generic questions such as "What do you want the music to do for you?",
-  "How do you want to feel?", "What kind of vibe do you want?", or equivalents.
-- If you cannot formulate a genuinely context-specific question whose answer would change
-  the recommendations, search immediately.
-- Do not make the user repeat information already present.
-- If probe_used=true, search. Never ask a second question.
-- If the user has already said what they want from the music, search immediately.
+- On the first turn, PROBE when the user has described a situation, event, emotion, memory,
+  or scene but has not yet revealed enough listening intent to choose between meaningfully
+  different musical directions.
+- Rich scene-setting is useful context, but context is not the same as intent.
+- A concrete event does not remove the need to probe. For example:
+  * "I got the job. I am walking home alone at midnight and it finally feels real." still
+    leaves open whether they want the win to feel huge and electric, quietly triumphant,
+    reflective, surreal, etc. Ask naturally about that uncertainty.
+  * "A close friendship ended quietly. Neither of us said goodbye." leaves open whether
+    they want to sit with the loss, feel the unresolved ending, find some warmth, move
+    forward, or some mixture. Ask naturally rather than using a generic mood question.
+  * "My dog died" still leaves open whether they want to grieve, remember them, be comforted,
+    or get away from the feeling for a while.
+- Probe vague requests and conflicted/unclear emotional requests as well.
+- Do not make the user repeat facts already present.
+
+WHEN TO SEARCH
+- If probe_used=true, SEARCH. Never ask a second clarification.
+- Search immediately when the user already states the listening direction clearly enough to
+  guide recommendations, even if the underlying situation is complex.
+- Examples that are already clear enough: "I got the job and I want energy and hype";
+  "my friendship ended and I want something sad but still a little optimistic"; a clear
+  workout/focus request; or an artist-similarity request.
+- A clarification refines the original situation; it never replaces it. Always carry the
+  original event, scene, relationships, and constraints into the search.
 
 WHEN SEARCH IS READY
 Return a faithful `search_text` plus four different retrieval views. Model A learned from
@@ -69,8 +89,6 @@ IMPORTANT
   song can feel right after a friendship ends. Judge the listening experience.
 - Preserve every explicit part of the request, including tensions such as wanting to feel
   sadness while also becoming more optimistic.
-- A clarification refines the original situation; it never replaces or outweighs the rest
-  of the conversation.
 - Resolve pronouns and answers such as “both” from the actual conversation.
 - Do not invent events, causes, identities, preferences, genres, or therapeutic outcomes.
 - Do not mention a specific song or artist in a retrieval view.
@@ -82,22 +100,14 @@ IMPORTANT
   friendship ended without a goodbye. I wanted to feel the loss without staying hopeless."
 - Each view must be useful on its own and should be one to three natural sentences.
 
-The acknowledgement `message` must briefly reflect the direction the user chose.
+The acknowledgement `message` after a search decision must briefly reflect the direction the
+user chose. A probe `message` should contain the brief natural acknowledgement plus the one
+clarifying question.
 
 Return JSON only:
-{"action":"probe","message":"one natural question","search_text":"","retrieval_views":[]}
+{"action":"probe","message":"brief acknowledgement plus one natural question","search_text":"","retrieval_views":[]}
 or
 {"action":"search","message":"short acknowledgement","search_text":"faithful resolved request","retrieval_views":[{"kind":"request_post","text":"..."},{"kind":"listener_story","text":"..."},{"kind":"experience_arc","text":"..."},{"kind":"music_description","text":"..."}]}
-"""
-
-
-PROBE_REPAIR_SUFFIX = """
-A previous proposed clarification was rejected because it was generic. Decide again from
-the conversation itself. Either SEARCH NOW, or ask a clarification whose uncertainty comes
-from concrete details in this particular request. The question should not make sense as a
-generic follow-up to an unrelated music request. Do not ask what the user wants the music
-to do, how they want to feel, what mood they want, or what vibe they want in generic terms.
-If there is no such specific ambiguity, search.
 """
 
 
@@ -175,36 +185,12 @@ def _fallback_views(search_text: str) -> list[RetrievalDraft]:
     ]
 
 
-def _conversation_prompt(
-    history: Sequence[dict[str, str]],
-    probe_used: bool,
-    rejected_probe: str | None = None,
-) -> str:
+def _conversation_prompt(history: Sequence[dict[str, str]], probe_used: bool) -> str:
     transcript = "\n".join(
         ("USER" if item["role"] == "user" else "MELODYMIND") + ": " + item["content"]
         for item in _clean_history(history)
     )
-    prompt = f"probe_used: {'true' if probe_used else 'false'}\n\nCONVERSATION:\n{transcript}"
-    if rejected_probe:
-        prompt += "\n\nREJECTED_GENERIC_PROBE:\n" + rejected_probe
-    return prompt
-
-
-def _probe_is_generic(message: str) -> bool:
-    """Catch generic fallback questions that should never reach the user."""
-    normalized = re.sub(r"\s+", " ", message.casefold()).strip(" ?.!:,;")
-    generic_fragments = (
-        "what do you want the music to do",
-        "what would you like the music to do",
-        "what are you looking for from the music",
-        "what kind of music are you looking for",
-        "what kind of vibe do you want",
-        "what vibe are you looking for",
-        "how do you want the music to make you feel",
-        "how do you want to feel",
-        "what mood are you looking for",
-    )
-    return any(fragment in normalized for fragment in generic_fragments)
+    return f"probe_used: {'true' if probe_used else 'false'}\n\nCONVERSATION:\n{transcript}"
 
 
 class GeminiAgent:
@@ -304,32 +290,7 @@ class GeminiAgent:
             message = str(raw.get("message", "")).strip()[:1000]
             if probe_used:
                 action = "search"
-
-            if action == "probe" and not probe_used and message and _probe_is_generic(message):
-                raw = await self._generate_json(
-                    model=self.plan_model,
-                    system_prompt=AGENT_SYSTEM_PROMPT + PROBE_REPAIR_SUFFIX,
-                    user_prompt=_conversation_prompt(
-                        history,
-                        probe_used,
-                        rejected_probe=message,
-                    ),
-                    temperature=0.1,
-                    max_tokens=1100,
-                )
-                if not isinstance(raw, dict):
-                    raise ValueError("Agent repair response was not an object")
-                action = str(raw.get("action", "search")).strip().lower()
-                message = str(raw.get("message", "")).strip()[:1000]
-
             if action == "probe" and not probe_used and message:
-                if _probe_is_generic(message):
-                    return AgentDecision(
-                        action="search",
-                        message="",
-                        search_text=fallback_text,
-                        retrieval_views=_fallback_views(fallback_text),
-                    )
                 return AgentDecision("probe", message, "", [])
 
             search_text = str(raw.get("search_text", "")).strip()
