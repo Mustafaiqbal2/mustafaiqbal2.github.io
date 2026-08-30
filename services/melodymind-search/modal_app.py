@@ -49,7 +49,7 @@ def install_telemetry(search_main) -> None:
                 {
                     "label": view.label,
                     "weight": round(float(view.weight), 3),
-                    "text": str(view.text)[:320],
+                    "text": str(view.text)[:300],
                 }
                 for view in views
             ]
@@ -69,15 +69,15 @@ def install_telemetry(search_main) -> None:
             diagnostic = [
                 candidate
                 for candidate in candidates
-                if candidate.fused_rank <= 10 or candidate.final_rank <= 10
+                if candidate.fused_rank <= 5 or candidate.final_rank <= 10
             ]
             diagnostic.sort(key=lambda candidate: candidate.final_rank)
             telemetry["ranking"] = [
                 {
                     "track_id": candidate.match.track_id,
                     "spotify_id": candidate.match.spotify_id,
-                    "title": candidate.match.title,
-                    "artist": candidate.match.artist,
+                    "title": str(candidate.match.title)[:120],
+                    "artist": str(candidate.match.artist)[:120],
                     "fused_rank": candidate.fused_rank,
                     "final_rank": candidate.final_rank,
                     "fit": candidate.fit,
@@ -110,7 +110,7 @@ def install_telemetry(search_main) -> None:
         current = search_main.active_runtime()
         payload = search_main._read_plan(current, request.plan_token)
         telemetry: dict = {
-            "resolved_request": str(payload["search_text"])[:800],
+            "resolved_request": str(payload["search_text"])[:700],
         }
         token = telemetry_context.set(telemetry)
         started = time.perf_counter()
@@ -137,11 +137,15 @@ def install_telemetry(search_main) -> None:
                 flush=True,
             )
 
+        dumped_results = [
+            result.model_dump() if hasattr(result, "model_dump") else result.dict()
+            for result in results
+        ]
         return {
             "type": "results",
             "query": str(payload["original"]),
             "message": str(payload.get("message", "")),
-            "results": [result.model_dump() for result in results],
+            "results": dumped_results,
             "total": len(results),
             "model": current.settings.model_version,
             "retrieval_queries": query_count,
