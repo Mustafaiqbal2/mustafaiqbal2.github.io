@@ -31,6 +31,7 @@ export type CatalogueResultsResponse = {
   query: string;
   message: string;
   results: CatalogueMatch[];
+  telemetry?: Record<string, unknown>;
 };
 
 export type CataloguePlanResponse = CatalogueProbeResponse | CatalogueSearchReadyResponse;
@@ -41,11 +42,23 @@ export type CataloguePlanInput =
 
 type Json = Record<string, unknown>;
 
+class MelodyMindServiceError extends Error {
+  constructor(readonly status: number) {
+    super("MelodyMind search service returned " + status);
+  }
+}
+
 function object(value: unknown, context: string): Json {
   if (typeof value !== "object" || value === null || Array.isArray(value)) {
     throw new Error("Invalid MelodyMind " + context);
   }
   return value as Json;
+}
+
+function optionalObject(value: unknown): Json | undefined {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+    ? value as Json
+    : undefined;
 }
 
 function requiredString(value: unknown, context: string): string {
@@ -86,22 +99,24 @@ async function servicePost(
   body: unknown,
   env: MelodyMindEnv,
   fetchImpl: typeof fetch,
-  timeoutMs: number
+  timeoutMs: number,
+  searchId?: string
 ): Promise<Json> {
   const { base, token } = serviceConfig(env);
+  const headers: Record<string, string> = {
+    Accept: "application/json",
+    Authorization: "Bearer " + token,
+    "Content-Type": "application/json"
+  };
+  if (searchId) headers["X-Analytics-Search"] = searchId.slice(0, 96);
+
   const response = await fetchImpl(base + path, {
     method: "POST",
-    headers: {
-      Accept: "application/json",
-      Authorization: "Bearer " + token,
-      "Content-Type": "application/json"
-    },
+    headers,
     body: JSON.stringify(body),
     signal: AbortSignal.timeout(timeoutMs)
   });
-  if (!response.ok) {
-    throw new Error("MelodyMind search service returned " + response.status);
-  }
+  if (!response.ok) throw new MelodyMindServiceError(response.status);
   return object(await response.json(), "response");
 }
 
@@ -146,15 +161,31 @@ export async function executeCataloguePlan(
   planToken: string,
   limit: number,
   env: MelodyMindEnv,
-  fetchImpl: typeof fetch = fetch
+  fetchImpl: typeof fetch = fetch,
+  searchId = ""
 ): Promise<CatalogueResultsResponse> {
-  const payload = await servicePost(
-    "/internal/execute",
-    { plan_token: planToken, limit },
-    env,
-    fetchImpl,
-    90_000
-  );
+  let payload: Json;
+  try {
+    payload = await servicePost(
+      "/internal/execute-telemetry",
+      { plan_token: planToken, limit },
+      env,
+      fetchImpl,
+      90_000,
+      searchId
+    );
+  } catch (error) {
+    if (!(error instanceof MelodyMindServiceError) || error.status !== 404) throw error;
+    payload = await servicePost(
+      "/internal/execute",
+      { plan_token: planToken, limit },
+      env,
+      fetchImpl,
+      90_000,
+      searchId
+    );
+  }
+
   const results = Array.isArray(payload.results)
     ? payload.results.map(normalizeMatch).slice(0, limit)
     : [];
@@ -162,7 +193,8 @@ export async function executeCataloguePlan(
     type: "results",
     query: requiredString(payload.query, "query"),
     message: typeof payload.message === "string" ? payload.message : "",
-    results
+    results,
+    ...(optionalObject(payload.telemetry) ? { telemetry: optionalObject(payload.telemetry) } : {})
   };
 }
 
