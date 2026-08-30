@@ -99,14 +99,24 @@ export function createRouter(deps: RouterDeps = {}) {
         return json({ error: "method_not_allowed" }, 405, origin);
       }
       let query = "";
+      let clarification: string | undefined;
       let limit = 10;
       try {
         const raw = await request.text();
-        if (raw.length > 2_048) return json({ error: "request_too_large" }, 413, origin);
+        if (raw.length > 3_072) return json({ error: "request_too_large" }, 413, origin);
         const body = JSON.parse(raw) as Record<string, unknown>;
         query = typeof body.query === "string" ? body.query.trim() : "";
         if (query.length < 4 || query.length > 500) {
           return json({ error: "invalid_query" }, 400, origin);
+        }
+        if (body.clarification !== undefined && body.clarification !== null) {
+          if (typeof body.clarification !== "string") {
+            return json({ error: "invalid_clarification" }, 400, origin);
+          }
+          clarification = body.clarification.trim();
+          if (!clarification || clarification.length > 500) {
+            return json({ error: "invalid_clarification" }, 400, origin);
+          }
         }
         if (body.limit !== undefined) {
           if (!Number.isInteger(body.limit) || Number(body.limit) < 1 || Number(body.limit) > 20) {
@@ -123,8 +133,17 @@ export function createRouter(deps: RouterDeps = {}) {
           query,
           limit,
           env,
-          deps.fetchImpl
+          deps.fetchImpl,
+          clarification
         );
+        if (catalogue.type === "probe") {
+          return json(
+            { type: "probe", query: catalogue.query, message: catalogue.message },
+            200,
+            origin
+          );
+        }
+
         const spotify = client(env);
         const tracks = await spotify.getTracks(
           catalogue.results.map((result) => result.spotifyId)
@@ -148,7 +167,13 @@ export function createRouter(deps: RouterDeps = {}) {
           };
         });
         return json(
-          { query: catalogue.query, results, total: results.length },
+          {
+            type: "results",
+            query: catalogue.query,
+            message: catalogue.message,
+            results,
+            total: results.length
+          },
           200,
           origin
         );
