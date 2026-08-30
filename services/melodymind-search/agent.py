@@ -23,26 +23,44 @@ import httpx
 
 
 AGENT_SYSTEM_PROMPT = """You are MelodyMind, an emotionally intelligent music curator.
-Your job is to decide whether the user's situation is already specific enough to search,
-or whether ONE useful clarification would materially improve the recommendation.
+Your job is to decide whether ONE useful clarification would materially improve the
+recommendation before searching. The point of the clarification is usually to learn
+what the user wants the music to DO for them, not to make them repeat facts they
+already gave you.
 
 PROBE FIRST when:
 - the request is vague (for example: "I need music", "play something", "I'm bored")
-- the user gives an emotion with no useful context and different musical directions are plausible
-- the situation is ambiguous about what the user wants the music to do
+- the user gives an emotion but has not said whether they want to match it, shift it,
+  release it, sit with it, be comforted, focus it, celebrate it, etc.
+- the user gives a concrete emotionally significant situation but several meaningfully
+  different musical directions are still plausible
+- knowing one preference would substantially change which songs you should return
+
+A CONCRETE LIFE EVENT IS NOT, BY ITSELF, A REASON TO SKIP THE PROBE.
+Examples:
+- "I'm sad" should usually probe for whether they want to match or change the mood.
+- "My dog died" should usually probe for what they want from the music: to sit with the
+  grief, find comfort, remember their dog, or move away from the feeling.
+- "A close friendship ended quietly. Neither of us said goodbye." should usually probe
+  if the user has not said whether they want unresolved-goodbye music, comfort, release,
+  or something that helps them move on.
 
 SEARCH IMMEDIATELY when:
-- the user gives a concrete situation, event, activity, genre, artist reference, or clear request
-- the user explicitly asks for recommendations and there is enough information to search
+- the user already states the desired musical direction or function clearly
+- the request is operationally specific enough that another question would not change
+  the search much (for example a clear workout/focus/artist-similarity request)
 - a clarification has already been supplied
 
 GOLDEN RULE: at most one clarification question. If clarification_text is present, you MUST search.
+Ask one concise, natural question. Do not interrogate the user or give them a questionnaire.
 
 When searching, create 0 to 3 alternate phrasings that are STRICTLY semantically equivalent
-to the user's own wording. They are retrieval views, not interpretations.
+to the user's own wording plus any clarification they supplied. They are retrieval views,
+not interpretations.
 
 PARAPHRASE RULES:
 - preserve every explicit person/entity, relationship, event, negation, time, and constraint
+- preserve the user's stated desired direction exactly
 - do not invent emotions, motivations, causes, consequences, genre, instrumentation, tempo,
   lyrical themes, or desired mood unless the user explicitly said them
 - do not translate a life situation into generic musical language
@@ -57,15 +75,20 @@ Return JSON only in one of these forms:
 
 
 RERANK_SYSTEM_PROMPT = """You are the second-stage curator in a semantic music retrieval system.
-The audio model produced the candidate pool. Use your own reliable knowledge of songs,
+The audio model produced the candidate pool. Use your own RELIABLE knowledge of songs,
 artists, themes, lyrics, and common listening context to improve the ordering.
 
 Rules:
-- prioritize the user's actual situation and constraints, not generic popularity
+- prioritize the user's actual situation and any clarification they gave
+- preserve explicit relationship type and subject: friendship is not the same as a romantic
+  breakup; pet loss is not the same as losing a partner; family, work, celebration, grief,
+  conflict, and other stated contexts should not be collapsed into a generic emotion
+- do not promote a candidate merely because its title or album name sounds relevant; title
+  wording alone is weak evidence
 - do not prefer a song merely because it is famous
 - if you do not know a song well enough, do not penalize it; preserve its relative retrieval order
-- remove or demote clear thematic/mood/activity mismatches when you are confident
-- prefer precise fits over generic songs that merely share a broad emotion
+- confidently demote clear thematic, relationship-type, mood, or activity mismatches
+- prefer precise situational fits over generic songs that merely share a broad emotion
 - select exactly the requested number when possible
 
 Return ONLY a JSON array of candidate IDs in best-first order, e.g. ["c03","c11","c01"].
@@ -84,7 +107,12 @@ class GeminiAgent:
 
     def __init__(self) -> None:
         self.api_key = os.environ.get("GEMINI_API_KEY", "").strip()
-        self.model = os.environ.get("MELODYMIND_AGENT_MODEL", "gemini-2.5-flash").strip()
+        self.plan_model = os.environ.get(
+            "MELODYMIND_PLAN_MODEL", "gemini-2.5-flash-lite"
+        ).strip()
+        self.rerank_model = os.environ.get(
+            "MELODYMIND_RERANK_MODEL", "gemini-2.5-flash"
+        ).strip()
         self._client: httpx.AsyncClient | None = None
 
     @property
@@ -99,6 +127,7 @@ class GeminiAgent:
     async def _generate_json(
         self,
         *,
+        model: str,
         system_prompt: str,
         user_prompt: str,
         temperature: float,
@@ -107,13 +136,28 @@ class GeminiAgent:
         if not self.api_key:
             raise RuntimeError("GEMINI_API_KEY is not configured")
         if self._client is None:
-            self._client = httpx.AsyncClient(timeout=30.0)
+            # Fail fast enough that optional agent work cannot make the portfolio
+            # appear hung. Search still has deterministic fallbacks below.
+            self._client = httpx.AsyncClient(
+                timeout=httpx.Timeout(20.0, connect=5.0)
+            )
 
         url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
-            + self.model
+            + model
             + ":generateContent"
         )
+        generation_config: dict[str, object] = {
+            "temperature": temperature,
+            "maxOutputTokens": max_tokens,
+            "responseMimeType": "application/json",
+        }
+        # Gemini 2.5 Flash supports disabling thinking. Planning/reranking here
+        # are tightly constrained ranking/control tasks, so extra reasoning tokens
+        # add latency without being useful to the portfolio interaction.
+        if model.startswith("gemini-2.5"):
+            generation_config["thinkingConfig"] = {"thinkingBudget": 0}
+
         response = await self._client.post(
             url,
             params={"key": self.api_key},
@@ -125,11 +169,7 @@ class GeminiAgent:
                         "parts": [{"text": user_prompt}],
                     }
                 ],
-                "generationConfig": {
-                    "temperature": temperature,
-                    "maxOutputTokens": max_tokens,
-                    "responseMimeType": "application/json",
-                },
+                "generationConfig": generation_config,
             },
         )
         response.raise_for_status()
@@ -161,10 +201,11 @@ class GeminiAgent:
         )
         try:
             raw = await self._generate_json(
+                model=self.plan_model,
                 system_prompt=AGENT_SYSTEM_PROMPT,
                 user_prompt=prompt,
-                temperature=0.15,
-                max_tokens=900,
+                temperature=0.1,
+                max_tokens=420,
             )
             if not isinstance(raw, dict):
                 raise ValueError("Agent response was not an object")
@@ -225,10 +266,11 @@ class GeminiAgent:
         )
         try:
             raw = await self._generate_json(
+                model=self.rerank_model,
                 system_prompt=RERANK_SYSTEM_PROMPT,
                 user_prompt=prompt,
-                temperature=0.1,
-                max_tokens=1200,
+                temperature=0.0,
+                max_tokens=320,
             )
             if not isinstance(raw, list):
                 raise ValueError("Reranker response was not an array")
