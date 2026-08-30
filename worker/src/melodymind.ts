@@ -16,6 +16,7 @@ export type CatalogueProbeResponse = {
   type: "probe";
   query: string;
   message: string;
+  conversationToken?: string;
 };
 
 export type CatalogueSearchReadyResponse = {
@@ -34,6 +35,9 @@ export type CatalogueResultsResponse = {
 
 export type CataloguePlanResponse = CatalogueProbeResponse | CatalogueSearchReadyResponse;
 export type CatalogueResponse = CatalogueProbeResponse | CatalogueResultsResponse;
+export type CataloguePlanInput =
+  | { query: string; clarification?: string }
+  | { conversationToken: string; message: string };
 
 type Json = Record<string, unknown>;
 
@@ -102,24 +106,29 @@ async function servicePost(
 }
 
 export async function planCatalogue(
-  query: string,
+  input: CataloguePlanInput,
   env: MelodyMindEnv,
-  fetchImpl: typeof fetch = fetch,
-  clarification?: string
+  fetchImpl: typeof fetch = fetch
 ): Promise<CataloguePlanResponse> {
+  const body = "conversationToken" in input
+    ? { conversation_token: input.conversationToken, message: input.message }
+    : { query: input.query, clarification: input.clarification || undefined };
+
   const payload = await servicePost(
     "/internal/plan",
-    { query, clarification: clarification || undefined },
+    body,
     env,
     fetchImpl,
     30_000
   );
 
   if (payload.type === "probe") {
+    const conversationToken = optionalString(payload.conversation_token);
     return {
       type: "probe",
       query: requiredString(payload.query, "query"),
-      message: requiredString(payload.message, "probe message")
+      message: requiredString(payload.message, "probe message"),
+      ...(conversationToken ? { conversationToken } : {})
     };
   }
   if (payload.type !== "search_ready") {
@@ -172,10 +181,12 @@ export async function searchCatalogue(
     90_000
   );
   if (payload.type === "probe") {
+    const conversationToken = optionalString(payload.conversation_token);
     return {
       type: "probe",
       query: requiredString(payload.query, "query"),
-      message: requiredString(payload.message, "probe message")
+      message: requiredString(payload.message, "probe message"),
+      ...(conversationToken ? { conversationToken } : {})
     };
   }
 
