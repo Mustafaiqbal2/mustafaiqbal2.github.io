@@ -91,6 +91,20 @@ function readClarification(body: Record<string, unknown>): string | undefined {
   return clarification;
 }
 
+function readConversationToken(body: Record<string, unknown>): string | undefined {
+  if (body.conversation_token === undefined || body.conversation_token === null) return undefined;
+  if (typeof body.conversation_token !== "string") throw new Error("invalid_conversation");
+  const token = body.conversation_token.trim();
+  if (token.length < 16 || token.length > 8192) throw new Error("invalid_conversation");
+  return token;
+}
+
+function readMessage(body: Record<string, unknown>): string {
+  const message = typeof body.message === "string" ? body.message.trim() : "";
+  if (!message || message.length > 500) throw new Error("invalid_message");
+  return message;
+}
+
 function readLimit(body: Record<string, unknown>): number {
   if (body.limit === undefined) return 10;
   if (!Number.isInteger(body.limit) || Number(body.limit) < 1 || Number(body.limit) > 20) {
@@ -171,12 +185,29 @@ export function createRouter(deps: RouterDeps = {}) {
       }
       try {
         const body = await requestBody(request);
-        const query = readQuery(body);
-        const clarification = readClarification(body);
-        const plan = await planCatalogue(query, env, deps.fetchImpl, clarification);
+        const conversationToken = readConversationToken(body);
+        const plan = conversationToken
+          ? await planCatalogue(
+              { conversationToken, message: readMessage(body) },
+              env,
+              deps.fetchImpl
+            )
+          : await planCatalogue(
+              { query: readQuery(body), clarification: readClarification(body) },
+              env,
+              deps.fetchImpl
+            );
+
         if (plan.type === "probe") {
           return json(
-            { type: "probe", query: plan.query, message: plan.message },
+            {
+              type: "probe",
+              query: plan.query,
+              message: plan.message,
+              ...(plan.conversationToken
+                ? { conversation_token: plan.conversationToken }
+                : {})
+            },
             200,
             origin
           );
@@ -230,7 +261,14 @@ export function createRouter(deps: RouterDeps = {}) {
           );
           if (legacy.type === "probe") {
             return json(
-              { type: "probe", query: legacy.query, message: legacy.message },
+              {
+                type: "probe",
+                query: legacy.query,
+                message: legacy.message,
+                ...(legacy.conversationToken
+                  ? { conversation_token: legacy.conversationToken }
+                  : {})
+              },
               200,
               origin
             );
