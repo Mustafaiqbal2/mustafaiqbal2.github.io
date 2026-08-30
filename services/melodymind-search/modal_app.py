@@ -24,7 +24,7 @@ image = modal.Image.from_dockerfile(
 app = modal.App("melodymind-search")
 service_secret = modal.Secret.from_name(
     "melodymind-search",
-    required_keys=["PINECONE_API_KEY", "MELODYMIND_SERVICE_TOKEN"],
+    required_keys=["PINECONE_API_KEY", "MELODYMIND_SERVICE_TOKEN", "OPENAI_API_KEY"],
 )
 
 
@@ -125,6 +125,9 @@ def install_telemetry(search_main) -> None:
             telemetry["retrieve_total_ms"] = round(
                 (time.perf_counter() - started) * 1000
             )
+            provider_snapshot = getattr(current.agent, "provider_snapshot", None)
+            if callable(provider_snapshot):
+                telemetry["llm"] = provider_snapshot()
         finally:
             telemetry_context.reset(token)
 
@@ -160,18 +163,21 @@ def install_telemetry(search_main) -> None:
     secrets=[service_secret],
     cpu=2.0,
     memory=(2048, 6144),
-    max_containers=1,
+    max_containers=5,
+    buffer_containers=1,
     scaledown_window=1200,
     timeout=300,
     startup_timeout=180,
 )
-@modal.concurrent(max_inputs=4)
+@modal.concurrent(target_inputs=2, max_inputs=4)
 @modal.asgi_app()
 def api():
     if "/app" not in sys.path:
         sys.path.insert(0, "/app")
 
     import main as search_main
+    from openai_primary import install_openai_primary
 
+    install_openai_primary(search_main)
     install_telemetry(search_main)
     return search_main.app
