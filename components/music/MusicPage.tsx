@@ -12,6 +12,7 @@ import { MelodyMindSearch } from "./MelodyMindSearch";
 import { ListeningRoom } from "./listening/ListeningRoom";
 import { ListeningRoomChoreography } from "./listening/ListeningRoomChoreography";
 import "./music-transition.css";
+import "./melodymind-mobile.css";
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -40,12 +41,15 @@ export function MusicPage() {
 
   useLayoutEffect(() => {
     const navi = navigator as Navigator & { deviceMemory?: number };
+    const compact = window.matchMedia("(max-width: 1023px)").matches;
     const weak =
       (navi.hardwareConcurrency || 8) <= 4 || (navi.deviceMemory !== undefined && navi.deviceMemory <= 4);
     let lenis: Lenis | null = null;
     let raf: ((t: number) => void) | null = null;
 
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches && !weak) {
+    // Phones/tablets use native scrolling. Lenis is useful for the desktop
+    // story choreography but can fight nested scrolling and the soft keyboard.
+    if (!compact && !window.matchMedia("(prefers-reduced-motion: reduce)").matches && !weak) {
       lenis = new Lenis({ duration: 1.05, smoothWheel: true });
       lenis.on("scroll", ScrollTrigger.update);
       raf = (time: number) => lenis && lenis.raf(time * 1000);
@@ -303,11 +307,14 @@ export function MusicPage() {
         <strong className="mu-tab-transition__label">The story</strong>
       </div>
 
-      <aside className="mu-mobile-gate" aria-label="Desktop experience">
+      <aside className="mu-mobile-gate" aria-label="Mobile music access">
         <span className="mu-mobile-gate__mark" aria-hidden="true">M</span>
-        <h1>Give this one a bigger screen.</h1>
-        <p>The music page is a wide, scroll-driven experience. It looks much better on a laptop or desktop.</p>
-        <a href="/">Back home</a>
+        <h1>MelodyMind works here.</h1>
+        <p>The story and listening room still want a bigger screen, but the music search is ready for your phone.</p>
+        <div className="mu-mobile-gate__actions">
+          <a className="mu-mobile-gate__primary" href="#melodymind">Use MelodyMind</a>
+          <a href="/">Back home</a>
+        </div>
       </aside>
 
       <div className="mu-top">
