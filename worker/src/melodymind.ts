@@ -18,6 +18,13 @@ export type CatalogueProbeResponse = {
   message: string;
 };
 
+export type CatalogueSearchReadyResponse = {
+  type: "search_ready";
+  query: string;
+  message: string;
+  planToken: string;
+};
+
 export type CatalogueResultsResponse = {
   type: "results";
   query: string;
@@ -25,6 +32,7 @@ export type CatalogueResultsResponse = {
   results: CatalogueMatch[];
 };
 
+export type CataloguePlanResponse = CatalogueProbeResponse | CatalogueSearchReadyResponse;
 export type CatalogueResponse = CatalogueProbeResponse | CatalogueResultsResponse;
 
 type Json = Record<string, unknown>;
@@ -62,6 +70,93 @@ function normalizeMatch(value: unknown): CatalogueMatch {
   };
 }
 
+function serviceConfig(env: MelodyMindEnv): { base: string; token: string } {
+  const base = env.MELODYMIND_SEARCH_URL?.trim().replace(/\/$/, "");
+  const token = env.MELODYMIND_SERVICE_TOKEN?.trim();
+  if (!base || !token) throw new Error("MelodyMind search service is not configured");
+  return { base, token };
+}
+
+async function servicePost(
+  path: string,
+  body: unknown,
+  env: MelodyMindEnv,
+  fetchImpl: typeof fetch,
+  timeoutMs: number
+): Promise<Json> {
+  const { base, token } = serviceConfig(env);
+  const response = await fetchImpl(base + path, {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: "Bearer " + token,
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(timeoutMs)
+  });
+  if (!response.ok) {
+    throw new Error("MelodyMind search service returned " + response.status);
+  }
+  return object(await response.json(), "response");
+}
+
+export async function planCatalogue(
+  query: string,
+  env: MelodyMindEnv,
+  fetchImpl: typeof fetch = fetch,
+  clarification?: string
+): Promise<CataloguePlanResponse> {
+  const payload = await servicePost(
+    "/internal/plan",
+    { query, clarification: clarification || undefined },
+    env,
+    fetchImpl,
+    30_000
+  );
+
+  if (payload.type === "probe") {
+    return {
+      type: "probe",
+      query: requiredString(payload.query, "query"),
+      message: requiredString(payload.message, "probe message")
+    };
+  }
+  if (payload.type !== "search_ready") {
+    throw new Error("Invalid MelodyMind plan response");
+  }
+  return {
+    type: "search_ready",
+    query: requiredString(payload.query, "query"),
+    message: typeof payload.message === "string" ? payload.message : "",
+    planToken: requiredString(payload.plan_token, "plan token")
+  };
+}
+
+export async function executeCataloguePlan(
+  planToken: string,
+  limit: number,
+  env: MelodyMindEnv,
+  fetchImpl: typeof fetch = fetch
+): Promise<CatalogueResultsResponse> {
+  const payload = await servicePost(
+    "/internal/execute",
+    { plan_token: planToken, limit },
+    env,
+    fetchImpl,
+    90_000
+  );
+  const results = Array.isArray(payload.results)
+    ? payload.results.map(normalizeMatch).slice(0, limit)
+    : [];
+  return {
+    type: "results",
+    query: requiredString(payload.query, "query"),
+    message: typeof payload.message === "string" ? payload.message : "",
+    results
+  };
+}
+
 export async function searchCatalogue(
   query: string,
   limit: number,
@@ -69,27 +164,14 @@ export async function searchCatalogue(
   fetchImpl: typeof fetch = fetch,
   clarification?: string
 ): Promise<CatalogueResponse> {
-  const base = env.MELODYMIND_SEARCH_URL?.trim().replace(/\/$/, "");
-  const token = env.MELODYMIND_SERVICE_TOKEN?.trim();
-  if (!base || !token) throw new Error("MelodyMind search service is not configured");
-
-  const response = await fetchImpl(base + "/internal/search", {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      Authorization: "Bearer " + token,
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({ query, limit, clarification: clarification || undefined }),
-    signal: AbortSignal.timeout(90_000)
-  });
-  if (!response.ok) {
-    throw new Error("MelodyMind search service returned " + response.status);
-  }
-
-  const payload = object(await response.json(), "search response");
-  const type = payload.type === "probe" ? "probe" : "results";
-  if (type === "probe") {
+  const payload = await servicePost(
+    "/internal/search",
+    { query, limit, clarification: clarification || undefined },
+    env,
+    fetchImpl,
+    90_000
+  );
+  if (payload.type === "probe") {
     return {
       type: "probe",
       query: requiredString(payload.query, "query"),
