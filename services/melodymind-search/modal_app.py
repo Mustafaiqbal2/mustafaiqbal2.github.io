@@ -31,7 +31,9 @@ service_secret = modal.Secret.from_name(
 @app.function(
     image=image,
     secrets=[service_secret],
-    cpu=1.0,
+    # Two CPUs keeps the portfolio search comfortably within the free-credit
+    # use case while making XLM-R startup/inference a little less sluggish.
+    cpu=2.0,
     # Request 2 GiB for normal operation but allow a larger startup peak while
     # Transformers materializes the model. This avoids the Railway OOM loop
     # without paying for a permanently reserved 6 GiB container.
