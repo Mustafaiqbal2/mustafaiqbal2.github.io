@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import json
 import os
 from pathlib import Path
@@ -19,6 +19,8 @@ import torch
 from torch import nn
 import torch.nn.functional as functional
 from transformers import AutoModel, AutoTokenizer
+
+from agent import GeminiAgent
 
 
 @dataclass(frozen=True)
@@ -63,6 +65,7 @@ class Settings:
 
 class SearchRequest(BaseModel):
     query: str = Field(min_length=4, max_length=500)
+    clarification: str | None = Field(default=None, max_length=500)
     limit: int = Field(default=10, ge=1, le=20)
 
 
@@ -75,11 +78,21 @@ class SearchMatch(BaseModel):
     score: float
 
 
-class SearchResponse(BaseModel):
+class ProbeResponse(BaseModel):
+    type: str = "probe"
     query: str
+    message: str
+    model: str
+
+
+class SearchResponse(BaseModel):
+    type: str = "results"
+    query: str
+    message: str = ""
     results: list[SearchMatch]
     total: int
     model: str
+    retrieval_queries: int
 
 
 class Clamp3TextEncoder:
@@ -133,33 +146,60 @@ class Clamp3TextEncoder:
             attention[index, : len(chunk)] = 1
         return input_ids, attention, torch.tensor(weights, dtype=torch.float32)
 
-    def embed(self, query: str) -> list[float]:
+    def _tokenize(self, query: str) -> torch.Tensor:
         lines = [line.strip() for line in query.splitlines() if line.strip()]
         text = self.tokenizer.sep_token.join(dict.fromkeys(lines)) or query.strip()
-        token_ids = self.tokenizer(
+        return self.tokenizer(
             text,
             return_tensors="pt",
             truncation=False,
         )["input_ids"][0]
-        input_ids, attention, segment_weights = self._segments(token_ids)
 
+    def embed_many(self, queries: list[str]) -> list[list[float]]:
+        """Embed several query views in one XLM-R forward pass."""
+        if not queries:
+            return []
+
+        input_batches: list[torch.Tensor] = []
+        attention_batches: list[torch.Tensor] = []
+        weights_by_query: list[torch.Tensor] = []
+        counts: list[int] = []
+        for query in queries:
+            input_ids, attention, weights = self._segments(self._tokenize(query))
+            input_batches.append(input_ids)
+            attention_batches.append(attention)
+            weights_by_query.append(weights)
+            counts.append(len(weights))
+
+        all_input_ids = torch.cat(input_batches, dim=0)
+        all_attention = torch.cat(attention_batches, dim=0)
         with torch.inference_mode():
             hidden = self.model(
-                input_ids=input_ids,
-                attention_mask=attention,
+                input_ids=all_input_ids,
+                attention_mask=all_attention,
             ).last_hidden_state
-            mask = attention.unsqueeze(-1)
+            mask = all_attention.unsqueeze(-1)
             pooled = (hidden * mask).sum(dim=1) / mask.sum(dim=1)
             projected = self.projection(pooled)
+
+        embeddings: list[list[float]] = []
+        offset = 0
+        for count, weights in zip(counts, weights_by_query):
+            segment_vectors = projected[offset : offset + count]
+            offset += count
             combined = (
-                projected * segment_weights.unsqueeze(-1)
-            ).sum(dim=0) / segment_weights.sum()
+                segment_vectors * weights.unsqueeze(-1)
+            ).sum(dim=0) / weights.sum()
             normalized = functional.normalize(combined, dim=0)
-        if normalized.shape != (self.dimension,) or not torch.isfinite(
-            normalized
-        ).all():
-            raise RuntimeError("CLaMP3 produced an invalid query vector")
-        return normalized.tolist()
+            if normalized.shape != (self.dimension,) or not torch.isfinite(
+                normalized
+            ).all():
+                raise RuntimeError("CLaMP3 produced an invalid query vector")
+            embeddings.append(normalized.tolist())
+        return embeddings
+
+    def embed(self, query: str) -> list[float]:
+        return self.embed_many([query])[0]
 
 
 class CatalogueSearch:
@@ -169,10 +209,10 @@ class CatalogueSearch:
             settings.pinecone_index
         )
 
-    def query(self, vector: list[float], limit: int) -> list[SearchMatch]:
+    def query(self, vector: list[float], top_k: int) -> list[SearchMatch]:
         response = self.index.query(
             vector=vector,
-            top_k=min(limit * 2, 40),
+            top_k=min(max(top_k, 1), 200),
             namespace=self.namespace,
             include_metadata=True,
             include_values=False,
@@ -206,8 +246,6 @@ class CatalogueSearch:
                     score=float(score),
                 )
             )
-            if len(values) == limit:
-                break
         return values
 
 
@@ -216,6 +254,7 @@ class Runtime:
     settings: Settings
     encoder: Clamp3TextEncoder
     catalogue: CatalogueSearch
+    agent: GeminiAgent
     inference_lock: asyncio.Lock
 
 
@@ -226,14 +265,19 @@ runtime: Runtime | None = None
 async def lifespan(_: FastAPI):
     global runtime
     settings = Settings.from_environment()
+    agent = GeminiAgent()
     runtime = Runtime(
         settings=settings,
         encoder=Clamp3TextEncoder(settings.model_dir),
         catalogue=CatalogueSearch(settings),
+        agent=agent,
         inference_lock=asyncio.Lock(),
     )
-    yield
-    runtime = None
+    try:
+        yield
+    finally:
+        await agent.close()
+        runtime = None
 
 
 app = FastAPI(
@@ -264,6 +308,74 @@ def authorize(authorization: str | None) -> None:
         )
 
 
+def _combined_request(query: str, clarification: str | None) -> str:
+    if not clarification:
+        return query.strip()
+    return query.strip() + "\n" + clarification.strip()
+
+
+def _rrf_fuse(result_sets: list[list[SearchMatch]], limit: int) -> list[SearchMatch]:
+    """Fuse independent retrieval views using standard reciprocal-rank fusion."""
+    if not result_sets:
+        return []
+    scores: dict[str, float] = {}
+    best: dict[str, SearchMatch] = {}
+    rrf_k = 60.0
+    for results in result_sets:
+        for rank, item in enumerate(results, start=1):
+            key = item.spotify_id or item.track_id
+            scores[key] = scores.get(key, 0.0) + 1.0 / (rrf_k + rank)
+            current = best.get(key)
+            if current is None or item.score > current.score:
+                best[key] = item
+    ordered = sorted(
+        scores,
+        key=lambda key: (scores[key], best[key].score),
+        reverse=True,
+    )
+    return [best[key] for key in ordered[:limit]]
+
+
+async def _retrieve(
+    current: Runtime,
+    search_text: str,
+    paraphrases: list[str],
+    limit: int,
+) -> tuple[list[SearchMatch], int]:
+    queries = [search_text]
+    seen = {search_text.casefold()}
+    for variant in paraphrases:
+        text = variant.strip()
+        key = text.casefold()
+        if len(text) >= 4 and key not in seen:
+            seen.add(key)
+            queries.append(text)
+        if len(queries) == 4:
+            break
+
+    async with current.inference_lock:
+        vectors = await asyncio.to_thread(current.encoder.embed_many, queries)
+
+    # Retrieval is network-bound; query the independent semantic views in parallel.
+    result_sets = await asyncio.gather(
+        *[
+            asyncio.to_thread(current.catalogue.query, vector, 50)
+            for vector in vectors
+        ]
+    )
+    candidates = _rrf_fuse(result_sets, limit=30)
+    if not candidates:
+        return [], len(queries)
+
+    selected_indices = await current.agent.rerank(
+        request=search_text,
+        candidates=candidates,
+        keep=limit,
+    )
+    results = [candidates[index] for index in selected_indices if 0 <= index < len(candidates)]
+    return results[:limit], len(queries)
+
+
 @app.get("/health")
 async def health() -> dict[str, object]:
     current = active_runtime()
@@ -273,33 +385,48 @@ async def health() -> dict[str, object]:
         "dimension": current.encoder.dimension,
         "index": current.settings.pinecone_index,
         "namespace": current.settings.pinecone_namespace,
+        "agent_configured": current.agent.configured,
     }
 
 
 @app.post(
     "/internal/search",
-    response_model=SearchResponse,
+    response_model=ProbeResponse | SearchResponse,
 )
 async def search(
     request: SearchRequest,
     authorization: Annotated[str | None, Header()] = None,
-) -> SearchResponse:
+) -> ProbeResponse | SearchResponse:
     authorize(authorization)
     current = active_runtime()
     query = request.query.strip()
+    clarification = request.clarification.strip() if request.clarification else None
     if len(query) < 4:
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
             detail="Query is too short",
         )
-    async with current.inference_lock:
-        vector = await asyncio.to_thread(current.encoder.embed, query)
-    results = await asyncio.to_thread(
-        current.catalogue.query, vector, request.limit
+
+    decision = await current.agent.plan(query=query, clarification=clarification)
+    if decision.action == "probe" and not clarification:
+        return ProbeResponse(
+            query=query,
+            message=decision.message,
+            model=current.settings.model_version,
+        )
+
+    search_text = _combined_request(query, clarification)
+    results, query_count = await _retrieve(
+        current=current,
+        search_text=search_text,
+        paraphrases=decision.paraphrases,
+        limit=request.limit,
     )
     return SearchResponse(
         query=query,
+        message=decision.message,
         results=results,
         total=len(results),
         model=current.settings.model_version,
+        retrieval_queries=query_count,
     )
