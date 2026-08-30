@@ -3,7 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import gsap from "gsap";
-import { ArrowRight, ExternalLink, RotateCcw, Search, X } from "lucide-react";
+import { ArrowRight, ArrowUp, ExternalLink, RotateCcw, X } from "lucide-react";
 import "./melodymind-search.css";
 
 type SongResult = {
@@ -32,7 +32,7 @@ type ResultsResponse = {
 };
 
 type SearchResponse = ProbeResponse | ResultsResponse;
-type SearchState = "idle" | "loading" | "probe" | "success" | "error";
+type SearchState = "idle" | "thinking" | "probe" | "searching" | "success" | "error";
 
 const EXAMPLES = [
   "A close friendship ended quietly. Neither of us said goodbye.",
@@ -63,14 +63,29 @@ function ResultArtwork({ song }: { song: SongResult }) {
   );
 }
 
+function ThinkingDots() {
+  return (
+    <span className="mm-agent-dots" aria-hidden="true">
+      <i />
+      <i />
+      <i />
+    </span>
+  );
+}
+
 export function MelodyMindSearch() {
   const rootRef = useRef<HTMLElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const initialTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const composerRef = useRef<HTMLTextAreaElement>(null);
+  const threadRef = useRef<HTMLDivElement>(null);
+  const resultsRef = useRef<HTMLElement>(null);
   const requestRef = useRef<AbortController | null>(null);
+
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [clarification, setClarification] = useState("");
   const [probeQuestion, setProbeQuestion] = useState("");
+  const [agentMessage, setAgentMessage] = useState("");
   const [state, setState] = useState<SearchState>("idle");
   const [results, setResults] = useState<SongResult[]>([]);
   const [error, setError] = useState("");
@@ -110,11 +125,11 @@ export function MelodyMindSearch() {
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
     const context = gsap.context(() => {
-      gsap.fromTo(".mm-result", { opacity: 0, y: 13 }, {
+      gsap.fromTo(".mm-result", { opacity: 0, y: 10 }, {
         opacity: 1,
         y: 0,
-        duration: 0.4,
-        stagger: 0.045,
+        duration: 0.32,
+        stagger: 0.035,
         ease: "power3.out"
       });
     }, rootRef);
@@ -124,11 +139,41 @@ export function MelodyMindSearch() {
 
   useEffect(() => () => requestRef.current?.abort(), []);
 
-  const resizeTextarea = () => {
-    const textarea = textareaRef.current;
+  useEffect(() => {
+    if (state === "probe") {
+      window.requestAnimationFrame(() => {
+        composerRef.current?.focus();
+        const thread = threadRef.current;
+        if (thread) thread.scrollTo({ top: thread.scrollHeight, behavior: "smooth" });
+      });
+    }
+
+    if (state === "searching") {
+      window.requestAnimationFrame(() => {
+        const thread = threadRef.current;
+        if (thread) thread.scrollTo({ top: thread.scrollHeight, behavior: "smooth" });
+      });
+    }
+
+    if (state === "success") {
+      window.requestAnimationFrame(() => {
+        resultsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
+  }, [state]);
+
+  const resizeInitialTextarea = () => {
+    const textarea = initialTextareaRef.current;
     if (!textarea) return;
     textarea.style.height = "0px";
     textarea.style.height = `${Math.min(260, Math.max(190, textarea.scrollHeight))}px`;
+  };
+
+  const resizeComposer = () => {
+    const textarea = composerRef.current;
+    if (!textarea) return;
+    textarea.style.height = "0px";
+    textarea.style.height = `${Math.min(112, Math.max(28, textarea.scrollHeight))}px`;
   };
 
   const beginAgain = () => {
@@ -137,21 +182,24 @@ export function MelodyMindSearch() {
     setSubmittedQuery("");
     setClarification("");
     setProbeQuestion("");
+    setAgentMessage("");
     setResults([]);
     setError("");
     setState("idle");
     window.requestAnimationFrame(() => {
-      resizeTextarea();
-      textareaRef.current?.focus();
+      resizeInitialTextarea();
+      initialTextareaRef.current?.focus();
     });
   };
 
   const submit = async (event?: FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     const answeringProbe = state === "probe";
+    if (state !== "idle" && !answeringProbe) return;
+
     const cleanQuery = answeringProbe ? submittedQuery.trim() : query.trim();
     const cleanClarification = answeringProbe ? clarification.trim() : "";
-    if (cleanQuery.length < 4 || state === "loading") return;
+    if (cleanQuery.length < 4) return;
     if (answeringProbe && !cleanClarification) return;
 
     const endpoint = searchUrl();
@@ -166,10 +214,16 @@ export function MelodyMindSearch() {
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
-    if (!answeringProbe) setSubmittedQuery(cleanQuery);
+
+    if (!answeringProbe) {
+      setSubmittedQuery(cleanQuery);
+      setProbeQuestion("");
+      setClarification("");
+    }
+    setAgentMessage("");
     setResults([]);
     setError("");
-    setState("loading");
+    setState(answeringProbe ? "searching" : "thinking");
 
     try {
       const response = await fetch(endpoint, {
@@ -183,34 +237,42 @@ export function MelodyMindSearch() {
         signal: controller.signal
       });
       if (!response.ok) throw new Error(`Search failed with status ${response.status}`);
+
       const payload = await response.json() as SearchResponse;
       if (payload.type === "probe") {
         setProbeQuestion(payload.message);
         setClarification("");
         setState("probe");
-        window.requestAnimationFrame(() => {
-          resizeTextarea();
-          textareaRef.current?.focus();
-        });
         return;
       }
+
+      setAgentMessage(payload.message?.trim() || "These are the closest matches I found for what you described.");
       setResults(Array.isArray(payload.results) ? payload.results : []);
       setState("success");
     } catch (reason) {
       if (reason instanceof DOMException && reason.name === "AbortError") return;
-      setError("The search could not be completed. Try again.");
+      setError("I couldn’t complete that search. Try again in a moment.");
       setState("error");
     } finally {
       if (requestRef.current === controller) requestRef.current = null;
     }
   };
 
-  const handleComposerKey = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+  const handleInitialKey = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
       event.preventDefault();
       void submit();
     }
   };
+
+  const handleComposerKey = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      void submit();
+    }
+  };
+
+  const isBusy = state === "thinking" || state === "searching";
 
   return (
     <section ref={rootRef} className="mm-product" aria-label="MelodyMind search">
@@ -222,7 +284,7 @@ export function MelodyMindSearch() {
           </div>
           <div className="mm-console__mode">
             <i aria-hidden="true" />
-            <span>SEARCH BY SITUATION</span>
+            <span>{state === "idle" ? "SEARCH BY SITUATION" : "AGENT SESSION"}</span>
           </div>
           {state !== "idle" && (
             <button className="mm-top-reset" type="button" onClick={beginAgain}>
@@ -232,7 +294,7 @@ export function MelodyMindSearch() {
           )}
         </header>
 
-        {state === "idle" && (
+        {state === "idle" ? (
           <div className="mm-search-screen">
             <div className="mm-intro">
               <span className="mm-intro__index lv-mono">TEXT SEARCH</span>
@@ -249,7 +311,7 @@ export function MelodyMindSearch() {
                 <span className="lv-mono">{query.length} / 500</span>
               </div>
               <textarea
-                ref={textareaRef}
+                ref={initialTextareaRef}
                 id="melodymind-query"
                 value={query}
                 maxLength={500}
@@ -257,15 +319,15 @@ export function MelodyMindSearch() {
                 placeholder="A sad song about losing a friend feels different from a sad song about a breakup. Tell MelodyMind what actually happened."
                 onChange={(event) => {
                   setQuery(event.target.value);
-                  resizeTextarea();
+                  resizeInitialTextarea();
                 }}
-                onKeyDown={handleComposerKey}
+                onKeyDown={handleInitialKey}
                 autoFocus
               />
               <div className="mm-query-card__action">
                 <span className="lv-mono">CTRL + ENTER</span>
                 <button type="submit" disabled={query.trim().length < 4}>
-                  Find songs
+                  Ask MelodyMind
                   <ArrowRight aria-hidden="true" />
                 </button>
               </div>
@@ -280,8 +342,8 @@ export function MelodyMindSearch() {
                       onClick={() => {
                         setQuery(example);
                         window.requestAnimationFrame(() => {
-                          resizeTextarea();
-                          textareaRef.current?.focus();
+                          resizeInitialTextarea();
+                          initialTextareaRef.current?.focus();
                         });
                       }}
                     >
@@ -293,127 +355,153 @@ export function MelodyMindSearch() {
               </div>
             </form>
           </div>
-        )}
+        ) : (
+          <div className="mm-agent-screen">
+            <div
+              ref={threadRef}
+              className="mm-thread"
+              data-lenis-prevent
+              data-lenis-prevent-wheel
+              aria-live="polite"
+            >
+              <div className="mm-thread__inner">
+                <article className="mm-turn mm-turn--user">
+                  <span className="mm-turn__role lv-mono">YOU</span>
+                  <p>{submittedQuery}</p>
+                </article>
 
-        {state === "probe" && (
-          <div className="mm-search-screen">
-            <div className="mm-intro">
-              <span className="mm-intro__index lv-mono">ONE QUICK QUESTION</span>
-              <h2>One more detail, then I’ll search.</h2>
-              <p>“{submittedQuery}”</p>
-              <div className="mm-intro__rule" aria-hidden="true"><i /></div>
+                {probeQuestion && (
+                  <article className="mm-turn mm-turn--assistant">
+                    <span className="mm-turn__role lv-mono">MELODYMIND</span>
+                    <p>{probeQuestion}</p>
+                  </article>
+                )}
+
+                {clarification && state !== "probe" && (
+                  <article className="mm-turn mm-turn--user mm-turn--followup">
+                    <span className="mm-turn__role lv-mono">YOU</span>
+                    <p>{clarification}</p>
+                  </article>
+                )}
+
+                {isBusy && (
+                  <article className="mm-turn mm-turn--assistant mm-turn--status" role="status">
+                    <span className="mm-turn__role lv-mono">MELODYMIND</span>
+                    <div className="mm-agent-status">
+                      <ThinkingDots />
+                      <span>{state === "thinking" ? "Reading your situation…" : "Searching and ranking matches…"}</span>
+                    </div>
+                  </article>
+                )}
+
+                {state === "error" && (
+                  <article className="mm-turn mm-turn--assistant mm-turn--error" role="alert">
+                    <span className="mm-turn__role lv-mono">MELODYMIND</span>
+                    <div>
+                      <p>{error}</p>
+                      <button type="button" onClick={beginAgain}>Start over</button>
+                    </div>
+                  </article>
+                )}
+
+                {state === "success" && (
+                  <>
+                    <article className="mm-turn mm-turn--assistant">
+                      <span className="mm-turn__role lv-mono">MELODYMIND</span>
+                      <p>{agentMessage}</p>
+                    </article>
+
+                    <section ref={resultsRef} className="mm-agent-results" aria-label="Song results">
+                      <header>
+                        <div>
+                          <span className="lv-mono">MATCHING TRACKS</span>
+                          <strong>{results.length}</strong>
+                        </div>
+                        <span className="lv-mono">TITLE / ARTIST / ALBUM</span>
+                      </header>
+
+                      {results.length > 0 ? (
+                        <ol className="mm-result-list" aria-label="Matching tracks">
+                          {results.map((song, index) => (
+                            <li className="mm-result" key={song.track_id}>
+                              <span className="mm-result__number lv-mono">{String(index + 1).padStart(2, "0")}</span>
+                              <ResultArtwork song={song} />
+                              <span className="mm-result__track">
+                                <strong>{song.title}</strong>
+                                <small>{song.artist}</small>
+                              </span>
+                              <span className="mm-result__album">{song.album || "—"}</span>
+                              {song.spotify_id ? (
+                                <a
+                                  className="mm-result__open"
+                                  href={spotifyUrl(song)}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  aria-label={`Open ${song.title} on Spotify`}
+                                  title="Open on Spotify"
+                                >
+                                  <ExternalLink aria-hidden="true" />
+                                </a>
+                              ) : <span />}
+                            </li>
+                          ))}
+                        </ol>
+                      ) : (
+                        <div className="mm-no-results">
+                          <p>No songs came back for this wording.</p>
+                          <button type="button" onClick={beginAgain}>Try another situation</button>
+                        </div>
+                      )}
+                    </section>
+                  </>
+                )}
+              </div>
             </div>
 
-            <form className="mm-query-card" onSubmit={submit}>
-              <div className="mm-query-card__head">
-                <label htmlFor="melodymind-clarification">{probeQuestion}</label>
-                <span className="lv-mono">{clarification.length} / 500</span>
+            <footer className="mm-agent-footer">
+              <div className="mm-agent-footer__inner">
+                {state === "probe" && (
+                  <form className="mm-agent-composer" onSubmit={submit}>
+                    <textarea
+                      ref={composerRef}
+                      value={clarification}
+                      rows={1}
+                      maxLength={500}
+                      aria-label="Reply to MelodyMind"
+                      placeholder="Reply to MelodyMind…"
+                      onChange={(event) => {
+                        setClarification(event.target.value);
+                        resizeComposer();
+                      }}
+                      onKeyDown={handleComposerKey}
+                    />
+                    <button type="submit" disabled={!clarification.trim()} aria-label="Send reply">
+                      <ArrowUp aria-hidden="true" />
+                    </button>
+                    <span className="mm-agent-composer__hint lv-mono">ENTER TO SEND · SHIFT + ENTER FOR NEW LINE</span>
+                  </form>
+                )}
+
+                {isBusy && (
+                  <div className="mm-agent-waiting">
+                    <span>{state === "thinking" ? "MelodyMind is thinking" : "Finding the best matches"}</span>
+                    <button type="button" onClick={beginAgain} aria-label="Cancel search">
+                      <X aria-hidden="true" />
+                    </button>
+                  </div>
+                )}
+
+                {(state === "success" || state === "error") && (
+                  <div className="mm-agent-finish">
+                    <span>Want to try a different situation?</span>
+                    <button type="button" onClick={beginAgain}>
+                      <RotateCcw aria-hidden="true" />
+                      New search
+                    </button>
+                  </div>
+                )}
               </div>
-              <textarea
-                ref={textareaRef}
-                id="melodymind-clarification"
-                value={clarification}
-                maxLength={500}
-                rows={6}
-                placeholder="Your answer"
-                onChange={(event) => {
-                  setClarification(event.target.value);
-                  resizeTextarea();
-                }}
-                onKeyDown={handleComposerKey}
-                autoFocus
-              />
-              <div className="mm-query-card__action">
-                <span className="lv-mono">ONE QUESTION MAX</span>
-                <button type="submit" disabled={!clarification.trim()}>
-                  Find songs
-                  <ArrowRight aria-hidden="true" />
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {state === "loading" && (
-          <div className="mm-status-screen" role="status" aria-live="polite">
-            <div className="mm-search-mark" aria-hidden="true">
-              <Search />
-              <i />
-              <i />
-            </div>
-            <span className="lv-mono">FINDING SONGS</span>
-            <h2>{submittedQuery || query}</h2>
-            <button className="mm-cancel" type="button" onClick={beginAgain}>
-              <X aria-hidden="true" /> Cancel
-            </button>
-          </div>
-        )}
-
-        {state === "error" && (
-          <div className="mm-status-screen mm-status-screen--error" role="alert">
-            <span className="lv-mono">SEARCH UNAVAILABLE</span>
-            <h2>{submittedQuery || query}</h2>
-            <p>{error}</p>
-            <button type="button" onClick={() => setState("idle")}>Return to the search</button>
-          </div>
-        )}
-
-        {state === "success" && (
-          <div className="mm-results-screen">
-            <aside className="mm-results-query">
-              <span className="lv-mono">YOU SEARCHED FOR</span>
-              <h2>{submittedQuery}</h2>
-              <button type="button" onClick={beginAgain}>
-                <RotateCcw aria-hidden="true" /> Change the situation
-              </button>
-            </aside>
-
-            <section className="mm-results-panel" aria-label="Song results">
-              <header>
-                <div>
-                  <span className="lv-mono">MATCHING TRACKS</span>
-                  <strong>{results.length}</strong>
-                </div>
-                <span className="lv-mono">TITLE / ARTIST / ALBUM</span>
-              </header>
-
-              {results.length > 0 ? (
-                <ol
-                  className="mm-result-list"
-                  tabIndex={0}
-                  data-lenis-prevent
-                  data-lenis-prevent-wheel
-                  aria-label="Matching tracks"
-                >
-                  {results.map((song, index) => (
-                    <li className="mm-result" key={song.track_id}>
-                      <span className="mm-result__number lv-mono">{String(index + 1).padStart(2, "0")}</span>
-                      <ResultArtwork song={song} />
-                      <span className="mm-result__track">
-                        <strong>{song.title}</strong>
-                        <small>{song.artist}</small>
-                      </span>
-                      <span className="mm-result__album">{song.album || "—"}</span>
-                      {song.spotify_id ? (
-                        <a
-                          href={spotifyUrl(song)}
-                          target="_blank"
-                          rel="noreferrer"
-                          aria-label={`Open ${song.title} on Spotify`}
-                        >
-                          <ExternalLink aria-hidden="true" />
-                        </a>
-                      ) : <span />}
-                    </li>
-                  ))}
-                </ol>
-              ) : (
-                <div className="mm-no-results">
-                  <p>No songs came back for this wording.</p>
-                  <button type="button" onClick={() => setState("idle")}>Change the situation</button>
-                </div>
-              )}
-            </section>
+            </footer>
           </div>
         )}
       </div>
