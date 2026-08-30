@@ -21,6 +21,7 @@ type ProbeResponse = {
   type: "probe";
   query: string;
   message: string;
+  conversation_token?: string;
 };
 
 type SearchReadyResponse = {
@@ -94,6 +95,7 @@ export function MelodyMindSearch() {
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [clarification, setClarification] = useState("");
   const [probeQuestion, setProbeQuestion] = useState("");
+  const [conversationToken, setConversationToken] = useState("");
   const [agentMessage, setAgentMessage] = useState("");
   const [state, setState] = useState<SearchState>("idle");
   const [results, setResults] = useState<SongResult[]>([]);
@@ -207,6 +209,7 @@ export function MelodyMindSearch() {
     setSubmittedQuery("");
     setClarification("");
     setProbeQuestion("");
+    setConversationToken("");
     setAgentMessage("");
     setResults([]);
     setError("");
@@ -219,6 +222,7 @@ export function MelodyMindSearch() {
 
   const showProbe = (payload: ProbeResponse) => {
     setProbeQuestion(payload.message);
+    setConversationToken(payload.conversation_token?.trim() || "");
     setClarification("");
     setState("probe");
   };
@@ -283,30 +287,33 @@ export function MelodyMindSearch() {
     if (!answeringProbe) {
       setSubmittedQuery(cleanQuery);
       setProbeQuestion("");
+      setConversationToken("");
       setClarification("");
     }
     setAgentMessage("");
     setResults([]);
     setError("");
 
-    // This state means exactly one thing: the agent decision/query planning call
-    // is in flight. It never implies that catalogue retrieval has started.
+    // This state is only the agent decision/planning phase. Catalogue retrieval
+    // cannot begin until the backend explicitly returns search_ready.
     setState("thinking");
 
     try {
+      const planBody = answeringProbe && conversationToken
+        ? { conversation_token: conversationToken, message: cleanClarification }
+        : {
+            query: cleanQuery,
+            ...(answeringProbe ? { clarification: cleanClarification } : {})
+          };
       const planResponse = await fetch(planEndpoint, {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({
-          query: cleanQuery,
-          ...(answeringProbe ? { clarification: cleanClarification } : {})
-        }),
+        body: JSON.stringify(planBody),
         signal: controller.signal
       });
 
-      // During rollout an older Worker may not have /api/plan yet. In that case
-      // keep the UI in the neutral planning state and use the old one-shot route;
-      // it still cannot falsely claim that a search has begun before a probe.
+      // During rollout an older Worker may not have /api/plan yet. Stay in the
+      // neutral planning state and use its one-shot route without claiming search.
       if (planResponse.status === 404) {
         await runLegacyOneShot(
           searchEndpoint,
@@ -329,8 +336,7 @@ export function MelodyMindSearch() {
         throw new Error("Invalid MelodyMind plan response");
       }
 
-      // Only a real search_ready response is allowed to move the UI into the
-      // search state. From this point retrieval/rank fusion/reranking is real.
+      // Only a real search_ready response may transition into retrieval.
       setState("searching");
       const searchResponse = await fetch(searchEndpoint, {
         method: "POST",
@@ -369,9 +375,7 @@ export function MelodyMindSearch() {
   const isBusy = state === "thinking" || state === "searching";
   const busyLabel = state === "searching"
     ? "Searching and ranking matches…"
-    : clarification
-      ? "Preparing your search from that answer…"
-      : "Understanding your request…";
+    : "Understanding your request…";
 
   return (
     <section ref={rootRef} className="mm-product" aria-label="MelodyMind search">
