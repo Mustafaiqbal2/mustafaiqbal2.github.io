@@ -6,3 +6,6 @@ workers_dev = true
 [observability]
 enabled = true
 head_sampling_rate = 0.1
+
+[[d1_databases]]
+binding = "ANALYTICS_DB"
