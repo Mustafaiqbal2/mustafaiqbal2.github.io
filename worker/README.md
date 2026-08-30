@@ -36,9 +36,16 @@ Add each value through Wrangler's hidden prompt:
 npx wrangler secret put SPOTIFY_CLIENT_ID --config worker/wrangler.toml
 npx wrangler secret put SPOTIFY_REFRESH_TOKEN --config worker/wrangler.toml
 npx wrangler secret put ALLOWED_ORIGIN --config worker/wrangler.toml
+npx wrangler secret put MELODYMIND_SEARCH_URL --config worker/wrangler.toml
+npx wrangler secret put MELODYMIND_SERVICE_TOKEN --config worker/wrangler.toml
 ```
 
 Use `https://mustafaiqbal2.github.io` for `ALLOWED_ORIGIN`.
+
+`MELODYMIND_SEARCH_URL` is the private CLaMP3 service described in
+`services/melodymind-search`. Use the same random `MELODYMIND_SERVICE_TOKEN` in
+both deployments. The Worker exposes `/api/search`, adds live Spotify metadata,
+and remains the only API URL used by the static site.
 
 Deploy:
 

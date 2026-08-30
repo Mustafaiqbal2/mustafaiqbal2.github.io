@@ -28,6 +28,7 @@ export type SpotifyEnv = {
 export type SpotifyClient = {
   getRoom(): Promise<ListeningRoomPayload>;
   getNow(): Promise<Playback>;
+  getTracks(ids: string[]): Promise<Array<Track | null>>;
 };
 
 export class SpotifyError extends Error {
@@ -172,6 +173,7 @@ export function createSpotifyClient(
   let token: { value: string; expiresAt: number } | null = null;
   let tokenRefresh: Promise<string> | null = null;
   let refreshToken = env.SPOTIFY_REFRESH_TOKEN;
+  const trackCache = new Map<string, { expiresAt: number; track: Track }>();
 
   async function refreshAccessToken(): Promise<string> {
     const response = await fetchImpl(TOKEN_URL, {
@@ -257,6 +259,31 @@ export function createSpotifyClient(
     return normalizeRecent(await get("/me/player/recently-played?limit=50"));
   }
 
+  async function tracks(ids: string[]): Promise<Array<Track | null>> {
+    const values: Array<Track | null> = [];
+    const unique = [...new Set(ids.filter(Boolean))];
+    for (let offset = 0; offset < unique.length; offset += 4) {
+      const batch = unique.slice(offset, offset + 4);
+      values.push(...await Promise.all(batch.map(async (id) => {
+        const cached = trackCache.get(id);
+        if (cached && cached.expiresAt > Date.now()) return cached.track;
+        try {
+          const value = await get("/tracks/" + encodeURIComponent(id));
+          if (value === null) return null;
+          const track = normalizeTrack(value);
+          trackCache.set(id, { expiresAt: Date.now() + 86_400_000, track });
+          if (trackCache.size > 512) {
+            trackCache.delete(trackCache.keys().next().value as string);
+          }
+          return track;
+        } catch {
+          return null;
+        }
+      })));
+    }
+    return values;
+  }
+
   return {
     async getRoom() {
       const ranges: TimeRange[] = ["short", "medium", "long"];
@@ -315,6 +342,10 @@ export function createSpotifyClient(
         observedAt,
         track: latest
       };
+    },
+
+    async getTracks(ids: string[]) {
+      return tracks(ids);
     }
   };
 }

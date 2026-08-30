@@ -12,6 +12,8 @@ type SongResult = {
   artist: string;
   spotify_id?: string | null;
   album?: string | null;
+  artwork?: string | null;
+  spotify_url?: string | null;
   score: number;
 };
 
@@ -29,15 +31,15 @@ const EXAMPLES = [
   "I am leaving home for the first time. I am excited, but I do not want to look back."
 ];
 
-const API_BASE = process.env.NEXT_PUBLIC_MELODYMIND_API_URL?.replace(/\/$/, "");
+const API_BASE = process.env.NEXT_PUBLIC_MUSIC_API_URL?.replace(/\/$/, "");
 
 function searchUrl(): string | null {
   if (!API_BASE) return null;
   return API_BASE.endsWith("/api") ? `${API_BASE}/search` : `${API_BASE}/api/search`;
 }
 
-function spotifyUrl(spotifyId: string): string {
-  return `https://open.spotify.com/track/${spotifyId}`;
+function spotifyUrl(song: SongResult): string {
+  return song.spotify_url || `https://open.spotify.com/track/${song.spotify_id}`;
 }
 
 export function MelodyMindSearch() {
@@ -306,7 +308,7 @@ export function MelodyMindSearch() {
                       </span>
                       <span className="mm-result__album">{song.album || "—"}</span>
                       {song.spotify_id ? (
-                        <a href={spotifyUrl(song.spotify_id)} target="_blank" rel="noreferrer" aria-label={`Open ${song.title} on Spotify`}>
+                        <a href={spotifyUrl(song)} target="_blank" rel="noreferrer" aria-label={`Open ${song.title} on Spotify`}>
                           <ExternalLink aria-hidden="true" />
                         </a>
                       ) : <span />}

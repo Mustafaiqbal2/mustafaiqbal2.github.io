@@ -1,6 +1,10 @@
 import { createSpotifyClient, type SpotifyClient, type SpotifyEnv } from "./spotify";
+import {
+  searchCatalogue,
+  type MelodyMindEnv
+} from "./melodymind";
 
-export type WorkerEnv = SpotifyEnv & { ALLOWED_ORIGIN: string };
+export type WorkerEnv = SpotifyEnv & MelodyMindEnv & { ALLOWED_ORIGIN: string };
 export type WorkerContext = { waitUntil(promise: Promise<unknown>): void };
 export type ResponseCache = {
   match(request: Request): Promise<Response | undefined>;
@@ -36,7 +40,7 @@ function securityHeaders(origin: string | null): Headers {
   });
   if (origin) {
     headers.set("Access-Control-Allow-Origin", origin);
-    headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+    headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
     headers.set("Access-Control-Allow-Headers", "Content-Type");
   }
   return headers;
@@ -80,15 +84,80 @@ export function createRouter(deps: RouterDeps = {}) {
     const originHeader = request.headers.get("Origin");
     const origin = allowedOrigin(originHeader, env.ALLOWED_ORIGIN);
     const isHealth = url.pathname === "/health";
+    const isSearch = url.pathname === "/api/search";
 
     if (request.method === "OPTIONS") {
       if (!origin) return json({ error: "forbidden" }, 403, null);
       return new Response(null, { status: 204, headers: securityHeaders(origin) });
     }
 
-    if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405, origin);
     if (isHealth) return json({ status: "ok" }, 200, origin);
     if (!origin) return json({ error: "forbidden" }, 403, null);
+
+    if (isSearch) {
+      if (request.method !== "POST") {
+        return json({ error: "method_not_allowed" }, 405, origin);
+      }
+      let query = "";
+      let limit = 10;
+      try {
+        const raw = await request.text();
+        if (raw.length > 2_048) return json({ error: "request_too_large" }, 413, origin);
+        const body = JSON.parse(raw) as Record<string, unknown>;
+        query = typeof body.query === "string" ? body.query.trim() : "";
+        if (query.length < 4 || query.length > 500) {
+          return json({ error: "invalid_query" }, 400, origin);
+        }
+        if (body.limit !== undefined) {
+          if (!Number.isInteger(body.limit) || Number(body.limit) < 1 || Number(body.limit) > 20) {
+            return json({ error: "invalid_limit" }, 400, origin);
+          }
+          limit = Number(body.limit);
+        }
+      } catch {
+        return json({ error: "invalid_json" }, 400, origin);
+      }
+
+      try {
+        const catalogue = await searchCatalogue(
+          query,
+          limit,
+          env,
+          deps.fetchImpl
+        );
+        const spotify = client(env);
+        const tracks = await spotify.getTracks(
+          catalogue.results.map((result) => result.spotifyId)
+        );
+        const byId = new Map(
+          tracks.flatMap((track) => track ? [[track.id, track] as const] : [])
+        );
+        const results = catalogue.results.map((result) => {
+          const track = byId.get(result.spotifyId);
+          return {
+            track_id: result.trackId,
+            spotify_id: result.spotifyId,
+            title: track?.name ?? result.title,
+            artist: track?.artists.map((artist) => artist.name).join(", ") ?? result.artist,
+            album: track?.album.name ?? result.album,
+            artwork: track?.album.images[0]?.url ?? null,
+            spotify_url: track?.url ?? "https://open.spotify.com/track/" + result.spotifyId,
+            duration_ms: track?.durationMs ?? null,
+            explicit: track?.explicit ?? null,
+            score: result.score
+          };
+        });
+        return json(
+          { query: catalogue.query, results, total: results.length },
+          200,
+          origin
+        );
+      } catch {
+        return json({ error: "search_unavailable" }, 502, origin);
+      }
+    }
+
+    if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405, origin);
 
     const route =
       url.pathname === "/spotify/room"
