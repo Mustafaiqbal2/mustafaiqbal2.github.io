@@ -27,24 +27,24 @@ The request flow is now:
 ```text
 user situation
   -> MelodyMind probe/search decision (one clarification maximum)
-  -> original wording is always preserved as retrieval query #1
-  -> 0-3 strict meaning-preserving paraphrases
+  -> original wording and resolved conversation remain retrieval views
+  -> four purpose-built views shaped like the Reddit music discussions used for training
   -> one batched CLaMP3 text-encoder pass
   -> independent Pinecone retrieval for each query view
-  -> reciprocal-rank fusion
-  -> larger candidate pool
-  -> LLM reranking using song/artist knowledge
+  -> rank, cosine-strength, and cross-view fusion into an 80-song candidate pool
+  -> experiential LLM ranking using song/artist knowledge when available
   -> final results
 ```
 
-The query planner is explicitly forbidden from inventing emotions, causes,
-genres, instrumentation, lyrical themes, or other interpretations that the user
-did not provide. The generated paraphrases supplement the original query; they
-never replace it.
+The four generated views cover the recommendation request, a plain listener
+account, the requested emotional movement, and the likely musical character.
+They preserve the user's situation and requested direction while matching the
+kind of music discussion Model A learned from. Unknown songs keep their retrieval
+score during final ranking; familiarity is not required.
 
-If `GEMINI_API_KEY` is missing, the service deliberately falls back to the old
-single-query Model A search path rather than taking search offline. `/health`
-reports `agent_configured: true|false` so the deployment can be checked directly.
+If `GEMINI_API_KEY` is missing, the service still searches Model A with deterministic
+views rather than taking search offline. `/health` reports
+`agent_configured: true|false` so the deployment can be checked directly.
 
 ## Modal deployment
 

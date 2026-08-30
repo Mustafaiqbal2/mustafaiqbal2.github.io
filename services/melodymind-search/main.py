@@ -24,7 +24,12 @@ from torch import nn
 import torch.nn.functional as functional
 from transformers import AutoModel, AutoTokenizer
 
-from agent import GeminiAgent
+from agent import (
+    CandidateJudgment,
+    GeminiAgent,
+    RETRIEVAL_KINDS,
+    RetrievalDraft,
+)
 
 
 @dataclass(frozen=True)
@@ -134,10 +139,13 @@ class QueryView:
 @dataclass
 class FusedCandidate:
     match: SearchMatch
-    rrf_score: float
+    fusion_score: float
     source_ranks: dict[str, int] = field(default_factory=dict)
+    source_scores: dict[str, float] = field(default_factory=dict)
     fused_rank: int = 0
-    judgment: str = "unknown"
+    fit: int = 2
+    confidence: int = 0
+    final_score: float = 0.0
     final_rank: int = 0
 
 
@@ -445,11 +453,25 @@ def _read_plan(current: Runtime, token: str) -> dict[str, Any]:
             original = payload.get("q")
             search_text = payload.get("s")
             paraphrases = payload.get("p")
+            retrieval_views = [
+                {"kind": f"legacy_{index}", "text": text}
+                for index, text in enumerate(paraphrases or [], start=1)
+            ]
             message = payload.get("m", "")
         elif version == 2 and payload.get("kind") == "search":
             original = payload.get("o")
             search_text = payload.get("s")
             paraphrases = payload.get("p")
+            retrieval_views = [
+                {"kind": f"legacy_{index}", "text": text}
+                for index, text in enumerate(paraphrases or [], start=1)
+            ]
+            message = payload.get("m", "")
+        elif version == 3 and payload.get("kind") == "search":
+            original = payload.get("o")
+            search_text = payload.get("s")
+            paraphrases = []
+            retrieval_views = payload.get("r")
             message = payload.get("m", "")
         else:
             raise ValueError("bad plan payload")
@@ -462,12 +484,25 @@ def _read_plan(current: Runtime, token: str) -> dict[str, Any]:
             raise ValueError("bad paraphrases")
         if not all(isinstance(item, str) and 4 <= len(item) <= 1600 for item in paraphrases):
             raise ValueError("bad paraphrase")
+        if not isinstance(retrieval_views, list) or len(retrieval_views) > 4:
+            raise ValueError("bad retrieval views")
+        validated_views: list[dict[str, str]] = []
+        for item in retrieval_views:
+            if not isinstance(item, dict):
+                raise ValueError("bad retrieval view")
+            kind = str(item.get("kind", "")).strip().lower()
+            text = str(item.get("text", "")).strip()
+            if not kind or not 4 <= len(text) <= 700:
+                raise ValueError("bad retrieval view")
+            if version == 3 and kind not in RETRIEVAL_KINDS:
+                raise ValueError("bad retrieval kind")
+            validated_views.append({"kind": kind, "text": text})
         if not isinstance(message, str) or len(message) > 1000:
             raise ValueError("bad message")
         return {
             "original": original,
             "search_text": search_text,
-            "paraphrases": paraphrases,
+            "retrieval_views": validated_views,
             "message": message,
         }
     except HTTPException:
@@ -501,11 +536,17 @@ def _legacy_history(query: str, clarification: str | None) -> tuple[list[dict[st
 def _query_views(
     original_text: str,
     resolved_text: str,
-    paraphrases: list[str],
+    retrieval_views: list[dict[str, str]] | list[RetrievalDraft],
 ) -> list[QueryView]:
-    """Keep human/core views stronger than correlated LLM expansions."""
+    """Combine the user's words with views shaped like Model A's training text."""
     views: list[QueryView] = []
     seen: set[str] = set()
+    weights = {
+        "request_post": 1.25,
+        "listener_story": 1.15,
+        "experience_arc": 1.15,
+        "music_description": 1.0,
+    }
 
     def add(label: str, text: str, weight: float) -> None:
         clean = text.strip()
@@ -515,37 +556,77 @@ def _query_views(
         seen.add(key)
         views.append(QueryView(label=label, text=clean, weight=weight))
 
-    add("original", original_text, 2.0)
-    add("resolved", resolved_text, 1.5)
-    for index, variant in enumerate(paraphrases[:2], start=1):
-        add(f"expansion_{index}", variant, 0.75)
+    add("original", original_text, 0.85)
+    add("resolved", resolved_text, 1.0)
+    for index, draft in enumerate(retrieval_views[:4], start=1):
+        if isinstance(draft, RetrievalDraft):
+            kind, text = draft.kind, draft.text
+        else:
+            kind, text = str(draft.get("kind", "")), str(draft.get("text", ""))
+        add(kind or f"legacy_{index}", text, weights.get(kind, 0.75))
     return views
 
 
-def _rrf_fuse(
+def _normalize(values: dict[str, float]) -> dict[str, float]:
+    if not values:
+        return {}
+    low = min(values.values())
+    high = max(values.values())
+    if high - low < 1e-9:
+        return {key: 1.0 for key in values}
+    return {key: (value - low) / (high - low) for key, value in values.items()}
+
+
+def _hybrid_fuse(
     result_sets: list[tuple[QueryView, list[SearchMatch]]],
     limit: int,
 ) -> list[FusedCandidate]:
+    """Fuse rank, cosine strength, and agreement across independent views."""
     if not result_sets:
         return []
 
-    scores: dict[str, float] = {}
+    rrf_scores: dict[str, float] = {}
+    similarity_scores: dict[str, float] = {}
+    coverage_scores: dict[str, float] = {}
     best: dict[str, SearchMatch] = {}
     ranks: dict[str, dict[str, int]] = {}
-    rrf_k = 60.0
+    raw_scores: dict[str, dict[str, float]] = {}
+    rrf_k = 25.0
 
     for view, results in result_sets:
+        if not results:
+            continue
+        top_score = max(item.score for item in results)
+        floor_score = min(item.score for item in results)
+        spread = max(top_score - floor_score, 1e-6)
         for rank, item in enumerate(results, start=1):
             key = item.spotify_id or item.track_id
-            scores[key] = scores.get(key, 0.0) + view.weight / (rrf_k + rank)
+            relative_score = max(0.0, min(1.0, (item.score - floor_score) / spread))
+            rrf_scores[key] = rrf_scores.get(key, 0.0) + view.weight / (rrf_k + rank)
+            similarity_scores[key] = (
+                similarity_scores.get(key, 0.0) + view.weight * relative_score
+            )
+            coverage_scores[key] = coverage_scores.get(key, 0.0) + view.weight
             ranks.setdefault(key, {})[view.label] = rank
+            raw_scores.setdefault(key, {})[view.label] = item.score
             current = best.get(key)
             if current is None or item.score > current.score:
                 best[key] = item
 
+    normalized_rrf = _normalize(rrf_scores)
+    normalized_similarity = _normalize(similarity_scores)
+    normalized_coverage = _normalize(coverage_scores)
+    fusion_scores = {
+        key: (
+            0.52 * normalized_rrf.get(key, 0.0)
+            + 0.38 * normalized_similarity.get(key, 0.0)
+            + 0.10 * normalized_coverage.get(key, 0.0)
+        )
+        for key in best
+    }
     ordered_keys = sorted(
-        scores,
-        key=lambda key: (scores[key], best[key].score),
+        fusion_scores,
+        key=lambda key: (fusion_scores[key], best[key].score),
         reverse=True,
     )[:limit]
     candidates: list[FusedCandidate] = []
@@ -553,35 +634,47 @@ def _rrf_fuse(
         candidates.append(
             FusedCandidate(
                 match=best[key],
-                rrf_score=scores[key],
+                fusion_score=fusion_scores[key],
                 source_ranks=ranks.get(key, {}),
+                source_scores=raw_scores.get(key, {}),
                 fused_rank=rank,
+                final_score=fusion_scores[key],
             )
         )
     return candidates
 
 
-def _bounded_verifier_order(
+def _experiential_order(
     candidates: list[FusedCandidate],
-    judgments: dict[int, str],
+    judgments: dict[int, CandidateJudgment],
 ) -> list[FusedCandidate]:
-    """Let Gemini correct clear mistakes without replacing Model A's ranking."""
-    offsets = {
-        "strong": -2,
-        "credible": -1,
-        "unknown": 0,
-        "mismatch": 10,
+    """Blend reliable experiential knowledge without penalizing unknown music."""
+    adjustment_by_fit = {
+        0: -0.70,
+        1: -0.40,
+        2: 0.0,
+        3: 0.22,
+        4: 0.48,
     }
-    scored: list[tuple[int, int, FusedCandidate]] = []
     for index, candidate in enumerate(candidates):
-        label = judgments.get(index, "unknown")
-        if label not in offsets:
-            label = "unknown"
-        candidate.judgment = label
-        scored.append((candidate.fused_rank + offsets[label], candidate.fused_rank, candidate))
+        judgment = judgments.get(index, CandidateJudgment(fit=2, confidence=0))
+        candidate.fit = judgment.fit
+        candidate.confidence = judgment.confidence
+        confidence = judgment.confidence / 3.0
+        candidate.final_score = (
+            candidate.fusion_score
+            + adjustment_by_fit[judgment.fit] * confidence
+        )
 
-    scored.sort(key=lambda item: (item[0], item[1]))
-    ordered = [item[2] for item in scored]
+    ordered = sorted(
+        candidates,
+        key=lambda candidate: (
+            candidate.final_score,
+            candidate.fusion_score,
+            -candidate.fused_rank,
+        ),
+        reverse=True,
+    )
     for rank, candidate in enumerate(ordered, start=1):
         candidate.final_rank = rank
     return ordered
@@ -591,11 +684,11 @@ async def _retrieve(
     current: Runtime,
     original_text: str,
     resolved_text: str,
-    paraphrases: list[str],
+    retrieval_views: list[dict[str, str]] | list[RetrievalDraft],
     limit: int,
 ) -> tuple[list[SearchMatch], int]:
     started = time.perf_counter()
-    views = _query_views(original_text, resolved_text, paraphrases)
+    views = _query_views(original_text, resolved_text, retrieval_views)
     if not views:
         return [], 0
 
@@ -624,14 +717,14 @@ async def _retrieve(
     pinecone_started = time.perf_counter()
     raw_sets = await asyncio.gather(
         *[
-            asyncio.to_thread(current.catalogue.query, vector, 50)
+            asyncio.to_thread(current.catalogue.query, vector, 100)
             for vector in vectors
         ]
     )
     pinecone_ms = round((time.perf_counter() - pinecone_started) * 1000)
     result_sets = list(zip(views, raw_sets))
 
-    candidates = _rrf_fuse(result_sets, limit=30)
+    candidates = _hybrid_fuse(result_sets, limit=80)
     if not candidates:
         print(
             "MELODYMIND_TIMING "
@@ -652,10 +745,10 @@ async def _retrieve(
     verifier_started = time.perf_counter()
     judgments = await current.agent.judge_candidates(
         request=resolved_text,
-        candidates=[candidate.match for candidate in candidates],
+        candidates=candidates,
     )
     verifier_ms = round((time.perf_counter() - verifier_started) * 1000)
-    ordered = _bounded_verifier_order(candidates, judgments)
+    ordered = _experiential_order(candidates, judgments)
     results = [candidate.match for candidate in ordered[:limit]]
 
     print(
@@ -668,9 +761,15 @@ async def _retrieve(
                         "artist": candidate.match.artist,
                         "fused_rank": candidate.fused_rank,
                         "final_rank": candidate.final_rank,
-                        "judgment": candidate.judgment,
+                        "fit": candidate.fit,
+                        "confidence": candidate.confidence,
                         "source_ranks": candidate.source_ranks,
-                        "rrf": round(candidate.rrf_score, 6),
+                        "source_scores": {
+                            label: round(score, 5)
+                            for label, score in candidate.source_scores.items()
+                        },
+                        "fusion": round(candidate.fusion_score, 6),
+                        "final_score": round(candidate.final_score, 6),
                     }
                     for candidate in candidates
                 ]
@@ -709,7 +808,7 @@ async def _plan(
             {
                 "action": decision.action,
                 "plan_ms": round((time.perf_counter() - started) * 1000),
-                "paraphrases": len(decision.paraphrases),
+                "retrieval_views": len(decision.retrieval_views),
                 "probe_used": probe_used,
                 "turns": len(history),
                 "search_text": decision.search_text if decision.action == "search" else "",
@@ -753,11 +852,14 @@ def _search_ready_response(
     plan_token = _sign_token(
         current,
         {
-            "v": 2,
+            "v": 3,
             "kind": "search",
             "o": original,
             "s": decision.search_text,
-            "p": decision.paraphrases[:2],
+            "r": [
+                {"kind": view.kind, "text": view.text}
+                for view in decision.retrieval_views[:4]
+            ],
             "m": decision.message,
             "iat": int(time.time()),
         },
@@ -834,7 +936,7 @@ async def execute_search(
         current=current,
         original_text=str(payload["original"]),
         resolved_text=str(payload["search_text"]),
-        paraphrases=list(payload["paraphrases"]),
+        retrieval_views=list(payload["retrieval_views"]),
         limit=request.limit,
     )
     return SearchResponse(
@@ -870,7 +972,7 @@ async def search(
         current=current,
         original_text=query,
         resolved_text=decision.search_text,
-        paraphrases=decision.paraphrases,
+        retrieval_views=decision.retrieval_views,
         limit=request.limit,
     )
     return SearchResponse(

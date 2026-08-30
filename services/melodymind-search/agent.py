@@ -1,17 +1,9 @@
-"""Lightweight conversational planning and verification for MelodyMind.
-
-The portfolio service deliberately keeps the useful agent behavior from the original
-MelodyMind demo while leaving its database/auth/Spotify/web-search stack behind.
-
-The agent sees the actual conversation turns. It may ask at most one clarification.
-When it searches, it resolves references in that conversation into one faithful,
-self-contained retrieval sentence and a small number of meaning-preserving variants.
-It never replaces Model A with an LLM-authored musical interpretation.
-"""
+"""Conversation planning and experiential verification for MelodyMind."""
 
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
 import json
 import os
 import re
@@ -20,81 +12,96 @@ from typing import Sequence
 import httpx
 
 
+RETRIEVAL_KINDS = (
+    "request_post",
+    "listener_story",
+    "experience_arc",
+    "music_description",
+)
+
+
 AGENT_SYSTEM_PROMPT = """You are MelodyMind, an emotionally intelligent music curator.
-You are given the ACTUAL conversation between the user and MelodyMind. Decide whether one
-clarification would materially improve the recommendations, or whether the system is ready
-to search.
+You receive the ACTUAL conversation between the user and MelodyMind. Decide whether one
+clarification would materially improve the recommendations, or whether search can begin.
 
-PROBING:
-- Ask at most ONE clarification question in the whole conversation.
-- Probe when the request leaves materially different musical goals plausible.
-- The most useful probe often asks what the user wants the music to do: reflect/match the
-  feeling, provide comfort, help release it, help move on, shift the mood, focus, celebrate,
-  etc. Do not make the user repeat facts already present.
-- A concrete life event does NOT automatically mean the goal is clear. "My dog died" can
-  still need one question about what the user wants from the music.
-- If probe_used=true, you MUST search. Never ask a second clarification.
-- If the user already stated the desired direction/function, search immediately.
+PROBING
+- Ask at most ONE clarification in the whole conversation.
+- Probe when the request leaves materially different listening goals plausible.
+- A useful question usually asks what the music should do: stay with the feeling, offer
+  comfort, release it, move forward, change the energy, focus, or celebrate.
+- Do not make the user repeat information already present.
+- If probe_used=true, search. Never ask a second question.
+- If the user has already said what they want from the music, search immediately.
 
-SEARCH PREPARATION:
-When ready to search, return one `search_text` plus 0 to 2 `paraphrases`.
-`search_text` is NOT an interpretation or an ontology. It is a concise, self-contained,
-faithful resolution of what the conversation explicitly establishes.
+WHEN SEARCH IS READY
+Return a faithful `search_text` plus four different retrieval views. Model A learned from
+real music discussions: recommendation requests, personal listening experiences, emotional
+associations, descriptions of sound, memories, situations, comparisons, and listening uses.
+The retrieval views should resemble those kinds of natural music discussion. They are
+hypotheses used to find candidates, not claims about the user and not generic paraphrases.
 
-You MAY:
-- resolve pronouns and references using the preceding assistant question
-- resolve answers such as "both", "the first one", or "more of the latter" using the exact
-  alternatives the assistant presented
-- combine the original situation with the user's explicit preference into one readable
-  sentence
+The four required views are:
+1. `request_post`: a natural first-person recommendation request with the situation and the
+   desired effect. It should read like a short post written by a person looking for music.
+2. `listener_story`: a plain first-person account of using music in this situation. State
+   what the listener felt before and what they wanted the music to change or preserve. Do
+   not claim that they already found a song.
+3. `experience_arc`: what the listener should feel while the music plays, including mixed
+   feelings or movement from one feeling to another.
+4. `music_description`: the likely emotional and sonic character of music that could create
+   that experience. Do not mention a genre, era, instrument, tempo, or lyrical topic unless
+   the user requested it.
 
-You MUST NOT:
-- invent emotions, motivations, causes, consequences, therapeutic goals, genre,
-  instrumentation, tempo, lyrical themes, era, or production style
-- collapse relationship/subject types: friendship is not romance; pet loss is not partner
-  loss; work, family, grief, conflict, celebration, etc. remain distinct when stated
-- silently drop one side of a multi-part answer such as "a little bit of both"
-- make the situation more dramatic, sentimental, specific, or musical than the conversation
-- turn a life event into generic sonic language
+IMPORTANT
+- A fitting song does not need to be literally about the same event or relationship. A love
+  song can feel right after a friendship ends. Judge the listening experience.
+- Preserve every explicit part of the request, including tensions such as wanting to feel
+  sadness while also becoming more optimistic.
+- Resolve pronouns and answers such as “both” from the actual conversation.
+- Do not invent events, causes, identities, preferences, genres, or therapeutic outcomes.
+- Do not mention a specific song or artist in a retrieval view.
+- Write plainly. Do not use poetic metaphors, similes, therapy language, inspirational
+  clichés, or invented imagery. Never write phrases such as "a hand on my shoulder", "a
+  sunrise after a long night", "a journey", "healing", or "soundscape". These are search
+  inputs, not creative writing.
+- `listener_story` should use direct wording such as: "I listened to music after a close
+  friendship ended without a goodbye. I wanted to feel the loss without staying hopeless."
+- Each view must be useful on its own and should be one to three natural sentences.
 
-PARAPHRASES:
-- strictly preserve the meaning of `search_text`
-- add no facts or musical attributes
-- return fewer or none when a safe alternative is not possible
+The acknowledgement `message` must briefly reflect the direction the user chose.
 
-The acknowledgement `message` must also preserve the user's explicit selected direction. If
-someone chose both options, acknowledge both rather than mentioning only one.
-
-Return JSON only in one of these forms:
-{"action":"probe","message":"one concise natural clarifying question","search_text":"","paraphrases":[]}
-{"action":"search","message":"one short faithful acknowledgement","search_text":"self-contained faithful request","paraphrases":["...","..."]}
+Return JSON only:
+{"action":"probe","message":"one natural question","search_text":"","retrieval_views":[]}
+or
+{"action":"search","message":"short acknowledgement","search_text":"faithful resolved request","retrieval_views":[{"kind":"request_post","text":"..."},{"kind":"listener_story","text":"..."},{"kind":"experience_arc","text":"..."},{"kind":"music_description","text":"..."}]}
 """
 
 
-RERANK_SYSTEM_PROMPT = """You are a conservative verification layer after an audio-semantic
-retriever. Model A produced the candidate pool. Do NOT create a new ranking from scratch.
-For each candidate, classify only what you can judge from RELIABLE knowledge of the song,
-artist, lyrics/themes, and common listening context.
+RERANK_SYSTEM_PROMPT = """You are the final experiential judge for a semantic music
+recommender. The audio model supplied every candidate. Decide how likely each song is to FEEL
+right for the complete listening request.
 
-Allowed labels:
-- strong: you reliably know it is a precise fit for the user's stated situation/direction
-- credible: you reliably know it is a reasonable broader fit
-- mismatch: you reliably know it conflicts with an explicit situation, relationship type,
-  subject, mood direction, or activity
-- unknown: you do not know enough to make a reliable judgment
+Literal subject matching is optional. A romantic song may fit the feeling after losing a
+friendship. A song about another event may create exactly the requested emotional experience.
+Use the music, emotional tone, lyrical effect, and common listening context when you know
+them. Do not reward fame. Do not infer a song from its title alone.
 
-Rules:
-- preserve explicit relationship and subject types: friendship != romantic breakup; pet loss
-  != partner loss; family/work/celebration/grief/conflict remain distinct when stated
-- title or album wording alone is NOT evidence of relevance
-- fame is NOT evidence of relevance
-- unfamiliar/obscure songs MUST be `unknown`, not penalized
-- candidate IDs and presentation order carry no quality signal
-- use `mismatch` only when you are genuinely confident
+For each candidate return two integers:
+- fit: 4 exceptional fit, 3 good fit, 2 plausible or neutral, 1 weak fit, 0 clear conflict
+- confidence: 3 you know the song well, 2 reliable knowledge, 1 limited knowledge, 0 unknown
 
-Return ONLY one JSON object mapping candidate IDs to labels, for example:
-{"c00":"unknown","c01":"strong","c02":"mismatch"}
+If a song is unfamiliar, return [2,0]. Unknown music remains neutral and must not be punished.
+Use low fit only when you know enough to support it. Candidate IDs and order carry no signal.
+
+Return one compact JSON object mapping every candidate ID to [fit, confidence], for example:
+{"c00":[4,3],"c01":[2,0],"c02":[1,2]}
 """
+
+
+@dataclass(frozen=True)
+class RetrievalDraft:
+    kind: str
+    text: str
 
 
 @dataclass(frozen=True)
@@ -102,7 +109,13 @@ class AgentDecision:
     action: str
     message: str
     search_text: str
-    paraphrases: list[str]
+    retrieval_views: list[RetrievalDraft]
+
+
+@dataclass(frozen=True)
+class CandidateJudgment:
+    fit: int
+    confidence: int
 
 
 def _clean_history(history: Sequence[dict[str, str]]) -> list[dict[str, str]]:
@@ -117,7 +130,6 @@ def _clean_history(history: Sequence[dict[str, str]]) -> list[dict[str, str]]:
 
 
 def _fallback_search_text(history: Sequence[dict[str, str]]) -> str:
-    """Preserve exact dialogue when the planner is unavailable; never invent intent."""
     cleaned = _clean_history(history)
     user_messages = [item["content"] for item in cleaned if item["role"] == "user"]
     if len(cleaned) == 1 and user_messages:
@@ -129,18 +141,25 @@ def _fallback_search_text(history: Sequence[dict[str, str]]) -> str:
     return transcript[:1600] or (user_messages[-1][:1600] if user_messages else "music request")
 
 
+def _fallback_views(search_text: str) -> list[RetrievalDraft]:
+    clean = search_text.strip()
+    return [
+        RetrievalDraft("request_post", "I am looking for music for this: " + clean),
+        RetrievalDraft("listener_story", "This is the kind of situation where a song can feel right: " + clean),
+        RetrievalDraft("experience_arc", "The listening experience should follow this direction: " + clean),
+        RetrievalDraft("music_description", "Music whose emotional character fits this request: " + clean),
+    ]
+
+
 def _conversation_prompt(history: Sequence[dict[str, str]], probe_used: bool) -> str:
-    cleaned = _clean_history(history)
     transcript = "\n".join(
         ("USER" if item["role"] == "user" else "MELODYMIND") + ": " + item["content"]
-        for item in cleaned
+        for item in _clean_history(history)
     )
     return f"probe_used: {'true' if probe_used else 'false'}\n\nCONVERSATION:\n{transcript}"
 
 
 class GeminiAgent:
-    """Small Gemini REST client used only for planning and bounded verification."""
-
     def __init__(self) -> None:
         self.api_key = os.environ.get("GEMINI_API_KEY", "").strip()
         self.plan_model = os.environ.get(
@@ -172,7 +191,7 @@ class GeminiAgent:
         if not self.api_key:
             raise RuntimeError("GEMINI_API_KEY is not configured")
         if self._client is None:
-            self._client = httpx.AsyncClient(timeout=httpx.Timeout(20.0, connect=5.0))
+            self._client = httpx.AsyncClient(timeout=httpx.Timeout(25.0, connect=5.0))
 
         url = (
             "https://generativelanguage.googleapis.com/v1beta/models/"
@@ -213,14 +232,13 @@ class GeminiAgent:
         history: Sequence[dict[str, str]],
         probe_used: bool = False,
     ) -> AgentDecision:
-        """Return either one probe question or a faithful search plan."""
         fallback_text = _fallback_search_text(history)
         if not self.configured:
             return AgentDecision(
                 action="search",
                 message="",
                 search_text=fallback_text,
-                paraphrases=[],
+                retrieval_views=_fallback_views(fallback_text),
             )
 
         try:
@@ -229,7 +247,7 @@ class GeminiAgent:
                 system_prompt=AGENT_SYSTEM_PROMPT,
                 user_prompt=_conversation_prompt(history, probe_used),
                 temperature=0.1,
-                max_tokens=520,
+                max_tokens=1100,
             )
             if not isinstance(raw, dict):
                 raise ValueError("Agent response was not an object")
@@ -239,72 +257,71 @@ class GeminiAgent:
             if probe_used:
                 action = "search"
             if action == "probe" and not probe_used and message:
-                return AgentDecision(
-                    action="probe",
-                    message=message,
-                    search_text="",
-                    paraphrases=[],
-                )
+                return AgentDecision("probe", message, "", [])
 
             search_text = str(raw.get("search_text", "")).strip()
-            if len(search_text) < 4 or len(search_text) > 1600:
+            if not 4 <= len(search_text) <= 1600:
                 search_text = fallback_text
 
-            variants: list[str] = []
-            seen = {search_text.casefold()}
-            for item in _clean_history(history):
-                seen.add(item["content"].casefold())
-            raw_variants = raw.get("paraphrases", [])
-            if isinstance(raw_variants, list):
-                for item in raw_variants:
-                    if not isinstance(item, str):
+            parsed: dict[str, RetrievalDraft] = {}
+            raw_views = raw.get("retrieval_views", [])
+            if isinstance(raw_views, list):
+                for item in raw_views:
+                    if not isinstance(item, dict):
                         continue
-                    text = item.strip()
-                    key = text.casefold()
-                    if not 4 <= len(text) <= 1600 or key in seen:
+                    kind = str(item.get("kind", "")).strip().lower()
+                    text = str(item.get("text", "")).strip()
+                    if kind not in RETRIEVAL_KINDS or not 12 <= len(text) <= 700:
                         continue
-                    seen.add(key)
-                    variants.append(text)
-                    if len(variants) == 2:
-                        break
+                    parsed.setdefault(kind, RetrievalDraft(kind, text))
 
-            return AgentDecision(
-                action="search",
-                message=message,
-                search_text=search_text,
-                paraphrases=variants,
-            )
+            fallbacks = {item.kind: item for item in _fallback_views(search_text)}
+            views = [parsed.get(kind, fallbacks[kind]) for kind in RETRIEVAL_KINDS]
+            return AgentDecision("search", message, search_text, views)
         except Exception:
             return AgentDecision(
                 action="search",
                 message="",
                 search_text=fallback_text,
-                paraphrases=[],
+                retrieval_views=_fallback_views(fallback_text),
             )
 
     async def judge_candidates(
         self,
         request: str,
         candidates: Sequence[object],
-    ) -> dict[int, str]:
-        """Classify candidates; unknown/missing judgments leave retrieval untouched."""
+    ) -> dict[int, CandidateJudgment]:
         if not self.configured or not candidates:
             return {}
 
+        indexed: list[tuple[int, object]] = list(enumerate(candidates))
+
+        def shuffle_key(item: tuple[int, object]) -> bytes:
+            _, candidate = item
+            match = getattr(candidate, "match", candidate)
+            identity = str(
+                getattr(match, "spotify_id", "")
+                or getattr(match, "track_id", "")
+                or item[0]
+            )
+            return hashlib.sha256((request + "\0" + identity).encode("utf-8")).digest()
+
+        indexed.sort(key=shuffle_key)
         lines: list[str] = []
-        for index, candidate in enumerate(candidates):
-            title = str(getattr(candidate, "title", "Unknown"))
-            artist = str(getattr(candidate, "artist", "Unknown"))
-            album = getattr(candidate, "album", None)
+        for original_index, candidate in indexed:
+            match = getattr(candidate, "match", candidate)
+            title = str(getattr(match, "title", "Unknown"))
+            artist = str(getattr(match, "artist", "Unknown"))
+            album = getattr(match, "album", None)
             suffix = f" — {album}" if album else ""
-            lines.append(f"c{index:02d}: {title} — {artist}{suffix}")
+            lines.append(f"c{original_index:02d}: {title} — {artist}{suffix}")
 
         prompt = (
-            "USER REQUEST:\n"
+            "COMPLETE LISTENING REQUEST:\n"
             + request.strip()
             + "\n\nCANDIDATES:\n"
             + "\n".join(lines)
-            + "\n\nClassify every candidate you can judge reliably. Use unknown when uncertain."
+            + "\n\nReturn a [fit, confidence] pair for every candidate."
         )
         try:
             raw = await self._generate_json(
@@ -312,21 +329,24 @@ class GeminiAgent:
                 system_prompt=RERANK_SYSTEM_PROMPT,
                 user_prompt=prompt,
                 temperature=0.0,
-                max_tokens=760,
+                max_tokens=2200,
             )
             if not isinstance(raw, dict):
                 raise ValueError("Verifier response was not an object")
 
-            allowed = {"strong", "credible", "mismatch", "unknown"}
-            judgments: dict[int, str] = {}
+            judgments: dict[int, CandidateJudgment] = {}
             for key, value in raw.items():
                 match = re.fullmatch(r"c(\d{1,3})", str(key).strip(), re.IGNORECASE)
-                label = str(value).strip().lower()
-                if not match or label not in allowed:
+                if not match or not isinstance(value, list) or len(value) != 2:
+                    continue
+                try:
+                    fit = int(value[0])
+                    confidence = int(value[1])
+                except (TypeError, ValueError):
                     continue
                 index = int(match.group(1))
-                if 0 <= index < len(candidates):
-                    judgments[index] = label
+                if 0 <= index < len(candidates) and 0 <= fit <= 4 and 0 <= confidence <= 3:
+                    judgments[index] = CandidateJudgment(fit, confidence)
             return judgments
         except Exception:
             return {}
