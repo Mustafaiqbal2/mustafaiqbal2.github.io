@@ -73,6 +73,20 @@ function ThinkingDots() {
   );
 }
 
+function busyLabel(state: SearchState, seconds: number): string {
+  if (state === "searching") {
+    if (seconds < 4) return "Using your answer to refine the search…";
+    if (seconds < 10) return "Running multiple semantic searches…";
+    if (seconds < 17) return "Combining the strongest candidates…";
+    return "Reranking the final matches…";
+  }
+
+  if (seconds < 4) return "Understanding what you want…";
+  if (seconds < 9) return "Deciding whether one detail would help…";
+  if (seconds < 17) return "Preparing the semantic search…";
+  return "Searching and reranking the strongest matches…";
+}
+
 export function MelodyMindSearch() {
   const rootRef = useRef<HTMLElement>(null);
   const initialTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -89,6 +103,7 @@ export function MelodyMindSearch() {
   const [state, setState] = useState<SearchState>("idle");
   const [results, setResults] = useState<SongResult[]>([]);
   const [error, setError] = useState("");
+  const [busySeconds, setBusySeconds] = useState(0);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -138,6 +153,21 @@ export function MelodyMindSearch() {
   }, [state, results]);
 
   useEffect(() => () => requestRef.current?.abort(), []);
+
+  useEffect(() => {
+    const busy = state === "thinking" || state === "searching";
+    if (!busy) {
+      setBusySeconds(0);
+      return;
+    }
+
+    const startedAt = Date.now();
+    setBusySeconds(0);
+    const timer = window.setInterval(() => {
+      setBusySeconds(Math.floor((Date.now() - startedAt) / 1000));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [state]);
 
   useEffect(() => {
     if (state === "probe") {
@@ -273,6 +303,7 @@ export function MelodyMindSearch() {
   };
 
   const isBusy = state === "thinking" || state === "searching";
+  const currentBusyLabel = busyLabel(state, busySeconds);
 
   return (
     <section ref={rootRef} className="mm-product" aria-label="MelodyMind search">
@@ -389,7 +420,7 @@ export function MelodyMindSearch() {
                     <span className="mm-turn__role lv-mono">MELODYMIND</span>
                     <div className="mm-agent-status">
                       <ThinkingDots />
-                      <span>{state === "thinking" ? "Reading your situation…" : "Searching and ranking matches…"}</span>
+                      <span>{currentBusyLabel} · {busySeconds}s</span>
                     </div>
                   </article>
                 )}
@@ -484,7 +515,7 @@ export function MelodyMindSearch() {
 
                 {isBusy && (
                   <div className="mm-agent-waiting">
-                    <span>{state === "thinking" ? "MelodyMind is thinking" : "Finding the best matches"}</span>
+                    <span>{currentBusyLabel} · {busySeconds}s</span>
                     <button type="button" onClick={beginAgain} aria-label="Cancel search">
                       <X aria-hidden="true" />
                     </button>
