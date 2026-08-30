@@ -17,13 +17,22 @@ type SongResult = {
   score: number;
 };
 
-type SearchResponse = {
+type ProbeResponse = {
+  type: "probe";
   query: string;
+  message: string;
+};
+
+type ResultsResponse = {
+  type?: "results";
+  query: string;
+  message?: string;
   results: SongResult[];
   total: number;
 };
 
-type SearchState = "idle" | "loading" | "success" | "error";
+type SearchResponse = ProbeResponse | ResultsResponse;
+type SearchState = "idle" | "loading" | "probe" | "success" | "error";
 
 const EXAMPLES = [
   "A close friendship ended quietly. Neither of us said goodbye.",
@@ -60,6 +69,8 @@ export function MelodyMindSearch() {
   const requestRef = useRef<AbortController | null>(null);
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
+  const [clarification, setClarification] = useState("");
+  const [probeQuestion, setProbeQuestion] = useState("");
   const [state, setState] = useState<SearchState>("idle");
   const [results, setResults] = useState<SongResult[]>([]);
   const [error, setError] = useState("");
@@ -124,6 +135,8 @@ export function MelodyMindSearch() {
     requestRef.current?.abort();
     setQuery("");
     setSubmittedQuery("");
+    setClarification("");
+    setProbeQuestion("");
     setResults([]);
     setError("");
     setState("idle");
@@ -135,12 +148,15 @@ export function MelodyMindSearch() {
 
   const submit = async (event?: FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
-    const cleanQuery = query.trim();
+    const answeringProbe = state === "probe";
+    const cleanQuery = answeringProbe ? submittedQuery.trim() : query.trim();
+    const cleanClarification = answeringProbe ? clarification.trim() : "";
     if (cleanQuery.length < 4 || state === "loading") return;
+    if (answeringProbe && !cleanClarification) return;
 
     const endpoint = searchUrl();
     if (!endpoint) {
-      setSubmittedQuery(cleanQuery);
+      if (!answeringProbe) setSubmittedQuery(cleanQuery);
       setResults([]);
       setError("The search server is not connected to this build.");
       setState("error");
@@ -150,7 +166,7 @@ export function MelodyMindSearch() {
     requestRef.current?.abort();
     const controller = new AbortController();
     requestRef.current = controller;
-    setSubmittedQuery(cleanQuery);
+    if (!answeringProbe) setSubmittedQuery(cleanQuery);
     setResults([]);
     setError("");
     setState("loading");
@@ -159,11 +175,25 @@ export function MelodyMindSearch() {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json" },
-        body: JSON.stringify({ query: cleanQuery, limit: 10 }),
+        body: JSON.stringify({
+          query: cleanQuery,
+          limit: 10,
+          ...(answeringProbe ? { clarification: cleanClarification } : {})
+        }),
         signal: controller.signal
       });
       if (!response.ok) throw new Error(`Search failed with status ${response.status}`);
       const payload = await response.json() as SearchResponse;
+      if (payload.type === "probe") {
+        setProbeQuestion(payload.message);
+        setClarification("");
+        setState("probe");
+        window.requestAnimationFrame(() => {
+          resizeTextarea();
+          textareaRef.current?.focus();
+        });
+        return;
+      }
       setResults(Array.isArray(payload.results) ? payload.results : []);
       setState("success");
     } catch (reason) {
@@ -265,6 +295,45 @@ export function MelodyMindSearch() {
           </div>
         )}
 
+        {state === "probe" && (
+          <div className="mm-search-screen">
+            <div className="mm-intro">
+              <span className="mm-intro__index lv-mono">ONE QUICK QUESTION</span>
+              <h2>One more detail, then I’ll search.</h2>
+              <p>“{submittedQuery}”</p>
+              <div className="mm-intro__rule" aria-hidden="true"><i /></div>
+            </div>
+
+            <form className="mm-query-card" onSubmit={submit}>
+              <div className="mm-query-card__head">
+                <label htmlFor="melodymind-clarification">{probeQuestion}</label>
+                <span className="lv-mono">{clarification.length} / 500</span>
+              </div>
+              <textarea
+                ref={textareaRef}
+                id="melodymind-clarification"
+                value={clarification}
+                maxLength={500}
+                rows={6}
+                placeholder="Your answer"
+                onChange={(event) => {
+                  setClarification(event.target.value);
+                  resizeTextarea();
+                }}
+                onKeyDown={handleComposerKey}
+                autoFocus
+              />
+              <div className="mm-query-card__action">
+                <span className="lv-mono">ONE QUESTION MAX</span>
+                <button type="submit" disabled={!clarification.trim()}>
+                  Find songs
+                  <ArrowRight aria-hidden="true" />
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
         {state === "loading" && (
           <div className="mm-status-screen" role="status" aria-live="polite">
             <div className="mm-search-mark" aria-hidden="true">
@@ -273,7 +342,7 @@ export function MelodyMindSearch() {
               <i />
             </div>
             <span className="lv-mono">FINDING SONGS</span>
-            <h2>{submittedQuery}</h2>
+            <h2>{submittedQuery || query}</h2>
             <button className="mm-cancel" type="button" onClick={beginAgain}>
               <X aria-hidden="true" /> Cancel
             </button>
@@ -283,7 +352,7 @@ export function MelodyMindSearch() {
         {state === "error" && (
           <div className="mm-status-screen mm-status-screen--error" role="alert">
             <span className="lv-mono">SEARCH UNAVAILABLE</span>
-            <h2>{submittedQuery}</h2>
+            <h2>{submittedQuery || query}</h2>
             <p>{error}</p>
             <button type="button" onClick={() => setState("idle")}>Return to the search</button>
           </div>
