@@ -3,8 +3,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import gsap from "gsap";
-import { ArrowRight, ExternalLink, RotateCcw, Search, X } from "lucide-react";
+import { ArrowRight, ArrowUpRight, RotateCcw, Search, X } from "lucide-react";
 import "./melodymind-search.css";
+import "./melodymind-results.css";
 
 type SongResult = {
   track_id: string;
@@ -40,6 +41,18 @@ function searchUrl(): string | null {
 
 function spotifyUrl(song: SongResult): string {
   return song.spotify_url || `https://open.spotify.com/track/${song.spotify_id}`;
+}
+
+function ResultArtwork({ song }: { song: SongResult }) {
+  return (
+    <span className="mm-result__art" aria-hidden="true">
+      {song.artwork ? (
+        <img src={song.artwork} alt="" loading="eager" decoding="async" />
+      ) : (
+        <span className="mm-result__art-fallback">M</span>
+      )}
+    </span>
+  );
 }
 
 export function MelodyMindSearch() {
@@ -90,8 +103,8 @@ export function MelodyMindSearch() {
       gsap.fromTo(".mm-result", { opacity: 0, y: 13 }, {
         opacity: 1,
         y: 0,
-        duration: 0.4,
-        stagger: 0.045,
+        duration: 0.34,
+        stagger: 0.035,
         ease: "power3.out"
       });
     }, rootRef);
@@ -297,19 +310,26 @@ export function MelodyMindSearch() {
               </header>
 
               {results.length > 0 ? (
-                <ol className="mm-result-list">
+                <ol className="mm-result-list" tabIndex={0} aria-label="Matching tracks. Scroll to see all results.">
                   {results.map((song, index) => (
                     <li className="mm-result" key={song.track_id}>
                       <span className="mm-result__number lv-mono">{String(index + 1).padStart(2, "0")}</span>
-                      <span className="mm-result__record" aria-hidden="true"><i /></span>
+                      <ResultArtwork song={song} />
                       <span className="mm-result__track">
                         <strong>{song.title}</strong>
                         <small>{song.artist}</small>
                       </span>
                       <span className="mm-result__album">{song.album || "—"}</span>
                       {song.spotify_id ? (
-                        <a href={spotifyUrl(song)} target="_blank" rel="noreferrer" aria-label={`Open ${song.title} on Spotify`}>
-                          <ExternalLink aria-hidden="true" />
+                        <a
+                          className="mm-result__spotify"
+                          href={spotifyUrl(song)}
+                          target="_blank"
+                          rel="noreferrer"
+                          aria-label={`Open ${song.title} by ${song.artist} in Spotify`}
+                        >
+                          <span>Open in Spotify</span>
+                          <ArrowUpRight aria-hidden="true" />
                         </a>
                       ) : <span />}
                     </li>
