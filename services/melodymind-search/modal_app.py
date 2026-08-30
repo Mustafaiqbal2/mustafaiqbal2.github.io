@@ -39,7 +39,10 @@ service_secret = modal.Secret.from_name(
     # without paying for a permanently reserved 6 GiB container.
     memory=(2048, 6144),
     max_containers=1,
-    scaledown_window=300,
+    # Keep the large text tower warm for the full Modal idle window. This costs
+    # more than the old five-minute window, but avoids repeated model cold starts
+    # while someone is actively trying several MelodyMind searches.
+    scaledown_window=1200,
     timeout=300,
     startup_timeout=180,
 )
