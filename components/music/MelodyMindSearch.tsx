@@ -23,6 +23,13 @@ type ProbeResponse = {
   message: string;
 };
 
+type SearchReadyResponse = {
+  type: "search_ready";
+  query: string;
+  message?: string;
+  plan_token: string;
+};
+
 type ResultsResponse = {
   type?: "results";
   query: string;
@@ -31,7 +38,8 @@ type ResultsResponse = {
   total: number;
 };
 
-type SearchResponse = ProbeResponse | ResultsResponse;
+type PlanResponse = ProbeResponse | SearchReadyResponse;
+type LegacySearchResponse = ProbeResponse | ResultsResponse;
 type SearchState = "idle" | "thinking" | "probe" | "searching" | "success" | "error";
 
 const EXAMPLES = [
@@ -42,9 +50,10 @@ const EXAMPLES = [
 
 const API_BASE = process.env.NEXT_PUBLIC_MUSIC_API_URL?.replace(/\/$/, "");
 
-function searchUrl(): string | null {
+function apiUrl(path: "plan" | "search"): string | null {
   if (!API_BASE) return null;
-  return API_BASE.endsWith("/api") ? `${API_BASE}/search` : `${API_BASE}/api/search`;
+  const root = API_BASE.endsWith("/api") ? API_BASE : `${API_BASE}/api`;
+  return `${root}/${path}`;
 }
 
 function spotifyUrl(song: SongResult): string {
@@ -71,20 +80,6 @@ function ThinkingDots() {
       <i />
     </span>
   );
-}
-
-function busyLabel(state: SearchState, seconds: number): string {
-  if (state === "searching") {
-    if (seconds < 4) return "Using your answer to refine the search…";
-    if (seconds < 10) return "Running multiple semantic searches…";
-    if (seconds < 17) return "Combining the strongest candidates…";
-    return "Reranking the final matches…";
-  }
-
-  if (seconds < 4) return "Understanding what you want…";
-  if (seconds < 9) return "Deciding whether one detail would help…";
-  if (seconds < 17) return "Preparing the semantic search…";
-  return "Searching and reranking the strongest matches…";
 }
 
 export function MelodyMindSearch() {
@@ -222,6 +217,45 @@ export function MelodyMindSearch() {
     });
   };
 
+  const showProbe = (payload: ProbeResponse) => {
+    setProbeQuestion(payload.message);
+    setClarification("");
+    setState("probe");
+  };
+
+  const showResults = (payload: ResultsResponse) => {
+    setAgentMessage(
+      payload.message?.trim() || "These are the closest matches I found for what you described."
+    );
+    setResults(Array.isArray(payload.results) ? payload.results : []);
+    setState("success");
+  };
+
+  const runLegacyOneShot = async (
+    searchEndpoint: string,
+    cleanQuery: string,
+    cleanClarification: string,
+    controller: AbortController
+  ) => {
+    const response = await fetch(searchEndpoint, {
+      method: "POST",
+      headers: { Accept: "application/json", "Content-Type": "application/json" },
+      body: JSON.stringify({
+        query: cleanQuery,
+        limit: 10,
+        ...(cleanClarification ? { clarification: cleanClarification } : {})
+      }),
+      signal: controller.signal
+    });
+    if (!response.ok) throw new Error(`Search failed with status ${response.status}`);
+    const payload = await response.json() as LegacySearchResponse;
+    if (payload.type === "probe") {
+      showProbe(payload);
+      return;
+    }
+    showResults(payload);
+  };
+
   const submit = async (event?: FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     const answeringProbe = state === "probe";
@@ -232,8 +266,9 @@ export function MelodyMindSearch() {
     if (cleanQuery.length < 4) return;
     if (answeringProbe && !cleanClarification) return;
 
-    const endpoint = searchUrl();
-    if (!endpoint) {
+    const planEndpoint = apiUrl("plan");
+    const searchEndpoint = apiUrl("search");
+    if (!planEndpoint || !searchEndpoint) {
       if (!answeringProbe) setSubmittedQuery(cleanQuery);
       setResults([]);
       setError("The search server is not connected to this build.");
@@ -253,32 +288,61 @@ export function MelodyMindSearch() {
     setAgentMessage("");
     setResults([]);
     setError("");
-    setState(answeringProbe ? "searching" : "thinking");
+
+    // This state means exactly one thing: the agent decision/query planning call
+    // is in flight. It never implies that catalogue retrieval has started.
+    setState("thinking");
 
     try {
-      const response = await fetch(endpoint, {
+      const planResponse = await fetch(planEndpoint, {
         method: "POST",
         headers: { Accept: "application/json", "Content-Type": "application/json" },
         body: JSON.stringify({
           query: cleanQuery,
-          limit: 10,
           ...(answeringProbe ? { clarification: cleanClarification } : {})
         }),
         signal: controller.signal
       });
-      if (!response.ok) throw new Error(`Search failed with status ${response.status}`);
 
-      const payload = await response.json() as SearchResponse;
-      if (payload.type === "probe") {
-        setProbeQuestion(payload.message);
-        setClarification("");
-        setState("probe");
+      // During rollout an older Worker may not have /api/plan yet. In that case
+      // keep the UI in the neutral planning state and use the old one-shot route;
+      // it still cannot falsely claim that a search has begun before a probe.
+      if (planResponse.status === 404) {
+        await runLegacyOneShot(
+          searchEndpoint,
+          cleanQuery,
+          cleanClarification,
+          controller
+        );
         return;
       }
+      if (!planResponse.ok) {
+        throw new Error(`Planning failed with status ${planResponse.status}`);
+      }
 
-      setAgentMessage(payload.message?.trim() || "These are the closest matches I found for what you described.");
-      setResults(Array.isArray(payload.results) ? payload.results : []);
-      setState("success");
+      const plan = await planResponse.json() as PlanResponse;
+      if (plan.type === "probe") {
+        showProbe(plan);
+        return;
+      }
+      if (plan.type !== "search_ready" || !plan.plan_token) {
+        throw new Error("Invalid MelodyMind plan response");
+      }
+
+      // Only a real search_ready response is allowed to move the UI into the
+      // search state. From this point retrieval/rank fusion/reranking is real.
+      setState("searching");
+      const searchResponse = await fetch(searchEndpoint, {
+        method: "POST",
+        headers: { Accept: "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ plan_token: plan.plan_token, limit: 10 }),
+        signal: controller.signal
+      });
+      if (!searchResponse.ok) {
+        throw new Error(`Search failed with status ${searchResponse.status}`);
+      }
+      const resultsPayload = await searchResponse.json() as ResultsResponse;
+      showResults(resultsPayload);
     } catch (reason) {
       if (reason instanceof DOMException && reason.name === "AbortError") return;
       setError("I couldn’t complete that search. Try again in a moment.");
@@ -303,7 +367,11 @@ export function MelodyMindSearch() {
   };
 
   const isBusy = state === "thinking" || state === "searching";
-  const currentBusyLabel = busyLabel(state, busySeconds);
+  const busyLabel = state === "searching"
+    ? "Searching and ranking matches…"
+    : clarification
+      ? "Preparing your search from that answer…"
+      : "Understanding your request…";
 
   return (
     <section ref={rootRef} className="mm-product" aria-label="MelodyMind search">
@@ -420,7 +488,7 @@ export function MelodyMindSearch() {
                     <span className="mm-turn__role lv-mono">MELODYMIND</span>
                     <div className="mm-agent-status">
                       <ThinkingDots />
-                      <span>{currentBusyLabel} · {busySeconds}s</span>
+                      <span>{busyLabel} · {busySeconds}s</span>
                     </div>
                   </article>
                 )}
@@ -515,7 +583,7 @@ export function MelodyMindSearch() {
 
                 {isBusy && (
                   <div className="mm-agent-waiting">
-                    <span>{currentBusyLabel} · {busySeconds}s</span>
+                    <span>{busyLabel} · {busySeconds}s</span>
                     <button type="button" onClick={beginAgain} aria-label="Cancel search">
                       <X aria-hidden="true" />
                     </button>
