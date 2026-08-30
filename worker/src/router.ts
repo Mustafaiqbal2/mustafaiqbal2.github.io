@@ -1,3 +1,11 @@
+import {
+  parseClientAnalyticsEvent,
+  readAnalyticsIdentity,
+  recordAnalyticsEvent,
+  renderAnalyticsDashboard,
+  type AnalyticsEnv,
+  type AnalyticsEvent
+} from "./analytics";
 import { createSpotifyClient, type SpotifyClient, type SpotifyEnv } from "./spotify";
 import {
   executeCataloguePlan,
@@ -7,7 +15,7 @@ import {
   type MelodyMindEnv
 } from "./melodymind";
 
-export type WorkerEnv = SpotifyEnv & MelodyMindEnv & { ALLOWED_ORIGIN: string };
+export type WorkerEnv = SpotifyEnv & MelodyMindEnv & AnalyticsEnv & { ALLOWED_ORIGIN: string };
 export type WorkerContext = { waitUntil(promise: Promise<unknown>): void };
 export type ResponseCache = {
   match(request: Request): Promise<Response | undefined>;
@@ -44,7 +52,10 @@ function securityHeaders(origin: string | null): Headers {
   if (origin) {
     headers.set("Access-Control-Allow-Origin", origin);
     headers.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-    headers.set("Access-Control-Allow-Headers", "Content-Type");
+    headers.set(
+      "Access-Control-Allow-Headers",
+      "Content-Type, X-Analytics-Visitor, X-Analytics-Session, X-Analytics-Path"
+    );
   }
   return headers;
 }
@@ -113,6 +124,11 @@ function readLimit(body: Record<string, unknown>): number {
   return Number(body.limit);
 }
 
+function analyticsPath(request: Request): string {
+  const value = request.headers.get("X-Analytics-Path")?.trim() || "";
+  return value.startsWith("/") && value.length <= 400 ? value : "/work/melodymind";
+}
+
 async function enrichCatalogue(
   catalogue: CatalogueResultsResponse,
   env: WorkerEnv,
@@ -170,35 +186,103 @@ export function createRouter(deps: RouterDeps = {}) {
     const isHealth = url.pathname === "/health";
     const isPlan = url.pathname === "/api/plan";
     const isSearch = url.pathname === "/api/search";
+    const isAnalyticsEvent = url.pathname === "/api/analytics/event";
+    const isAnalyticsDashboard = url.pathname === "/analytics" || url.pathname === "/analytics/";
+    const identity = readAnalyticsIdentity(request);
+
+    const track = (input: AnalyticsEvent) => {
+      ctx.waitUntil(
+        recordAnalyticsEvent(env, request, {
+          ...input,
+          path: input.path || analyticsPath(request),
+          visitorId: input.visitorId || identity.visitorId,
+          sessionId: input.sessionId || identity.sessionId
+        }).catch(() => undefined)
+      );
+    };
+
+    if (isAnalyticsDashboard) {
+      if (request.method !== "GET") return json({ error: "method_not_allowed" }, 405, null);
+      try {
+        return await renderAnalyticsDashboard(request, env);
+      } catch {
+        return new Response("Analytics dashboard unavailable", {
+          status: 500,
+          headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" }
+        });
+      }
+    }
 
     if (request.method === "OPTIONS") {
       if (!origin) return json({ error: "forbidden" }, 403, null);
       return new Response(null, { status: 204, headers: securityHeaders(origin) });
     }
 
-    if (isHealth) return json({ status: "ok" }, 200, origin);
+    if (isHealth) {
+      return json(
+        {
+          status: "ok",
+          analytics_db: Boolean(env.ANALYTICS_DB),
+          analytics_dashboard: Boolean(env.ANALYTICS_PASSWORD)
+        },
+        200,
+        origin
+      );
+    }
     if (!origin) return json({ error: "forbidden" }, 403, null);
+
+    if (isAnalyticsEvent) {
+      if (request.method !== "POST") return json({ error: "method_not_allowed" }, 405, origin);
+      try {
+        const event = await parseClientAnalyticsEvent(request);
+        if (!event.event) return json({ error: "invalid_event" }, 400, origin);
+        ctx.waitUntil(recordAnalyticsEvent(env, request, event).catch(() => undefined));
+        return new Response(null, { status: 204, headers: securityHeaders(origin) });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "";
+        if (message === "analytics_too_large") return json({ error: message }, 413, origin);
+        return json({ error: "invalid_analytics_event" }, 400, origin);
+      }
+    }
 
     if (isPlan) {
       if (request.method !== "POST") {
         return json({ error: "method_not_allowed" }, 405, origin);
       }
+      const startedAt = Date.now();
       try {
         const body = await requestBody(request);
         const conversationToken = readConversationToken(body);
-        const plan = conversationToken
-          ? await planCatalogue(
-              { conversationToken, message: readMessage(body) },
-              env,
-              deps.fetchImpl
-            )
-          : await planCatalogue(
-              { query: readQuery(body), clarification: readClarification(body) },
-              env,
-              deps.fetchImpl
-            );
+        let plan;
 
+        if (conversationToken) {
+          const answer = readMessage(body);
+          track({ event: "melodymind_probe_answer", data: { answer } });
+          plan = await planCatalogue(
+            { conversationToken, message: answer },
+            env,
+            deps.fetchImpl
+          );
+        } else {
+          const query = readQuery(body);
+          const clarification = readClarification(body);
+          track({
+            event: "melodymind_query",
+            data: { query, ...(clarification ? { clarification } : {}) }
+          });
+          plan = await planCatalogue(
+            { query, clarification },
+            env,
+            deps.fetchImpl
+          );
+        }
+
+        const elapsedMs = Date.now() - startedAt;
         if (plan.type === "probe") {
+          track({
+            event: "melodymind_probe",
+            data: { question: plan.message, elapsed_ms: elapsedMs }
+          });
           return json(
             {
               type: "probe",
@@ -212,6 +296,11 @@ export function createRouter(deps: RouterDeps = {}) {
             origin
           );
         }
+
+        track({
+          event: "melodymind_search_ready",
+          data: { acknowledgement: plan.message, elapsed_ms: elapsedMs }
+        });
         return json(
           {
             type: "search_ready",
@@ -224,6 +313,10 @@ export function createRouter(deps: RouterDeps = {}) {
         );
       } catch (error) {
         const message = error instanceof Error ? error.message : "";
+        track({
+          event: "melodymind_error",
+          data: { stage: "plan", error: message || "plan_unavailable", elapsed_ms: Date.now() - startedAt }
+        });
         if (message === "request_too_large") return json({ error: message }, 413, origin);
         if (message.startsWith("invalid_")) return json({ error: message }, 400, origin);
         return json({ error: "plan_unavailable" }, 502, origin);
@@ -234,6 +327,7 @@ export function createRouter(deps: RouterDeps = {}) {
       if (request.method !== "POST") {
         return json({ error: "method_not_allowed" }, 405, origin);
       }
+      const startedAt = Date.now();
       try {
         const body = await requestBody(request);
         const limit = readLimit(body);
@@ -252,6 +346,10 @@ export function createRouter(deps: RouterDeps = {}) {
           // Backward-compatible one-shot mode for older Pages builds.
           const query = readQuery(body);
           const clarification = readClarification(body);
+          track({
+            event: "melodymind_query",
+            data: { query, ...(clarification ? { clarification } : {}), legacy: true }
+          });
           const legacy = await searchCatalogue(
             query,
             limit,
@@ -260,6 +358,10 @@ export function createRouter(deps: RouterDeps = {}) {
             clarification
           );
           if (legacy.type === "probe") {
+            track({
+              event: "melodymind_probe",
+              data: { question: legacy.message, elapsed_ms: Date.now() - startedAt, legacy: true }
+            });
             return json(
               {
                 type: "probe",
@@ -277,9 +379,27 @@ export function createRouter(deps: RouterDeps = {}) {
         }
 
         const enriched = await enrichCatalogue(catalogue, env, client(env));
+        track({
+          event: "melodymind_results",
+          data: {
+            total: enriched.total,
+            elapsed_ms: Date.now() - startedAt,
+            results: enriched.results.map((result, index) => ({
+              rank: index + 1,
+              spotify_id: result.spotify_id,
+              title: result.title,
+              artist: result.artist,
+              score: result.score
+            }))
+          }
+        });
         return json(enriched, 200, origin);
       } catch (error) {
         const message = error instanceof Error ? error.message : "";
+        track({
+          event: "melodymind_error",
+          data: { stage: "search", error: message || "search_unavailable", elapsed_ms: Date.now() - startedAt }
+        });
         if (message === "request_too_large") return json({ error: message }, 413, origin);
         if (message.startsWith("invalid_")) return json({ error: message }, 400, origin);
         return json({ error: "search_unavailable" }, 502, origin);
