@@ -205,8 +205,9 @@ export function AnalyticsTracker() {
         return;
       }
 
-      if (destination.hostname === window.location.hostname) return;
       const category = categoryForLink(anchor);
+      const label = (anchor.textContent || anchor.getAttribute("aria-label") || "").trim().slice(0, 200);
+      const sameSite = destination.hostname === window.location.hostname;
 
       if (category === "spotify") {
         const row = anchor.closest(".mm-result");
@@ -220,12 +221,23 @@ export function AnalyticsTracker() {
         return;
       }
 
+      if (sameSite && category !== "resume") {
+        sendEvent({
+          event: "internal_click",
+          data: {
+            href: `${destination.pathname}${destination.hash}`,
+            label
+          }
+        });
+        return;
+      }
+
       sendEvent({
         event: "outbound_click",
         data: {
           category,
           href: destination.toString(),
-          label: (anchor.textContent || anchor.getAttribute("aria-label") || "").trim().slice(0, 200)
+          label
         }
       });
     };
