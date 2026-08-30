@@ -3,6 +3,7 @@ import { Bricolage_Grotesque, JetBrains_Mono } from "next/font/google";
 import { AnalyticsTracker } from "@/components/AnalyticsTracker";
 import { SiteFooter } from "@/components/SiteFooter";
 import { profile, siteUrl } from "@/data/portfolio";
+import "@/components/music/melodymind-analytics.css";
 import "./globals.css";
 
 const displaySans = Bricolage_Grotesque({
@@ -73,17 +74,10 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  // Pre-hydration site script. The old theme system (resolveTheme,
-  // data-theme, colorScheme writes) is gone: the site is single-look and
-  // globals.css pins color-scheme. What remains is the no-js fallback flag,
-  // the reveal observer, and the case-page lightbox.
   const siteScript = `
     (function () {
       document.documentElement.classList.remove("no-js");
 
-      // Run AFTER hydration: setupReveals mutates server-rendered class
-      // lists; doing it at DOMContentLoaded races React and triggers
-      // hydration mismatches.
       function initAfterHydration() {
         [setupReveals, setupLightbox].forEach(function (fn) {
           try { fn(); } catch (e) {}
@@ -148,7 +142,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       }
     })();
   `;
-
 
   const jsonLd = {
     "@context": "https://schema.org",
