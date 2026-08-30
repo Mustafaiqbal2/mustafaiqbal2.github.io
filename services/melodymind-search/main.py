@@ -4,11 +4,12 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 import json
 import os
 from pathlib import Path
 import secrets
+import time
 from typing import Annotated, Any
 
 from fastapi import FastAPI, Header, HTTPException, status
@@ -128,7 +129,6 @@ class Clamp3TextEncoder:
         ]
         remainder = len(token_ids) % self.max_tokens
         if remainder and len(chunks) > 1:
-            # CLaMP3 uses a full final window and weights it by the remainder.
             chunks[-1] = token_ids[-self.max_tokens :]
         weights = [self.max_tokens] * (len(token_ids) // self.max_tokens)
         if remainder:
@@ -342,6 +342,7 @@ async def _retrieve(
     paraphrases: list[str],
     limit: int,
 ) -> tuple[list[SearchMatch], int]:
+    started = time.perf_counter()
     queries = [search_text]
     seen = {search_text.casefold()}
     for variant in paraphrases:
@@ -353,26 +354,61 @@ async def _retrieve(
         if len(queries) == 4:
             break
 
+    embed_started = time.perf_counter()
     async with current.inference_lock:
         vectors = await asyncio.to_thread(current.encoder.embed_many, queries)
+    embed_ms = round((time.perf_counter() - embed_started) * 1000)
 
-    # Retrieval is network-bound; query the independent semantic views in parallel.
+    pinecone_started = time.perf_counter()
     result_sets = await asyncio.gather(
         *[
             asyncio.to_thread(current.catalogue.query, vector, 50)
             for vector in vectors
         ]
     )
+    pinecone_ms = round((time.perf_counter() - pinecone_started) * 1000)
+
     candidates = _rrf_fuse(result_sets, limit=30)
     if not candidates:
+        print(
+            "MELODYMIND_TIMING "
+            + json.dumps(
+                {
+                    "queries": len(queries),
+                    "embed_ms": embed_ms,
+                    "pinecone_ms": pinecone_ms,
+                    "rerank_ms": 0,
+                    "retrieve_total_ms": round((time.perf_counter() - started) * 1000),
+                    "candidates": 0,
+                }
+            ),
+            flush=True,
+        )
         return [], len(queries)
 
+    rerank_started = time.perf_counter()
     selected_indices = await current.agent.rerank(
         request=search_text,
         candidates=candidates,
         keep=limit,
     )
+    rerank_ms = round((time.perf_counter() - rerank_started) * 1000)
     results = [candidates[index] for index in selected_indices if 0 <= index < len(candidates)]
+
+    print(
+        "MELODYMIND_TIMING "
+        + json.dumps(
+            {
+                "queries": len(queries),
+                "embed_ms": embed_ms,
+                "pinecone_ms": pinecone_ms,
+                "rerank_ms": rerank_ms,
+                "retrieve_total_ms": round((time.perf_counter() - started) * 1000),
+                "candidates": len(candidates),
+            }
+        ),
+        flush=True,
+    )
     return results[:limit], len(queries)
 
 
@@ -407,7 +443,22 @@ async def search(
             detail="Query is too short",
         )
 
+    plan_started = time.perf_counter()
     decision = await current.agent.plan(query=query, clarification=clarification)
+    plan_ms = round((time.perf_counter() - plan_started) * 1000)
+    print(
+        "MELODYMIND_PLAN "
+        + json.dumps(
+            {
+                "action": decision.action,
+                "plan_ms": plan_ms,
+                "paraphrases": len(decision.paraphrases),
+                "has_clarification": bool(clarification),
+            }
+        ),
+        flush=True,
+    )
+
     if decision.action == "probe" and not clarification:
         return ProbeResponse(
             query=query,
