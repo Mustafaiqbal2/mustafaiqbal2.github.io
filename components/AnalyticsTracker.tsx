@@ -119,6 +119,7 @@ function patchApiFetch(): () => void {
     if (init?.headers) new Headers(init.headers).forEach((value, key) => headers.set(key, value));
     headers.set("X-Analytics-Visitor", identity.visitorId);
     headers.set("X-Analytics-Session", identity.sessionId);
+    headers.set("X-Analytics-Path", window.location.pathname);
 
     if (input instanceof Request) {
       return original(new Request(input, { ...init, headers }));
