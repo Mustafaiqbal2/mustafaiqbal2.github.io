@@ -2,10 +2,10 @@
 
 This is the private model service used by the portfolio's Cloudflare Worker. It
 contains no song-ingestion code and does not depend on the original MelodyMind
-backend.
+backend's database, auth, persistence, voice, stem-separation, or Spotify account
+stack.
 
-The service uses the frozen CLaMP3 text tower to create a unit-length
-768-dimensional query and searches:
+The service uses the frozen CLaMP3 text tower to search Model A in:
 
 ```text
 index: melodymind-embeddings
@@ -17,6 +17,35 @@ The query encoder must remain CLaMP3 for this namespace. Do not replace it with
 Nomic or another text model unless the catalogue is re-embedded into a matching
 space.
 
+## Lightweight agent layer
+
+The useful conversational/retrieval behavior from the original MelodyMind agent
+has been ported into this service without its backend baggage.
+
+The request flow is now:
+
+```text
+user situation
+  -> MelodyMind probe/search decision (one clarification maximum)
+  -> original wording is always preserved as retrieval query #1
+  -> 0-3 strict meaning-preserving paraphrases
+  -> one batched CLaMP3 text-encoder pass
+  -> independent Pinecone retrieval for each query view
+  -> reciprocal-rank fusion
+  -> larger candidate pool
+  -> LLM reranking using song/artist knowledge
+  -> final results
+```
+
+The query planner is explicitly forbidden from inventing emotions, causes,
+genres, instrumentation, lyrical themes, or other interpretations that the user
+did not provide. The generated paraphrases supplement the original query; they
+never replace it.
+
+If `GEMINI_API_KEY` is missing, the service deliberately falls back to the old
+single-query Model A search path rather than taking search offline. `/health`
+reports `agent_configured: true|false` so the deployment can be checked directly.
+
 ## Modal deployment
 
 Modal is the primary runtime for this service. `modal_app.py` reuses the existing
@@ -25,7 +54,6 @@ OOM restart loop seen on small Railway containers.
 
 The Modal function requests 2 GiB of memory, permits a 6 GiB startup ceiling,
 keeps at most one model container alive, and scales back to zero after idle time.
-The search implementation itself is unchanged.
 
 ### 1. Install and authenticate Modal
 
@@ -36,23 +64,31 @@ python -m pip install "modal>=1.3,<2"
 modal setup
 ```
 
-### 2. Create the service secret
+### 2. Create/update the service secret
 
-In the Modal dashboard, create a secret named:
+In the Modal dashboard, create or edit the secret named:
 
 ```text
 melodymind-search
 ```
 
-It must contain exactly the runtime credentials used by the current service:
+It should contain:
 
 ```text
 PINECONE_API_KEY
 MELODYMIND_SERVICE_TOKEN
+GEMINI_API_KEY
 ```
 
 Use the same `MELODYMIND_SERVICE_TOKEN` that is stored in the Cloudflare Worker.
-Do not commit either value to this repository.
+`GEMINI_API_KEY` enables probing, strict paraphrase generation, and reranking.
+Do not commit any of these values to this repository.
+
+Optional:
+
+```text
+MELODYMIND_AGENT_MODEL=gemini-2.5-flash
+```
 
 The index, namespace, and model label already have the correct defaults in the
 image:
@@ -71,48 +107,50 @@ From the repository root:
 modal deploy services/melodymind-search/modal_app.py
 ```
 
-Modal prints the public HTTPS endpoint for the `api` web function. Verify it
-before changing the Worker:
+Modal prints the public HTTPS endpoint for the `api` web function. Verify it:
 
 ```text
 GET <modal-url>/health
 ```
 
-A healthy deployment returns the model label, dimension `768`, index
-`melodymind-embeddings`, and namespace `clamp3-reddit-evidence-a-v1`.
+A healthy agent-enabled deployment returns the model label, dimension `768`,
+index, namespace, and:
 
-### 4. Point the Cloudflare Worker at Modal
+```json
+{"agent_configured": true}
+```
 
-Replace the Worker's `MELODYMIND_SEARCH_URL` secret with the Modal URL. Wrangler
-will prompt for the value without putting it in the repository:
+### 4. Deploy the Cloudflare Worker
+
+The Worker already knows the Modal URL and service token. The agent contract adds
+the optional clarification field and the `probe | results` response type, so the
+Worker code must be redeployed after pulling this version:
 
 ```powershell
-npx wrangler secret put MELODYMIND_SEARCH_URL --config worker/wrangler.toml
 npm run worker:deploy
 ```
 
-The Worker continues to call:
-
-```text
-POST <MELODYMIND_SEARCH_URL>/internal/search
-Authorization: Bearer <MELODYMIND_SERVICE_TOKEN>
-```
-
-No frontend API contract changes are required. The static site still talks only
-to the Cloudflare Worker.
+The browser still talks only to the Cloudflare Worker. No model or Pinecone
+credentials are exposed to the static site.
 
 ## Local/container behavior
 
-`Dockerfile` still builds the same standalone service image. Its build stage
-downloads the official CLaMP3 SAAS checkpoint, exports only the frozen text tower
-and projection, then discards the original multimodal checkpoint from the final
+`Dockerfile` builds the standalone service image. Its build stage downloads the
+official CLaMP3 SAAS checkpoint, exports only the frozen text tower and
+projection, then discards the original multimodal checkpoint from the final
 runtime image.
 
-Required runtime secrets remain:
+Required runtime secrets for basic search:
 
 ```text
 PINECONE_API_KEY
 MELODYMIND_SERVICE_TOKEN
+```
+
+Agent-enabled search additionally uses:
+
+```text
+GEMINI_API_KEY
 ```
 
 `railway.json` is retained only as a fallback deployment configuration; Modal is
