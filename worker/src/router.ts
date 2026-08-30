@@ -27,8 +27,18 @@ export type RouterDeps = {
   clientFactory?: (env: WorkerEnv, fetchImpl?: typeof fetch) => SpotifyClient;
 };
 
+type SearchAnalyticsMeta = {
+  search_id?: string;
+  previous_search_id?: string;
+  attempt_index?: number;
+  query_source?: string;
+  client_started_at_ms?: number;
+  probe_response_ms?: number;
+};
+
 const ROOM_SECONDS = 900;
 const NOW_SECONDS = 5;
+const SEARCH_ID_RE = /^[A-Za-z0-9_-]{8,96}$/;
 
 function allowedOrigin(value: string | null, productionOrigin: string): string | null {
   if (!value) return null;
@@ -122,6 +132,42 @@ function readLimit(body: Record<string, unknown>): number {
     throw new Error("invalid_limit");
   }
   return Number(body.limit);
+}
+
+function readSearchAnalytics(body: Record<string, unknown>): SearchAnalyticsMeta {
+  const raw = body.analytics;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return {};
+  const value = raw as Record<string, unknown>;
+  const searchId = typeof value.search_id === "string" && SEARCH_ID_RE.test(value.search_id)
+    ? value.search_id
+    : undefined;
+  const previousSearchId = typeof value.previous_search_id === "string" && SEARCH_ID_RE.test(value.previous_search_id)
+    ? value.previous_search_id
+    : undefined;
+  const attemptIndex = Number.isInteger(value.attempt_index)
+    ? Math.max(1, Math.min(1000, Number(value.attempt_index)))
+    : undefined;
+  const querySource = typeof value.query_source === "string"
+    ? value.query_source.trim().slice(0, 40)
+    : undefined;
+  const clientStartedAt = typeof value.client_started_at_ms === "number" && Number.isFinite(value.client_started_at_ms)
+    ? Math.round(value.client_started_at_ms)
+    : undefined;
+  const probeResponseMs = typeof value.probe_response_ms === "number" && Number.isFinite(value.probe_response_ms)
+    ? Math.max(0, Math.min(3_600_000, Math.round(value.probe_response_ms)))
+    : undefined;
+  return {
+    ...(searchId ? { search_id: searchId } : {}),
+    ...(previousSearchId ? { previous_search_id: previousSearchId } : {}),
+    ...(attemptIndex ? { attempt_index: attemptIndex } : {}),
+    ...(querySource ? { query_source: querySource } : {}),
+    ...(clientStartedAt ? { client_started_at_ms: clientStartedAt } : {}),
+    ...(probeResponseMs !== undefined ? { probe_response_ms: probeResponseMs } : {})
+  };
+}
+
+function withSearchMeta(meta: SearchAnalyticsMeta, data: Record<string, unknown>): Record<string, unknown> {
+  return { ...meta, ...data };
 }
 
 function analyticsPath(request: Request): string {
@@ -250,14 +296,19 @@ export function createRouter(deps: RouterDeps = {}) {
         return json({ error: "method_not_allowed" }, 405, origin);
       }
       const startedAt = Date.now();
+      let analytics: SearchAnalyticsMeta = {};
       try {
         const body = await requestBody(request);
+        analytics = readSearchAnalytics(body);
         const conversationToken = readConversationToken(body);
         let plan;
 
         if (conversationToken) {
           const answer = readMessage(body);
-          track({ event: "melodymind_probe_answer", data: { answer } });
+          track({
+            event: "melodymind_probe_answer",
+            data: withSearchMeta(analytics, { answer })
+          });
           plan = await planCatalogue(
             { conversationToken, message: answer },
             env,
@@ -268,7 +319,7 @@ export function createRouter(deps: RouterDeps = {}) {
           const clarification = readClarification(body);
           track({
             event: "melodymind_query",
-            data: { query, ...(clarification ? { clarification } : {}) }
+            data: withSearchMeta(analytics, { query, ...(clarification ? { clarification } : {}) })
           });
           plan = await planCatalogue(
             { query, clarification },
@@ -281,7 +332,7 @@ export function createRouter(deps: RouterDeps = {}) {
         if (plan.type === "probe") {
           track({
             event: "melodymind_probe",
-            data: { question: plan.message, elapsed_ms: elapsedMs }
+            data: withSearchMeta(analytics, { question: plan.message, elapsed_ms: elapsedMs })
           });
           return json(
             {
@@ -299,7 +350,7 @@ export function createRouter(deps: RouterDeps = {}) {
 
         track({
           event: "melodymind_search_ready",
-          data: { acknowledgement: plan.message, elapsed_ms: elapsedMs }
+          data: withSearchMeta(analytics, { acknowledgement: plan.message, elapsed_ms: elapsedMs })
         });
         return json(
           {
@@ -315,7 +366,11 @@ export function createRouter(deps: RouterDeps = {}) {
         const message = error instanceof Error ? error.message : "";
         track({
           event: "melodymind_error",
-          data: { stage: "plan", error: message || "plan_unavailable", elapsed_ms: Date.now() - startedAt }
+          data: withSearchMeta(analytics, {
+            stage: "plan",
+            error: message || "plan_unavailable",
+            elapsed_ms: Date.now() - startedAt
+          })
         });
         if (message === "request_too_large") return json({ error: message }, 413, origin);
         if (message.startsWith("invalid_")) return json({ error: message }, 400, origin);
@@ -328,8 +383,10 @@ export function createRouter(deps: RouterDeps = {}) {
         return json({ error: "method_not_allowed" }, 405, origin);
       }
       const startedAt = Date.now();
+      let analytics: SearchAnalyticsMeta = {};
       try {
         const body = await requestBody(request);
+        analytics = readSearchAnalytics(body);
         const limit = readLimit(body);
         let catalogue: CatalogueResultsResponse;
 
@@ -340,15 +397,19 @@ export function createRouter(deps: RouterDeps = {}) {
             planToken,
             limit,
             env,
-            deps.fetchImpl
+            deps.fetchImpl,
+            analytics.search_id || ""
           );
         } else {
-          // Backward-compatible one-shot mode for older Pages builds.
           const query = readQuery(body);
           const clarification = readClarification(body);
           track({
             event: "melodymind_query",
-            data: { query, ...(clarification ? { clarification } : {}), legacy: true }
+            data: withSearchMeta(analytics, {
+              query,
+              ...(clarification ? { clarification } : {}),
+              legacy: true
+            })
           });
           const legacy = await searchCatalogue(
             query,
@@ -360,7 +421,11 @@ export function createRouter(deps: RouterDeps = {}) {
           if (legacy.type === "probe") {
             track({
               event: "melodymind_probe",
-              data: { question: legacy.message, elapsed_ms: Date.now() - startedAt, legacy: true }
+              data: withSearchMeta(analytics, {
+                question: legacy.message,
+                elapsed_ms: Date.now() - startedAt,
+                legacy: true
+              })
             });
             return json(
               {
@@ -381,9 +446,10 @@ export function createRouter(deps: RouterDeps = {}) {
         const enriched = await enrichCatalogue(catalogue, env, client(env));
         track({
           event: "melodymind_results",
-          data: {
+          data: withSearchMeta(analytics, {
             total: enriched.total,
             elapsed_ms: Date.now() - startedAt,
+            ...(catalogue.telemetry ? { telemetry: catalogue.telemetry } : {}),
             results: enriched.results.map((result, index) => ({
               rank: index + 1,
               spotify_id: result.spotify_id,
@@ -391,14 +457,18 @@ export function createRouter(deps: RouterDeps = {}) {
               artist: result.artist,
               score: result.score
             }))
-          }
+          })
         });
         return json(enriched, 200, origin);
       } catch (error) {
         const message = error instanceof Error ? error.message : "";
         track({
           event: "melodymind_error",
-          data: { stage: "search", error: message || "search_unavailable", elapsed_ms: Date.now() - startedAt }
+          data: withSearchMeta(analytics, {
+            stage: "search",
+            error: message || "search_unavailable",
+            elapsed_ms: Date.now() - startedAt
+          })
         });
         if (message === "request_too_large") return json({ error: message }, 413, origin);
         if (message.startsWith("invalid_")) return json({ error: message }, 400, origin);
