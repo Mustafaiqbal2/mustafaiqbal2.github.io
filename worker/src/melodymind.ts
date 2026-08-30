@@ -12,10 +12,20 @@ export type CatalogueMatch = {
   score: number;
 };
 
-export type CatalogueResponse = {
+export type CatalogueProbeResponse = {
+  type: "probe";
   query: string;
+  message: string;
+};
+
+export type CatalogueResultsResponse = {
+  type: "results";
+  query: string;
+  message: string;
   results: CatalogueMatch[];
 };
+
+export type CatalogueResponse = CatalogueProbeResponse | CatalogueResultsResponse;
 
 type Json = Record<string, unknown>;
 
@@ -56,7 +66,8 @@ export async function searchCatalogue(
   query: string,
   limit: number,
   env: MelodyMindEnv,
-  fetchImpl: typeof fetch = fetch
+  fetchImpl: typeof fetch = fetch,
+  clarification?: string
 ): Promise<CatalogueResponse> {
   const base = env.MELODYMIND_SEARCH_URL?.trim().replace(/\/$/, "");
   const token = env.MELODYMIND_SERVICE_TOKEN?.trim();
@@ -69,19 +80,30 @@ export async function searchCatalogue(
       Authorization: "Bearer " + token,
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ query, limit }),
-    signal: AbortSignal.timeout(45_000)
+    body: JSON.stringify({ query, limit, clarification: clarification || undefined }),
+    signal: AbortSignal.timeout(90_000)
   });
   if (!response.ok) {
     throw new Error("MelodyMind search service returned " + response.status);
   }
 
   const payload = object(await response.json(), "search response");
+  const type = payload.type === "probe" ? "probe" : "results";
+  if (type === "probe") {
+    return {
+      type: "probe",
+      query: requiredString(payload.query, "query"),
+      message: requiredString(payload.message, "probe message")
+    };
+  }
+
   const results = Array.isArray(payload.results)
     ? payload.results.map(normalizeMatch).slice(0, limit)
     : [];
   return {
+    type: "results",
     query: requiredString(payload.query, "query"),
+    message: typeof payload.message === "string" ? payload.message : "",
     results
   };
 }
