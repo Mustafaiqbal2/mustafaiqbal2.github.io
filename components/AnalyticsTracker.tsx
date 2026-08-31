@@ -233,7 +233,10 @@ export function AnalyticsTracker() {
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
       const target = event.target as Element | null;
-      const anchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
+      const resultRow = target?.closest?.(".mm-result") as HTMLElement | null;
+      const directAnchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
+      const rowSpotifyAnchor = resultRow?.querySelector?.("a.mm-result__open[href]") as HTMLAnchorElement | null;
+      const anchor = directAnchor || rowSpotifyAnchor;
       if (!anchor) return;
 
       let destination: URL;
@@ -248,7 +251,11 @@ export function AnalyticsTracker() {
       const sameSite = destination.hostname === window.location.hostname;
 
       if (category === "spotify") {
-        const row = anchor.closest(".mm-result");
+        // Some mobile/in-app browsers were swallowing the target=_blank navigation.
+        // Treat the whole MelodyMind result row as the Spotify action and force a
+        // same-tab navigation after queueing the keepalive analytics event.
+        event.preventDefault();
+        const row = resultRow || anchor.closest(".mm-result");
         const product = anchor.closest(".mm-product") as HTMLElement | null;
         const rank = Number(row?.querySelector(".mm-result__number")?.textContent || 0) || undefined;
         const title = row?.querySelector(".mm-result__track strong")?.textContent?.trim() || anchor.getAttribute("aria-label") || "";
@@ -266,6 +273,7 @@ export function AnalyticsTracker() {
             since_results_ms: shownAt ? Math.max(0, Date.now() - shownAt) : 0
           }
         });
+        window.location.assign(destination.toString());
         return;
       }
 
