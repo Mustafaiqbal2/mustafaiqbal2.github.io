@@ -267,9 +267,42 @@
   }
 
   .mu--melodymind .mm-result {
+    position: relative;
     grid-template-columns: 24px 46px minmax(0, 1fr) 44px;
     min-height: 66px;
     gap: 9px;
+    transition: background 0.18s ease;
+  }
+
+  /* The existing Spotify anchor remains the single analytics target, but its
+     hit area covers the whole recommendation row on touch screens. */
+  .mu--melodymind .mm-result .mm-result__open {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    display: block;
+    width: auto;
+    height: auto;
+    border: 0;
+    border-radius: 0;
+    color: #9a9994;
+    background: transparent;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: rgba(241, 239, 231, 0.08);
+  }
+
+  .mu--melodymind .mm-result .mm-result__open svg {
+    position: absolute;
+    right: 14px;
+    top: 50%;
+    width: 16px;
+    height: 16px;
+    transform: translateY(-50%);
+    pointer-events: none;
+  }
+
+  .mu--melodymind .mm-result:active {
+    background: rgba(241, 239, 231, 0.07);
   }
 
   .mu--melodymind .mm-result__art {
@@ -283,12 +316,6 @@
 
   .mu--melodymind .mm-result__track small {
     font-size: 11px;
-  }
-
-  .mu--melodymind .mm-result__open {
-    width: 44px;
-    height: 44px;
-    touch-action: manipulation;
   }
 
   .mu--melodymind .mm-agent-footer {
