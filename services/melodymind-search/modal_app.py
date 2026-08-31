@@ -181,7 +181,9 @@ def api():
 
     import main as search_main
     from openai_primary import install_openai_primary
+    from quality_patch import install_quality_patch
 
     install_openai_primary(search_main)
+    install_quality_patch(search_main)
     install_telemetry(search_main)
     return search_main.app
