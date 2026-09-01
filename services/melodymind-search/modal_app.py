@@ -95,6 +95,7 @@ def install_telemetry(search_main) -> None:
                     "trajectory_fit": candidate.trajectory_fit,
                     "sound_fit": candidate.sound_fit,
                     "confidence": candidate.confidence,
+                    "listenability_adjustment": round(float(candidate.listenability_adjustment), 6),
                     "taste_adjustment": round(float(candidate.taste_adjustment), 6),
                     "fusion": round(float(candidate.fusion_score), 6),
                     "final_score": round(float(candidate.final_score), 6),

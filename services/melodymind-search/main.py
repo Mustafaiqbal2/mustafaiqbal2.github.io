@@ -140,6 +140,7 @@ class SearchMatch(BaseModel):
     album: str | None = None
     score: float
     tags: list[str] = Field(default_factory=list, exclude=True)
+    primary_genre: str = Field(default="", exclude=True)
     year: int = Field(default=0, exclude=True)
     energy: float | None = Field(default=None, exclude=True)
     valence: float | None = Field(default=None, exclude=True)
@@ -209,6 +210,7 @@ class FusedCandidate:
     fit: int = 2
     confidence: int = 0
     taste_adjustment: float = 0.0
+    listenability_adjustment: float = 0.0
     final_score: float = 0.0
     final_rank: int = 0
 
@@ -428,6 +430,7 @@ class CatalogueSearch:
                     ),
                     score=float(score),
                     tags=tags,
+                    primary_genre=str(metadata.get("primary_genre") or "").strip().lower(),
                     year=int(optional_float("year") or 0),
                     energy=optional_float("energy"),
                     valence=optional_float("valence"),
@@ -1020,6 +1023,119 @@ def _taste_adjustments(
     return adjustments
 
 
+# A genre-neutral request should start from music with broad listening appeal.
+# The adjustment is deliberately smaller than one verifier fit level, so a
+# merely popular song cannot outrank a materially better situational match.
+DEFAULT_GENRE_PRIOR: dict[str, float] = {
+    "pop": 0.025,
+    "rock": 0.018,
+    "rap": 0.018,
+    "electronic": 0.012,
+    "rnb": 0.012,
+    "country": 0.006,
+    "classical": 0.004,
+    "folk": 0.003,
+    "reggae": 0.0,
+    "jazz": -0.005,
+    "other": 0.0,
+    "punk": -0.035,
+    "metal": -0.045,
+}
+
+GENRE_TAGS: dict[str, set[str]] = {
+    "pop": {"pop", "dance pop", "synthpop", "electropop"},
+    "rock": {"rock", "alternative", "indie", "grunge", "britpop"},
+    "rap": {"rap", "hip hop", "hip-hop", "hip_hop"},
+    "electronic": {"electronic", "electronica", "house", "techno", "edm", "trance", "ambient"},
+    "rnb": {"rnb", "r&b", "rhythm and blues", "soul", "funk"},
+    "country": {"country", "americana", "bluegrass"},
+    "classical": {"classical", "soundtrack", "score", "orchestral"},
+    "folk": {"folk", "singer-songwriter"},
+    "reggae": {"reggae", "ska", "dub"},
+    "jazz": {"jazz", "blues"},
+    "punk": {"punk", "punk rock", "pop punk", "hardcore"},
+    "metal": {"metal", "heavy metal", "death metal", "doom metal", "black metal"},
+}
+
+DEFAULT_GENRE_MIN_POPULARITY = {
+    "punk": 70,
+    "metal": 72,
+}
+
+
+def _candidate_genre(match: SearchMatch) -> str:
+    tags = {tag.strip().lower() for tag in match.tags if tag.strip()}
+
+    # Pinecone's broad primary genre can be less specific than its tags. For
+    # example, some metalcore records are stored as "other" or "punk". Catch
+    # those families first so they cannot slip through the neutral-search gate.
+    if any("metal" in tag for tag in tags):
+        return "metal"
+    if any("punk" in tag or tag in {"hardcore", "post-hardcore"} for tag in tags):
+        return "punk"
+    if match.primary_genre in DEFAULT_GENRE_PRIOR:
+        return match.primary_genre
+    for genre, aliases in GENRE_TAGS.items():
+        if tags.intersection(aliases):
+            return genre
+    return "other"
+
+
+def _genre_requested(genre: str, intent: SearchIntent) -> bool:
+    requested = {tag.strip().lower() for tag in intent.required_tags}
+    if genre == "metal" and any("metal" in tag for tag in requested):
+        return True
+    if genre == "punk" and any(
+        "punk" in tag or tag in {"hardcore", "post-hardcore"}
+        for tag in requested
+    ):
+        return True
+    return bool(requested.intersection(GENRE_TAGS.get(genre, {genre})))
+
+
+def _taste_explicitly_supports(
+    match: SearchMatch,
+    profile: TasteProfileInput | None,
+) -> bool:
+    if profile is None:
+        return False
+    if any(item.track_id == match.track_id for item in profile.positive_tracks):
+        return True
+    artists = _artist_parts(match.artist)
+    return any(
+        item.score >= 0.25
+        and bool(artists.intersection(_artist_parts(item.artist)))
+        for item in profile.positive_artists
+    )
+
+
+def _passes_default_genre_prior(
+    match: SearchMatch,
+    intent: SearchIntent,
+    profile: TasteProfileInput | None,
+) -> bool:
+    genre = _candidate_genre(match)
+    minimum = DEFAULT_GENRE_MIN_POPULARITY.get(genre)
+    if minimum is None or _genre_requested(genre, intent):
+        return True
+    if _taste_explicitly_supports(match, profile):
+        return True
+    return match.popularity is not None and match.popularity >= minimum
+
+
+def _listenability_adjustment(match: SearchMatch, intent: SearchIntent) -> float:
+    genre = _candidate_genre(match)
+    genre_prior = 0.0 if _genre_requested(genre, intent) else DEFAULT_GENRE_PRIOR.get(genre, 0.0)
+
+    if match.popularity is None:
+        popularity_prior = -0.015 if genre in {"punk", "metal"} else 0.0
+    else:
+        popularity_prior = max(-0.03, min(0.055, (match.popularity - 45) / 650.0))
+        if intent.familiarity == "recognizable":
+            popularity_prior = min(0.07, popularity_prior * 1.3)
+    return genre_prior + popularity_prior
+
+
 def _experiential_order(
     candidates: list[FusedCandidate],
     judgments: dict[int, CandidateJudgment],
@@ -1066,8 +1182,7 @@ def _experiential_order(
             metadata_adjustment += 0.025 if match.energy >= intent.energy_min else -0.08 * (intent.energy_min - match.energy)
         if intent.energy_max >= 0 and match.energy is not None:
             metadata_adjustment += 0.025 if match.energy <= intent.energy_max else -0.08 * (match.energy - intent.energy_max)
-        if intent.familiarity == "recognizable" and match.popularity is not None:
-            metadata_adjustment += max(-0.05, min(0.06, (match.popularity - 45) / 500))
+        candidate.listenability_adjustment = _listenability_adjustment(match, intent)
         candidate.taste_adjustment = 0.0
         relevance_pass = (
             judgment.hard_pass
@@ -1080,6 +1195,7 @@ def _experiential_order(
             candidate.fusion_score
             + adjustment_by_fit[candidate.fit] * confidence
             + metadata_adjustment
+            + candidate.listenability_adjustment
             + candidate.taste_adjustment
         )
 
@@ -1293,13 +1409,14 @@ async def _retrieve(
     strict_metadata = any(match.tags for _, results in result_sets for match in results)
     fused_pool = _hybrid_fuse(
         result_sets,
-        limit=64 if taste_profile and taste_profile.negative_artists else 32,
+        limit=64 if taste_profile and taste_profile.negative_artists else 48,
     )
     candidates = [
         candidate
             for candidate in fused_pool
         if _hard_match(candidate.match, intent, strict_metadata)
         and not _strongly_disliked(candidate, taste_profile)
+        and _passes_default_genre_prior(candidate.match, intent, taste_profile)
         and not (
             strict_metadata
             and intent.lyrics_weight >= 0.5
@@ -1360,6 +1477,7 @@ async def _retrieve(
                         "trajectory_fit": candidate.trajectory_fit,
                         "sound_fit": candidate.sound_fit,
                         "confidence": candidate.confidence,
+                        "listenability_adjustment": round(candidate.listenability_adjustment, 6),
                         "taste_adjustment": round(candidate.taste_adjustment, 6),
                         "source_ranks": candidate.source_ranks,
                         "source_scores": {
