@@ -14,6 +14,7 @@ import {
   type CatalogueResultsResponse,
   type MelodyMindEnv
 } from "./melodymind";
+import { readTasteProfile, recordTasteEvent } from "./taste";
 
 export type WorkerEnv = SpotifyEnv & MelodyMindEnv & AnalyticsEnv & { ALLOWED_ORIGIN: string };
 export type WorkerContext = { waitUntil(promise: Promise<unknown>): void };
@@ -272,7 +273,8 @@ export function createRouter(deps: RouterDeps = {}) {
         {
           status: "ok",
           analytics_db: Boolean(env.ANALYTICS_DB),
-          analytics_dashboard: Boolean(env.ANALYTICS_PASSWORD)
+          analytics_dashboard: Boolean(env.ANALYTICS_PASSWORD),
+          taste_memory: Boolean(env.ANALYTICS_DB)
         },
         200,
         origin
@@ -286,6 +288,7 @@ export function createRouter(deps: RouterDeps = {}) {
         const event = await parseClientAnalyticsEvent(request);
         if (!event.event) return json({ error: "invalid_event" }, 400, origin);
         ctx.waitUntil(recordAnalyticsEvent(env, request, event).catch(() => undefined));
+        ctx.waitUntil(recordTasteEvent(env, identity, event).catch(() => undefined));
         return new Response(null, { status: 204, headers: securityHeaders(origin) });
       } catch (error) {
         const message = error instanceof Error ? error.message : "";
@@ -303,6 +306,7 @@ export function createRouter(deps: RouterDeps = {}) {
       try {
         const body = await requestBody(request);
         analytics = readSearchAnalytics(body);
+        const tasteProfile = await readTasteProfile(env, identity.visitorId).catch(() => null);
         const conversationToken = readConversationToken(body);
         let plan;
 
@@ -313,7 +317,7 @@ export function createRouter(deps: RouterDeps = {}) {
             data: withSearchMeta(analytics, { answer })
           });
           plan = await planCatalogue(
-            { conversationToken, message: answer },
+            { conversationToken, message: answer, tasteProfile },
             env,
             deps.fetchImpl
           );
@@ -325,7 +329,7 @@ export function createRouter(deps: RouterDeps = {}) {
             data: withSearchMeta(analytics, { query, ...(clarification ? { clarification } : {}) })
           });
           plan = await planCatalogue(
-            { query, clarification },
+            { query, clarification, tasteProfile },
             env,
             deps.fetchImpl
           );
@@ -428,6 +432,7 @@ export function createRouter(deps: RouterDeps = {}) {
         } else {
           const query = readQuery(body);
           const clarification = readClarification(body);
+          const tasteProfile = await readTasteProfile(env, identity.visitorId).catch(() => null);
           track({
             event: "melodymind_query",
             data: withSearchMeta(analytics, {
@@ -441,7 +446,8 @@ export function createRouter(deps: RouterDeps = {}) {
             limit,
             env,
             deps.fetchImpl,
-            clarification
+            clarification,
+            tasteProfile
           );
           if (legacy.type === "probe") {
             track({
@@ -477,6 +483,7 @@ export function createRouter(deps: RouterDeps = {}) {
             ...(catalogue.telemetry ? { telemetry: catalogue.telemetry } : {}),
             results: enriched.results.map((result, index) => ({
               rank: index + 1,
+              track_id: result.track_id,
               spotify_id: result.spotify_id,
               title: result.title,
               artist: result.artist,

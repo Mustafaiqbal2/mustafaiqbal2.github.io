@@ -268,23 +268,28 @@
 
   .mu--melodymind .mm-result {
     position: relative;
-    grid-template-columns: 24px 46px minmax(0, 1fr) 44px;
+    grid-template-columns: 24px 46px minmax(0, 1fr) 69px;
     min-height: 66px;
     gap: 9px;
     transition: background 0.18s ease;
   }
 
-  /* The existing Spotify anchor remains the single analytics target, but its
-     hit area covers the whole recommendation row on touch screens. */
+  .mu--melodymind .mm-result__actions {
+    position: static;
+    z-index: auto;
+    display: flex;
+    justify-self: end;
+    gap: 5px;
+  }
+
+  .mu--melodymind .mm-result .mm-result__play,
   .mu--melodymind .mm-result .mm-result__open {
-    position: absolute;
-    inset: 0;
-    z-index: 3;
-    display: block;
-    width: auto;
-    height: auto;
-    border: 0;
-    border-radius: 0;
+    position: static;
+    display: grid;
+    width: 32px;
+    height: 32px;
+    border: 1px solid rgba(241, 239, 231, 0.16);
+    border-radius: 6px;
     color: #9a9994;
     background: transparent;
     touch-action: manipulation;
@@ -292,12 +297,10 @@
   }
 
   .mu--melodymind .mm-result .mm-result__open svg {
-    position: absolute;
-    right: 14px;
-    top: 50%;
-    width: 16px;
-    height: 16px;
-    transform: translateY(-50%);
+    position: static;
+    width: 14px;
+    height: 14px;
+    transform: none;
     pointer-events: none;
   }
 
@@ -410,8 +413,14 @@
   }
 
   .mu--melodymind .mm-result {
-    grid-template-columns: 20px 44px minmax(0, 1fr) 44px;
+    grid-template-columns: 20px 44px minmax(0, 1fr) 65px;
     gap: 8px;
+  }
+
+  .mu--melodymind .mm-result .mm-result__play,
+  .mu--melodymind .mm-result .mm-result__open {
+    width: 30px;
+    height: 30px;
   }
 
   .mu--melodymind .mm-result__art {

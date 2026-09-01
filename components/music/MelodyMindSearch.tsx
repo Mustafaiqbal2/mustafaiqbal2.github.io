@@ -3,7 +3,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { FormEvent, KeyboardEvent } from "react";
 import gsap from "gsap";
-import { ArrowRight, ArrowUp, ExternalLink, RotateCcw, X } from "lucide-react";
+import { ArrowRight, ArrowUp, ExternalLink, Play, RotateCcw, X } from "lucide-react";
+import {
+  SpotifyResultPlayer,
+  type PlaybackSignal,
+  type SpotifyResultPlayerHandle
+} from "./SpotifyResultPlayer";
 import "./melodymind-search.css";
 
 type SongResult = {
@@ -105,6 +110,7 @@ export function MelodyMindSearch() {
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const threadRef = useRef<HTMLDivElement>(null);
   const resultsRef = useRef<HTMLElement>(null);
+  const playerRef = useRef<SpotifyResultPlayerHandle>(null);
   const requestRef = useRef<AbortController | null>(null);
   const previousSearchIdRef = useRef("");
   const attemptRef = useRef(0);
@@ -128,6 +134,7 @@ export function MelodyMindSearch() {
   const [searchId, setSearchId] = useState("");
   const [resultsShownAt, setResultsShownAt] = useState(0);
   const [feedback, setFeedback] = useState<Feedback>("");
+  const [activeTrackId, setActiveTrackId] = useState("");
 
   const trackClientEvent = (event: string, data: Record<string, unknown>) => {
     const endpoint = apiUrl("analytics/event");
@@ -286,6 +293,7 @@ export function MelodyMindSearch() {
     setSearchId("");
     setResultsShownAt(0);
     setFeedback("");
+    setActiveTrackId("");
     probeShownAtRef.current = 0;
     startedAtRef.current = 0;
     querySourceRef.current = "typed";
@@ -314,7 +322,9 @@ export function MelodyMindSearch() {
     );
     setConversationToken(payload.conversation_token?.trim() || "");
     setSearchSummary("");
-    setResults(Array.isArray(payload.results) ? payload.results : []);
+    const nextResults = Array.isArray(payload.results) ? payload.results : [];
+    setResults(nextResults);
+    setActiveTrackId(nextResults.find((song) => Boolean(song.spotify_id))?.track_id || "");
     setResultsShownAt(shownAt);
     setState("success");
     trackClientEvent("melodymind_results_rendered", {
@@ -501,6 +511,19 @@ export function MelodyMindSearch() {
     });
   };
 
+  const recordPlayback = (signal: PlaybackSignal) => {
+    trackClientEvent("melodymind_playback", {
+      action: signal.action,
+      search_id: searchIdRef.current,
+      track_id: signal.song.track_id,
+      spotify_id: signal.song.spotify_id || "",
+      title: signal.song.title,
+      artist: signal.song.artist,
+      position_ms: signal.position_ms,
+      duration_ms: signal.duration_ms
+    });
+  };
+
   const handleInitialKey = (event: KeyboardEvent<HTMLTextAreaElement>) => {
     if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
       event.preventDefault();
@@ -681,9 +704,22 @@ export function MelodyMindSearch() {
                       </header>
 
                         <>
+                          {results.some((song) => Boolean(song.spotify_id)) && (
+                            <SpotifyResultPlayer
+                              key={searchId}
+                              ref={playerRef}
+                              initialSong={results.find((song) => Boolean(song.spotify_id)) as SongResult}
+                              onSignal={recordPlayback}
+                            />
+                          )}
                           <ol className="mm-result-list" aria-label="Matching tracks">
                             {results.map((song, index) => (
-                              <li className="mm-result" key={song.track_id}>
+                              <li
+                                className={`mm-result${activeTrackId === song.track_id ? " is-playing" : ""}`}
+                                key={song.track_id}
+                                data-track-id={song.track_id}
+                                data-spotify-id={song.spotify_id || undefined}
+                              >
                                 <span className="mm-result__number lv-mono">{String(index + 1).padStart(2, "0")}</span>
                                 <ResultArtwork song={song} />
                                 <span className="mm-result__track">
@@ -692,16 +728,30 @@ export function MelodyMindSearch() {
                                 </span>
                                 <span className="mm-result__album">{song.album || "—"}</span>
                                 {song.spotify_id ? (
-                                  <a
-                                    className="mm-result__open"
-                                    href={spotifyUrl(song)}
-                                    target="_blank"
-                                    rel="noreferrer"
-                                    aria-label={`Open ${song.title} on Spotify`}
-                                    title="Open on Spotify"
-                                  >
-                                    <ExternalLink aria-hidden="true" />
-                                  </a>
+                                  <span className="mm-result__actions">
+                                    <button
+                                      className="mm-result__play"
+                                      type="button"
+                                      onClick={() => {
+                                        setActiveTrackId(song.track_id);
+                                        playerRef.current?.play(song);
+                                      }}
+                                      aria-label={`Play ${song.title}`}
+                                      title="Play here"
+                                    >
+                                      <Play aria-hidden="true" />
+                                    </button>
+                                    <a
+                                      className="mm-result__open"
+                                      href={spotifyUrl(song)}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      aria-label={`Open ${song.title} on Spotify`}
+                                      title="Open on Spotify"
+                                    >
+                                      <ExternalLink aria-hidden="true" />
+                                    </a>
+                                  </span>
                                 ) : <span />}
                               </li>
                             ))}

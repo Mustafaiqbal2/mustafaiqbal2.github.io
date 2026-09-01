@@ -235,8 +235,7 @@ export function AnalyticsTracker() {
       const target = event.target as Element | null;
       const resultRow = target?.closest?.(".mm-result") as HTMLElement | null;
       const directAnchor = target?.closest?.("a[href]") as HTMLAnchorElement | null;
-      const rowSpotifyAnchor = resultRow?.querySelector?.("a.mm-result__open[href]") as HTMLAnchorElement | null;
-      const anchor = directAnchor || rowSpotifyAnchor;
+      const anchor = directAnchor;
       if (!anchor) return;
 
       let destination: URL;
@@ -251,15 +250,19 @@ export function AnalyticsTracker() {
       const sameSite = destination.hostname === window.location.hostname;
 
       if (category === "spotify") {
-        // Some mobile/in-app browsers were swallowing the target=_blank navigation.
-        // Treat the whole MelodyMind result row as the Spotify action and force a
-        // same-tab navigation after queueing the keepalive analytics event.
+        // Keep this explicit external action reliable in mobile and in-app browsers.
+        // Playing a row inside MelodyMind is handled by the embedded player instead.
         event.preventDefault();
         const row = resultRow || anchor.closest(".mm-result");
         const product = anchor.closest(".mm-product") as HTMLElement | null;
         const rank = Number(row?.querySelector(".mm-result__number")?.textContent || 0) || undefined;
-        const title = row?.querySelector(".mm-result__track strong")?.textContent?.trim() || anchor.getAttribute("aria-label") || "";
-        const artist = row?.querySelector(".mm-result__track small")?.textContent?.trim() || "";
+        const title = row?.querySelector(".mm-result__track strong")?.textContent?.trim()
+          || anchor.dataset.trackTitle
+          || anchor.getAttribute("aria-label")
+          || "";
+        const artist = row?.querySelector(".mm-result__track small")?.textContent?.trim()
+          || anchor.dataset.trackArtist
+          || "";
         const searchId = product?.dataset.searchId || "";
         const shownAt = Number(product?.dataset.resultsShownAt || 0);
         sendEvent({
@@ -268,6 +271,8 @@ export function AnalyticsTracker() {
             search_id: searchId,
             href: destination.toString(),
             rank,
+            track_id: row?.dataset.trackId || anchor.dataset.trackId || "",
+            spotify_id: row?.dataset.spotifyId || anchor.dataset.spotifyId || "",
             title,
             artist,
             since_results_ms: shownAt ? Math.max(0, Date.now() - shownAt) : 0

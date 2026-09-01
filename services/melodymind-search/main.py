@@ -9,6 +9,7 @@ from dataclasses import dataclass, field
 import hashlib
 import hmac
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -83,12 +84,37 @@ class Settings:
         )
 
 
+class TasteTrackInput(BaseModel):
+    track_id: str = Field(min_length=1, max_length=180)
+    spotify_id: str = Field(min_length=8, max_length=64)
+    title: str = Field(default="", max_length=220)
+    artist: str = Field(min_length=1, max_length=220)
+    score: float = Field(default=0, ge=-12, le=12)
+    signals: int = Field(default=0, ge=0, le=100_000)
+
+
+class TasteArtistInput(BaseModel):
+    artist: str = Field(min_length=1, max_length=220)
+    score: float = Field(default=0, ge=-12, le=12)
+    signals: int = Field(default=0, ge=0, le=100_000)
+
+
+class TasteProfileInput(BaseModel):
+    version: int = Field(default=0, ge=0, le=1_000_000_000)
+    signal_count: int = Field(default=0, ge=0, le=1_000_000_000)
+    positive_tracks: list[TasteTrackInput] = Field(default_factory=list, max_length=18)
+    negative_tracks: list[TasteTrackInput] = Field(default_factory=list, max_length=10)
+    positive_artists: list[TasteArtistInput] = Field(default_factory=list, max_length=12)
+    negative_artists: list[TasteArtistInput] = Field(default_factory=list, max_length=8)
+
+
 class SearchRequest(BaseModel):
     """Backward-compatible one-shot request used during Worker rollouts."""
 
     query: str = Field(min_length=4, max_length=500)
     clarification: str | None = Field(default=None, max_length=500)
     limit: int = Field(default=10, ge=1, le=20)
+    taste_profile: TasteProfileInput | None = None
 
 
 class PlanRequest(BaseModel):
@@ -98,6 +124,7 @@ class PlanRequest(BaseModel):
     clarification: str | None = Field(default=None, max_length=500)
     conversation_token: str | None = Field(default=None, max_length=16384)
     message: str | None = Field(default=None, max_length=500)
+    taste_profile: TasteProfileInput | None = None
 
 
 class ExecuteRequest(BaseModel):
@@ -175,8 +202,13 @@ class FusedCandidate:
     source_ranks: dict[str, int] = field(default_factory=dict)
     source_scores: dict[str, float] = field(default_factory=dict)
     fused_rank: int = 0
+    hard_pass: bool = True
+    situation_fit: int = 2
+    trajectory_fit: int = 2
+    sound_fit: int = 2
     fit: int = 2
     confidence: int = 0
+    taste_adjustment: float = 0.0
     final_score: float = 0.0
     final_rank: int = 0
 
@@ -412,6 +444,30 @@ class CatalogueSearch:
                 best_by_track[identity] = value
         return sorted(best_by_track.values(), key=lambda item: item.score, reverse=True)
 
+    def fetch_audio_vectors(self, track_ids: list[str]) -> dict[str, list[float]]:
+        ids = list(dict.fromkeys(track_id for track_id in track_ids if track_id))[:80]
+        if not ids:
+            return {}
+        response = self.index.fetch(ids=ids, namespace=self.audio_namespace)
+        raw_vectors = getattr(response, "vectors", None)
+        if raw_vectors is None and isinstance(response, dict):
+            raw_vectors = response.get("vectors", {})
+        if raw_vectors is None or not hasattr(raw_vectors, "items"):
+            return {}
+        vectors: dict[str, list[float]] = {}
+        for track_id, value in raw_vectors.items():
+            values = getattr(value, "values", None)
+            if values is None and isinstance(value, dict):
+                values = value.get("values")
+            if values is None:
+                continue
+            vector = [float(item) for item in list(values)]
+            if not vector:
+                continue
+            if all(math.isfinite(item) for item in vector):
+                vectors[str(track_id)] = vector
+        return vectors
+
 
 @dataclass
 class Runtime:
@@ -520,6 +576,64 @@ def _read_token(current: Runtime, token: str, max_age_seconds: int = 7200) -> di
         ) from exc
 
 
+def _compact_taste(profile: TasteProfileInput | None) -> dict[str, Any] | None:
+    if profile is None or profile.signal_count < 1:
+        return None
+    return {
+        "v": profile.version,
+        "c": profile.signal_count,
+        "p": [[item.track_id, item.spotify_id, item.artist, item.score, item.signals] for item in profile.positive_tracks],
+        "n": [[item.track_id, item.spotify_id, item.artist, item.score, item.signals] for item in profile.negative_tracks],
+        "pa": [[item.artist, item.score, item.signals] for item in profile.positive_artists],
+        "na": [[item.artist, item.score, item.signals] for item in profile.negative_artists],
+    }
+
+
+def _taste_from_token(value: object) -> TasteProfileInput | None:
+    if not isinstance(value, dict):
+        return None
+
+    def tracks(key: str, limit: int) -> list[dict[str, Any]]:
+        rows = value.get(key)
+        if not isinstance(rows, list):
+            return []
+        result: list[dict[str, Any]] = []
+        for row in rows[:limit]:
+            if not isinstance(row, list) or len(row) != 5:
+                continue
+            result.append({
+                "track_id": row[0],
+                "spotify_id": row[1],
+                "title": "",
+                "artist": row[2],
+                "score": row[3],
+                "signals": row[4],
+            })
+        return result
+
+    def artists(key: str, limit: int) -> list[dict[str, Any]]:
+        rows = value.get(key)
+        if not isinstance(rows, list):
+            return []
+        return [
+            {"artist": row[0], "score": row[1], "signals": row[2]}
+            for row in rows[:limit]
+            if isinstance(row, list) and len(row) == 3
+        ]
+
+    try:
+        return TasteProfileInput.model_validate({
+            "version": value.get("v", 0),
+            "signal_count": value.get("c", 0),
+            "positive_tracks": tracks("p", 18),
+            "negative_tracks": tracks("n", 10),
+            "positive_artists": artists("pa", 12),
+            "negative_artists": artists("na", 8),
+        })
+    except Exception:
+        return None
+
+
 def _validate_history(value: object) -> list[dict[str, str]]:
     if not isinstance(value, list) or not 1 <= len(value) <= 12:
         raise ValueError("bad history")
@@ -611,6 +725,7 @@ def _read_plan(current: Runtime, token: str) -> dict[str, Any]:
             summary = payload.get("y", "")
             intent_value = payload.get("n")
             history_value = payload.get("h")
+            taste_value = payload.get("t")
         else:
             raise ValueError("bad plan payload")
 
@@ -618,6 +733,9 @@ def _read_plan(current: Runtime, token: str) -> dict[str, Any]:
             summary = message
             intent_value = {}
             history_value = [{"role": "user", "content": str(original or "")[:500]}]
+            taste_value = None
+        elif version == 3:
+            taste_value = None
 
         if not isinstance(original, str) or not 4 <= len(original) <= 500:
             raise ValueError("bad original query")
@@ -650,6 +768,7 @@ def _read_plan(current: Runtime, token: str) -> dict[str, Any]:
             raise ValueError("bad summary")
         history = _validate_history(history_value)
         intent = parse_intent(intent_value)
+        taste_profile = _taste_from_token(taste_value)
         return {
             "original": original,
             "search_text": search_text,
@@ -657,6 +776,7 @@ def _read_plan(current: Runtime, token: str) -> dict[str, Any]:
             "message": message,
             "summary": summary,
             "intent": intent,
+            "taste_profile": taste_profile,
             "history": history,
         }
     except HTTPException:
@@ -800,10 +920,86 @@ def _hybrid_fuse(
     return candidates
 
 
+def _cosine(left: list[float], right: list[float]) -> float:
+    if len(left) != len(right) or not left:
+        return 0.0
+    left_norm = math.sqrt(sum(value * value for value in left))
+    right_norm = math.sqrt(sum(value * value for value in right))
+    if left_norm <= 0 or right_norm <= 0:
+        return 0.0
+    return sum(a * b for a, b in zip(left, right)) / (left_norm * right_norm)
+
+
+def _artist_parts(value: str) -> set[str]:
+    parts = re.split(r"\s*(?:,|&|\bfeat\.?\b|\bft\.?\b|\bwith\b)\s*", value.casefold())
+    return {re.sub(r"\s+", " ", part).strip() for part in parts if part.strip()}
+
+
+def _taste_adjustments(
+    candidates: list[FusedCandidate],
+    profile: TasteProfileInput | None,
+    vectors: dict[str, list[float]],
+) -> dict[str, float]:
+    if profile is None or profile.signal_count < 2:
+        return {}
+
+    positive_tracks = {item.track_id: item for item in profile.positive_tracks}
+    negative_tracks = {item.track_id: item for item in profile.negative_tracks}
+    positive_artist_scores: dict[str, float] = {}
+    negative_artist_scores: dict[str, float] = {}
+    for item in profile.positive_artists:
+        for key in _artist_parts(item.artist):
+            positive_artist_scores[key] = max(positive_artist_scores.get(key, 0.0), item.score)
+    for item in profile.negative_artists:
+        for key in _artist_parts(item.artist):
+            negative_artist_scores[key] = min(negative_artist_scores.get(key, 0.0), item.score)
+
+    positive_vectors = [
+        vectors[item.track_id]
+        for item in profile.positive_tracks
+        if item.track_id in vectors
+    ]
+    negative_vectors = [
+        vectors[item.track_id]
+        for item in profile.negative_tracks
+        if item.track_id in vectors
+    ]
+    strength = min(1.0, math.log1p(profile.signal_count) / math.log(18.0))
+    adjustments: dict[str, float] = {}
+
+    for candidate in candidates:
+        match = candidate.match
+        score = 0.0
+        positive = positive_tracks.get(match.track_id)
+        negative = negative_tracks.get(match.track_id)
+        if positive:
+            score += min(0.2, max(0.0, positive.score) * 0.04)
+        if negative:
+            score -= min(0.25, abs(min(0.0, negative.score)) * 0.05)
+
+        for artist_key in _artist_parts(match.artist):
+            score += min(0.1, max(0.0, positive_artist_scores.get(artist_key, 0.0)) * 0.025)
+            score -= min(0.12, abs(min(0.0, negative_artist_scores.get(artist_key, 0.0))) * 0.03)
+
+        candidate_vector = vectors.get(match.track_id)
+        if candidate_vector and positive_vectors:
+            nearest_positive = max(_cosine(candidate_vector, anchor) for anchor in positive_vectors)
+            if nearest_positive >= 0.35:
+                score += min(0.14, 0.03 + (nearest_positive - 0.35) * 0.35)
+        if candidate_vector and negative_vectors:
+            nearest_negative = max(_cosine(candidate_vector, anchor) for anchor in negative_vectors)
+            if nearest_negative >= 0.45:
+                score -= min(0.16, 0.03 + (nearest_negative - 0.45) * 0.4)
+
+        adjustments[match.track_id] = max(-0.25, min(0.22, score * strength))
+    return adjustments
+
+
 def _experiential_order(
     candidates: list[FusedCandidate],
     judgments: dict[int, CandidateJudgment],
     intent: SearchIntent,
+    taste_adjustments: dict[str, float] | None = None,
 ) -> list[FusedCandidate]:
     """Blend reliable experiential knowledge without penalizing unknown music."""
     adjustment_by_fit = {
@@ -813,9 +1009,30 @@ def _experiential_order(
         3: 0.22,
         4: 0.48,
     }
+    direction_required = bool(
+        intent.desired_destination or intent.trajectory or intent.avoid_state
+    )
     for index, candidate in enumerate(candidates):
-        judgment = judgments.get(index, CandidateJudgment(fit=2, confidence=0))
-        candidate.fit = judgment.fit
+        judgment = judgments.get(
+            index,
+            CandidateJudgment(
+                hard_pass=True,
+                situation_fit=2,
+                trajectory_fit=2,
+                sound_fit=2,
+                confidence=0,
+            ),
+        )
+        candidate.hard_pass = judgment.hard_pass
+        candidate.situation_fit = judgment.situation_fit
+        candidate.trajectory_fit = judgment.trajectory_fit
+        candidate.sound_fit = judgment.sound_fit
+        required_scores = [judgment.situation_fit]
+        if direction_required:
+            required_scores.append(judgment.trajectory_fit)
+        if intent.audio_weight >= 0.25:
+            required_scores.append(judgment.sound_fit)
+        candidate.fit = min(required_scores)
         candidate.confidence = judgment.confidence
         confidence = judgment.confidence / 3.0
         match = candidate.match
@@ -826,10 +1043,19 @@ def _experiential_order(
             metadata_adjustment += 0.025 if match.energy <= intent.energy_max else -0.08 * (match.energy - intent.energy_max)
         if intent.familiarity == "recognizable" and match.popularity is not None:
             metadata_adjustment += max(-0.05, min(0.06, (match.popularity - 45) / 500))
+        candidate.taste_adjustment = 0.0
+        relevance_pass = (
+            judgment.hard_pass
+            and judgment.situation_fit >= 3
+            and (not direction_required or judgment.trajectory_fit >= 3)
+        )
+        if relevance_pass and taste_adjustments:
+            candidate.taste_adjustment = taste_adjustments.get(match.track_id, 0.0)
         candidate.final_score = (
             candidate.fusion_score
-            + adjustment_by_fit[judgment.fit] * confidence
+            + adjustment_by_fit[candidate.fit] * confidence
             + metadata_adjustment
+            + candidate.taste_adjustment
         )
 
     ordered = sorted(
@@ -915,7 +1141,13 @@ def _hard_match(match: SearchMatch, intent: SearchIntent, strict_metadata: bool)
 
 def _trusted(candidate: FusedCandidate, intent: SearchIntent) -> bool:
     """Only release candidates supported by retrieval and the verifier."""
-    if candidate.fit < 3 or candidate.confidence < 2:
+    if not candidate.hard_pass or candidate.situation_fit < 3 or candidate.confidence < 2:
+        return False
+    if (
+        intent.desired_destination or intent.trajectory or intent.avoid_state
+    ) and candidate.trajectory_fit < 3:
+        return False
+    if intent.audio_weight >= 0.4 and candidate.sound_fit < 2:
         return False
     if intent.lyric_topics and intent.lyrics_weight >= 0.5:
         # A strong audio match cannot prove that a song covers a requested
@@ -972,6 +1204,7 @@ async def _retrieve(
     resolved_text: str,
     retrieval_views: list[dict[str, Any]] | list[RetrievalDraft],
     intent: SearchIntent,
+    taste_profile: TasteProfileInput | None,
     limit: int,
 ) -> tuple[list[SearchMatch], int]:
     started = time.perf_counter()
@@ -1068,7 +1301,17 @@ async def _retrieve(
         candidates=candidates,
     )
     verifier_ms = round((time.perf_counter() - verifier_started) * 1000)
-    ordered = _experiential_order(candidates, judgments, intent)
+    taste_vectors: dict[str, list[float]] = {}
+    if taste_profile and taste_profile.signal_count >= 2:
+        taste_track_ids = [item.track_id for item in taste_profile.positive_tracks]
+        taste_track_ids.extend(item.track_id for item in taste_profile.negative_tracks)
+        taste_track_ids.extend(candidate.match.track_id for candidate in candidates)
+        taste_vectors = await asyncio.to_thread(
+            current.catalogue.fetch_audio_vectors,
+            taste_track_ids,
+        )
+    taste_adjustments = _taste_adjustments(candidates, taste_profile, taste_vectors)
+    ordered = _experiential_order(candidates, judgments, intent, taste_adjustments)
     results = _diverse_results(ordered, limit, intent)
 
     print(
@@ -1082,7 +1325,12 @@ async def _retrieve(
                         "fused_rank": candidate.fused_rank,
                         "final_rank": candidate.final_rank,
                         "fit": candidate.fit,
+                        "hard_pass": candidate.hard_pass,
+                        "situation_fit": candidate.situation_fit,
+                        "trajectory_fit": candidate.trajectory_fit,
+                        "sound_fit": candidate.sound_fit,
                         "confidence": candidate.confidence,
+                        "taste_adjustment": round(candidate.taste_adjustment, 6),
                         "source_ranks": candidate.source_ranks,
                         "source_scores": {
                             label: round(score, 5)
@@ -1170,6 +1418,7 @@ def _search_ready_response(
     original: str,
     history: list[dict[str, str]],
     decision,
+    taste_profile: TasteProfileInput | None,
 ) -> SearchReadyResponse:
     plan_token = _sign_token(
         current,
@@ -1185,6 +1434,7 @@ def _search_ready_response(
             "m": decision.message,
             "y": decision.summary,
             "n": decision.intent.payload(),
+            "t": _compact_taste(taste_profile),
             "h": _compact_history(history),
             "iat": int(time.time()),
         },
@@ -1320,7 +1570,13 @@ async def plan_search(
         return _probe_response(current, history, original, decision.message, probes_used)
     if decision.action == "reply":
         return _reply_response(current, history, original, decision.message)
-    return _search_ready_response(current, original, history, decision)
+    return _search_ready_response(
+        current,
+        original,
+        history,
+        decision,
+        request.taste_profile,
+    )
 
 
 @app.post("/internal/execute", response_model=SearchResponse)
@@ -1337,6 +1593,7 @@ async def execute_search(
         resolved_text=str(payload["search_text"]),
         retrieval_views=list(payload["retrieval_views"]),
         intent=payload["intent"],
+        taste_profile=payload.get("taste_profile"),
         limit=request.limit,
     )
     return SearchResponse(
@@ -1375,6 +1632,7 @@ async def search(
         resolved_text=decision.search_text,
         retrieval_views=decision.retrieval_views,
         intent=decision.intent,
+        taste_profile=request.taste_profile,
         limit=request.limit,
     )
     return SearchResponse(

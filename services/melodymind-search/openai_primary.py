@@ -227,6 +227,10 @@ def install_openai_primary(search_main) -> None:
             prompt = agent_module._conversation_prompt(history, probes_used)
             intent_properties = {
                 "situation": {"type": "string"},
+                "current_state": {"type": "string"},
+                "desired_destination": {"type": "string"},
+                "trajectory": {"type": "string"},
+                "avoid_state": {"type": "string"},
                 "desired_effect": {"type": "string"},
                 "hard_constraints": {"type": "array", "items": {"type": "string"}, "maxItems": 8},
                 "soft_preferences": {"type": "array", "items": {"type": "string"}, "maxItems": 8},
@@ -354,18 +358,32 @@ def install_openai_primary(search_main) -> None:
                 if not match:
                     raise ValueError("OpenAI reranker returned invalid candidate id")
                 index = int(match.group(1))
-                fit = item.get("fit")
+                hard_pass = item.get("hard_pass")
+                situation_fit = item.get("situation_fit")
+                trajectory_fit = item.get("trajectory_fit")
+                sound_fit = item.get("sound_fit")
                 confidence = item.get("confidence")
                 if (
                     index in judgments
                     or not 0 <= index < candidate_count
-                    or not isinstance(fit, int)
-                    or not 0 <= fit <= 4
+                    or not isinstance(hard_pass, bool)
+                    or not isinstance(situation_fit, int)
+                    or not 0 <= situation_fit <= 4
+                    or not isinstance(trajectory_fit, int)
+                    or not 0 <= trajectory_fit <= 4
+                    or not isinstance(sound_fit, int)
+                    or not 0 <= sound_fit <= 4
                     or not isinstance(confidence, int)
                     or not 0 <= confidence <= 3
                 ):
                     raise ValueError("OpenAI reranker returned invalid candidate judgment")
-                judgments[index] = agent_module.CandidateJudgment(fit, confidence)
+                judgments[index] = agent_module.CandidateJudgment(
+                    hard_pass,
+                    situation_fit,
+                    trajectory_fit,
+                    sound_fit,
+                    confidence,
+                )
             if len(judgments) != candidate_count:
                 raise ValueError("OpenAI reranker omitted candidates")
             return judgments
@@ -378,16 +396,30 @@ def install_openai_primary(search_main) -> None:
             judgments: dict[int, Any] = {}
             for key, value in raw.items():
                 match = re.fullmatch(r"c(\d{1,3})", str(key).strip(), re.I)
-                if not match or not isinstance(value, list) or len(value) != 2:
+                if not match or not isinstance(value, list) or len(value) != 5:
                     continue
                 try:
-                    fit = int(value[0])
-                    confidence = int(value[1])
+                    hard_pass = value[0]
+                    situation_fit = int(value[1])
+                    trajectory_fit = int(value[2])
+                    sound_fit = int(value[3])
+                    confidence = int(value[4])
                 except (TypeError, ValueError):
                     continue
                 index = int(match.group(1))
-                if 0 <= index < candidate_count and 0 <= fit <= 4 and 0 <= confidence <= 3:
-                    judgments[index] = agent_module.CandidateJudgment(fit, confidence)
+                if (
+                    0 <= index < candidate_count
+                    and isinstance(hard_pass, bool)
+                    and all(0 <= score <= 4 for score in (situation_fit, trajectory_fit, sound_fit))
+                    and 0 <= confidence <= 3
+                ):
+                    judgments[index] = agent_module.CandidateJudgment(
+                        hard_pass,
+                        situation_fit,
+                        trajectory_fit,
+                        sound_fit,
+                        confidence,
+                    )
             if len(judgments) != candidate_count:
                 raise ValueError("Gemini reranker returned incomplete judgments")
             return judgments
@@ -416,10 +448,20 @@ def install_openai_primary(search_main) -> None:
                             "additionalProperties": False,
                             "properties": {
                                 "id": {"type": "string"},
-                                "fit": {"type": "integer", "enum": [0, 1, 2, 3, 4]},
+                                "hard_pass": {"type": "boolean"},
+                                "situation_fit": {"type": "integer", "enum": [0, 1, 2, 3, 4]},
+                                "trajectory_fit": {"type": "integer", "enum": [0, 1, 2, 3, 4]},
+                                "sound_fit": {"type": "integer", "enum": [0, 1, 2, 3, 4]},
                                 "confidence": {"type": "integer", "enum": [0, 1, 2, 3]},
                             },
-                            "required": ["id", "fit", "confidence"],
+                            "required": [
+                                "id",
+                                "hard_pass",
+                                "situation_fit",
+                                "trajectory_fit",
+                                "sound_fit",
+                                "confidence",
+                            ],
                         },
                     }
                 },
@@ -428,7 +470,8 @@ def install_openai_primary(search_main) -> None:
             openai_system = (
                 agent_module.RERANK_SYSTEM_PROMPT
                 + "\n\nFor this OpenAI structured-output call, return an object with a `judgments` "
-                "array. Each item must be {\"id\":\"cNN\",\"fit\":N,\"confidence\":N}. "
+                "array. Each item must contain id, hard_pass, situation_fit, "
+                "trajectory_fit, sound_fit, and confidence. "
                 "Include every candidate exactly once."
             )
 
@@ -467,7 +510,7 @@ def install_openai_primary(search_main) -> None:
                         user_prompt=(
                             prompt
                             + "\n\nReturn one compact JSON object mapping every candidate ID "
-                            "to [fit, confidence]."
+                            "to [hard_pass, situation_fit, trajectory_fit, sound_fit, confidence]."
                         ),
                         temperature=0.0,
                         max_tokens=2200,

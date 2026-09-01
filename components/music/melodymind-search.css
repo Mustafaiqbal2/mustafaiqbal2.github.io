@@ -477,11 +477,137 @@
 
 .mm-result {
   display: grid;
-  grid-template-columns: 34px 54px minmax(190px, 1.15fr) minmax(150px, 0.85fr) 36px;
+  grid-template-columns: 34px 54px minmax(190px, 1.15fr) minmax(150px, 0.85fr) 76px;
   min-height: 76px;
   align-items: center;
   gap: 14px;
   border-bottom: 1px solid var(--mm-soft-line);
+  transition: background 0.18s ease;
+}
+
+.mm-result.is-playing {
+  background: linear-gradient(90deg, rgba(255, 90, 71, 0.1), transparent 58%);
+}
+
+.mm-result.is-playing .mm-result__number {
+  color: var(--mm-signal);
+}
+
+.mm-player {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.72fr) minmax(360px, 1.28fr);
+  align-items: center;
+  gap: clamp(18px, 3vw, 42px);
+  margin: 18px 0 12px;
+  border: 1px solid rgba(241, 239, 231, 0.2);
+  border-radius: 10px;
+  padding: 12px;
+  background:
+    linear-gradient(105deg, rgba(255, 90, 71, 0.11), transparent 34%),
+    #0d0d0c;
+}
+
+.mm-player__identity {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) 32px;
+  align-items: center;
+  gap: 13px;
+  min-width: 0;
+}
+
+.mm-player__art {
+  display: block;
+  width: 58px;
+  height: 58px;
+  overflow: hidden;
+  border-radius: 5px;
+  background: #222220;
+}
+
+.mm-player__art img,
+.mm-player__art i {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.mm-player__art img {
+  object-fit: cover;
+}
+
+.mm-player__art i {
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 5px,
+    rgba(241, 239, 231, 0.16) 5px 7px
+  );
+}
+
+.mm-player__copy {
+  display: block;
+  min-width: 0;
+}
+
+.mm-player__copy small,
+.mm-player__copy strong,
+.mm-player__copy > span {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mm-player__copy small {
+  margin-bottom: 5px;
+  color: var(--mm-signal);
+  font-size: 8px;
+  letter-spacing: 0.12em;
+}
+
+.mm-player__copy strong {
+  color: var(--mm-paper);
+  font-size: 13px;
+  font-weight: 680;
+}
+
+.mm-player__copy > span {
+  margin-top: 3px;
+  color: #9b9a94;
+  font-size: 10px;
+}
+
+.mm-player__external {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid rgba(241, 239, 231, 0.18);
+  border-radius: 6px;
+  color: #9a9994;
+}
+
+.mm-player__external svg {
+  width: 13px;
+  height: 13px;
+}
+
+.mm-player__embed {
+  min-width: 0;
+  min-height: 80px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.mm-player__embed > iframe {
+  display: block;
+}
+
+.mm-player__embed > span {
+  display: grid;
+  min-height: 80px;
+  place-items: center;
+  color: var(--mm-muted);
+  font-size: 11px;
 }
 
 .mm-result__number {
@@ -546,22 +672,41 @@
   font-size: 10px;
 }
 
+.mm-result__actions {
+  display: flex;
+  justify-self: end;
+  gap: 7px;
+}
+
+.mm-result__play,
 .mm-result__open {
   display: grid;
   width: 32px;
   height: 32px;
   place-items: center;
-  justify-self: end;
   border: 1px solid rgba(241, 239, 231, 0.16);
   border-radius: 6px;
   color: #9a9994;
   background: transparent;
-  transition: border-color 0.18s ease, color 0.18s ease;
+  transition: border-color 0.18s ease, color 0.18s ease, background 0.18s ease;
 }
 
+.mm-result__play {
+  padding: 0;
+  cursor: pointer;
+}
+
+.mm-result__play:hover,
 .mm-result__open:hover {
-  border-color: rgba(241, 239, 231, 0.5);
-  color: var(--mm-paper);
+  border-color: var(--mm-paper);
+  color: var(--mm-ink);
+  background: var(--mm-paper);
+}
+
+.mm-result__play svg {
+  width: 13px;
+  height: 13px;
+  fill: currentColor;
 }
 
 .mm-result__open svg {
@@ -804,7 +949,7 @@
 
   .mm-result {
     min-height: 64px;
-    grid-template-columns: 30px 46px minmax(170px, 1.15fr) minmax(130px, 0.85fr) 32px;
+    grid-template-columns: 30px 46px minmax(170px, 1.15fr) minmax(130px, 0.85fr) 72px;
     gap: 12px;
   }
 
@@ -897,12 +1042,27 @@
   }
 
   .mm-result {
-    grid-template-columns: 26px 48px minmax(0, 1fr) 32px;
+    grid-template-columns: 26px 48px minmax(0, 1fr) 72px;
     min-height: 68px;
     gap: 10px;
   }
 
   .mm-result__art {
+    width: 48px;
+    height: 48px;
+  }
+
+  .mm-player {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    margin-top: 14px;
+  }
+
+  .mm-player__identity {
+    grid-template-columns: 48px minmax(0, 1fr) 30px;
+  }
+
+  .mm-player__art {
     width: 48px;
     height: 48px;
   }

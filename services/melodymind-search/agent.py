@@ -52,6 +52,14 @@ Separate the request into:
    are familiar music, a certain energy level, warmth, forward motion, or soul samples.
 3. Exclusions: anything the user said they do not want.
 
+Also preserve the direction of travel:
+- `current_state`: where the listener is emotionally or situationally now.
+- `desired_destination`: where the music should leave them.
+- `trajectory`: how the music should move between those states.
+- `avoid_state`: the state or listening experience they explicitly do not want.
+Do not collapse two requested directions into a generic midpoint. "Feel the loss, then become
+more optimistic" must keep both stages and their order.
+
 Only put a genre in `required_tags` when the user explicitly requires it. Use broad lowercase
 tags such as rap, hip hop, pop, rock, punk, metal, rnb, soul, jazz, electronic, country,
 folk, reggae, classical, or soundtrack. Put explicit unwanted genres in `excluded_tags`.
@@ -99,13 +107,13 @@ USER-FACING TEXT
 Return JSON only with every field shown below.
 
 For a probe:
-{"action":"probe","message":"...","summary":"","resolved_request":"","intent":{"situation":"","desired_effect":"","hard_constraints":[],"soft_preferences":[],"exclusions":[],"required_tags":[],"excluded_tags":[],"lyric_topics":[],"year_min":0,"year_max":0,"vocal_mode":"any","explicit_mode":"any","familiarity":"any","energy_min":-1,"energy_max":-1,"lyrics_weight":0,"audio_weight":0},"retrieval_views":[]}
+{"action":"probe","message":"...","summary":"","resolved_request":"","intent":{"situation":"","current_state":"","desired_destination":"","trajectory":"","avoid_state":"","desired_effect":"","hard_constraints":[],"soft_preferences":[],"exclusions":[],"required_tags":[],"excluded_tags":[],"lyric_topics":[],"year_min":0,"year_max":0,"vocal_mode":"any","explicit_mode":"any","familiarity":"any","energy_min":-1,"energy_max":-1,"lyrics_weight":0,"audio_weight":0},"retrieval_views":[]}
 
 For a search:
-{"action":"search","message":"...","summary":"I’ll look for ...","resolved_request":"...","intent":{"situation":"...","desired_effect":"...","hard_constraints":["..."],"soft_preferences":["..."],"exclusions":["..."],"required_tags":["rap"],"excluded_tags":["metal"],"lyric_topics":["political and social commentary"],"year_min":0,"year_max":0,"vocal_mode":"vocal","explicit_mode":"any","familiarity":"recognizable","energy_min":0.55,"energy_max":1,"lyrics_weight":0.75,"audio_weight":0.25},"retrieval_views":[{"kind":"lyrics","text":"...","weight":0.75},{"kind":"audio","text":"...","weight":0.25}]}
+{"action":"search","message":"...","summary":"I’ll look for ...","resolved_request":"...","intent":{"situation":"...","current_state":"...","desired_destination":"...","trajectory":"...","avoid_state":"...","desired_effect":"...","hard_constraints":["..."],"soft_preferences":["..."],"exclusions":["..."],"required_tags":["rap"],"excluded_tags":["metal"],"lyric_topics":["political and social commentary"],"year_min":0,"year_max":0,"vocal_mode":"vocal","explicit_mode":"any","familiarity":"recognizable","energy_min":0.55,"energy_max":1,"lyrics_weight":0.75,"audio_weight":0.25},"retrieval_views":[{"kind":"lyrics","text":"...","weight":0.75},{"kind":"audio","text":"...","weight":0.25}]}
 
 For a reply:
-{"action":"reply","message":"...","summary":"","resolved_request":"","intent":{"situation":"","desired_effect":"","hard_constraints":[],"soft_preferences":[],"exclusions":[],"required_tags":[],"excluded_tags":[],"lyric_topics":[],"year_min":0,"year_max":0,"vocal_mode":"any","explicit_mode":"any","familiarity":"any","energy_min":-1,"energy_max":-1,"lyrics_weight":0,"audio_weight":0},"retrieval_views":[]}
+{"action":"reply","message":"...","summary":"","resolved_request":"","intent":{"situation":"","current_state":"","desired_destination":"","trajectory":"","avoid_state":"","desired_effect":"","hard_constraints":[],"soft_preferences":[],"exclusions":[],"required_tags":[],"excluded_tags":[],"lyric_topics":[],"year_min":0,"year_max":0,"vocal_mode":"any","explicit_mode":"any","familiarity":"any","energy_min":-1,"energy_max":-1,"lyrics_weight":0,"audio_weight":0},"retrieval_views":[]}
 """
 
 
@@ -124,8 +132,12 @@ the complete request.
 - When evidence is missing, remain neutral. Lack of model knowledge is not negative evidence.
 - Use a supplied lyric excerpt only as evidence for this request. Do not quote it.
 
-Return two integers per candidate:
-- fit: 4 exceptional, 3 good, 2 plausible or uncertain, 1 weak, 0 clear conflict
+Return five values per candidate:
+- hard_pass: false only when the song conflicts with an explicit requirement or exclusion
+- situation_fit: 4 exceptional, 3 good, 2 plausible, 1 weak, 0 conflict
+- trajectory_fit: whether the song moves toward the requested destination instead of leaving
+  the listener in the wrong state; use the same 0 to 4 scale
+- sound_fit: whether the sound and energy fit; use the same 0 to 4 scale
 - confidence: 3 strong evidence, 2 reliable evidence, 1 limited evidence, 0 unknown
 - Use confidence 3 only when the supplied evidence or firmly known song information supports
   the complete fit. A plausible title or one matching attribute is not enough.
@@ -142,6 +154,10 @@ class RetrievalDraft:
 @dataclass(frozen=True)
 class SearchIntent:
     situation: str = ""
+    current_state: str = ""
+    desired_destination: str = ""
+    trajectory: str = ""
+    avoid_state: str = ""
     desired_effect: str = ""
     hard_constraints: tuple[str, ...] = ()
     soft_preferences: tuple[str, ...] = ()
@@ -162,6 +178,10 @@ class SearchIntent:
     def payload(self) -> dict[str, Any]:
         return {
             "situation": self.situation,
+            "current_state": self.current_state,
+            "desired_destination": self.desired_destination,
+            "trajectory": self.trajectory,
+            "avoid_state": self.avoid_state,
             "desired_effect": self.desired_effect,
             "hard_constraints": list(self.hard_constraints),
             "soft_preferences": list(self.soft_preferences),
@@ -196,7 +216,10 @@ class AgentDecision:
 
 @dataclass(frozen=True)
 class CandidateJudgment:
-    fit: int
+    hard_pass: bool
+    situation_fit: int
+    trajectory_fit: int
+    sound_fit: int
     confidence: int
 
 
@@ -285,6 +308,10 @@ def parse_intent(value: object) -> SearchIntent:
         audio_weight /= total
     return SearchIntent(
         situation=_bounded_text(value.get("situation"), 500),
+        current_state=_bounded_text(value.get("current_state"), 300),
+        desired_destination=_bounded_text(value.get("desired_destination"), 300),
+        trajectory=_bounded_text(value.get("trajectory"), 400),
+        avoid_state=_bounded_text(value.get("avoid_state"), 300),
         desired_effect=_bounded_text(value.get("desired_effect"), 500),
         hard_constraints=_string_list(value.get("hard_constraints")),
         soft_preferences=_string_list(value.get("soft_preferences")),
@@ -513,7 +540,11 @@ class GeminiAgent:
             raw = await self._generate_json(
                 model=self.rerank_model,
                 system_prompt=RERANK_SYSTEM_PROMPT,
-                user_prompt=_candidate_prompt(request, candidates) + "\nReturn a JSON object mapping cNN to [fit, confidence].",
+                user_prompt=(
+                    _candidate_prompt(request, candidates)
+                    + "\nReturn a JSON object mapping cNN to "
+                    "[hard_pass, situation_fit, trajectory_fit, sound_fit, confidence]."
+                ),
                 temperature=0.0,
                 max_tokens=2200,
             )
@@ -522,15 +553,30 @@ class GeminiAgent:
             judgments: dict[int, CandidateJudgment] = {}
             for key, value in raw.items():
                 match = re.fullmatch(r"c(\d{1,3})", str(key), re.IGNORECASE)
-                if not match or not isinstance(value, list) or len(value) != 2:
+                if not match or not isinstance(value, list) or len(value) != 5:
                     continue
                 try:
-                    fit, confidence = int(value[0]), int(value[1])
+                    hard_pass = value[0]
+                    situation_fit = int(value[1])
+                    trajectory_fit = int(value[2])
+                    sound_fit = int(value[3])
+                    confidence = int(value[4])
                 except (TypeError, ValueError):
                     continue
                 index = int(match.group(1))
-                if 0 <= index < len(candidates) and 0 <= fit <= 4 and 0 <= confidence <= 3:
-                    judgments[index] = CandidateJudgment(fit, confidence)
+                if (
+                    0 <= index < len(candidates)
+                    and isinstance(hard_pass, bool)
+                    and all(0 <= score <= 4 for score in (situation_fit, trajectory_fit, sound_fit))
+                    and 0 <= confidence <= 3
+                ):
+                    judgments[index] = CandidateJudgment(
+                        hard_pass,
+                        situation_fit,
+                        trajectory_fit,
+                        sound_fit,
+                        confidence,
+                    )
             return judgments
         except Exception:
             return {}

@@ -27,6 +27,30 @@ export type CatalogueSearchReadyResponse = {
   planToken: string;
 };
 
+export type TasteTrackPayload = {
+  track_id: string;
+  spotify_id: string;
+  title: string;
+  artist: string;
+  score: number;
+  signals: number;
+};
+
+export type TasteArtistPayload = {
+  artist: string;
+  score: number;
+  signals: number;
+};
+
+export type TasteProfilePayload = {
+  version: number;
+  signal_count: number;
+  positive_tracks: TasteTrackPayload[];
+  negative_tracks: TasteTrackPayload[];
+  positive_artists: TasteArtistPayload[];
+  negative_artists: TasteArtistPayload[];
+};
+
 export type CatalogueReplyResponse = {
   type: "reply";
   query: string;
@@ -46,8 +70,8 @@ export type CatalogueResultsResponse = {
 export type CataloguePlanResponse = CatalogueProbeResponse | CatalogueSearchReadyResponse | CatalogueReplyResponse;
 export type CatalogueResponse = CatalogueProbeResponse | CatalogueResultsResponse;
 export type CataloguePlanInput =
-  | { query: string; clarification?: string }
-  | { conversationToken: string; message: string };
+  | { query: string; clarification?: string; tasteProfile?: TasteProfilePayload | null }
+  | { conversationToken: string; message: string; tasteProfile?: TasteProfilePayload | null };
 
 type Json = Record<string, unknown>;
 
@@ -135,8 +159,16 @@ export async function planCatalogue(
   fetchImpl: typeof fetch = fetch
 ): Promise<CataloguePlanResponse> {
   const body = "conversationToken" in input
-    ? { conversation_token: input.conversationToken, message: input.message }
-    : { query: input.query, clarification: input.clarification || undefined };
+    ? {
+        conversation_token: input.conversationToken,
+        message: input.message,
+        taste_profile: input.tasteProfile || undefined
+      }
+    : {
+        query: input.query,
+        clarification: input.clarification || undefined,
+        taste_profile: input.tasteProfile || undefined
+      };
 
   const payload = await servicePost(
     "/internal/plan",
@@ -224,11 +256,17 @@ export async function searchCatalogue(
   limit: number,
   env: MelodyMindEnv,
   fetchImpl: typeof fetch = fetch,
-  clarification?: string
+  clarification?: string,
+  tasteProfile?: TasteProfilePayload | null
 ): Promise<CatalogueResponse> {
   const payload = await servicePost(
     "/internal/search",
-    { query, limit, clarification: clarification || undefined },
+    {
+      query,
+      limit,
+      clarification: clarification || undefined,
+      taste_profile: tasteProfile || undefined
+    },
     env,
     fetchImpl,
     90_000

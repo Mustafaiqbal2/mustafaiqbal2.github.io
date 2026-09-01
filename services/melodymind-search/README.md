@@ -16,6 +16,7 @@ conversation
   -> the two candidate lists are fused without duplicate chunk voting
   -> an LLM checks the complete request against the available evidence
   -> weak or uncertain candidates are removed instead of padding the list
+  -> songs that passed those checks can be reordered using the visitor's playback history
   -> a signed session token lets the user refine or discuss the results
 ```
 
@@ -23,6 +24,12 @@ The agent usually asks at most one useful question before a recommendation. It
 may ask a second when the first answer still leaves a specific retrieval choice
 unresolved. A follow-up after results starts a new cycle, so the conversation
 does not stop after the first playlist.
+
+The portfolio uses one Spotify embed for every result. Starts, longer listens,
+replays, quick switches, and explicit Spotify opens update an anonymous profile
+in Cloudflare D1. Ranking uses the nearest previously enjoyed tracks and artist
+signals after the request-fit gate; it does not average a listener's whole taste
+into one vector.
 
 ## Search data
 

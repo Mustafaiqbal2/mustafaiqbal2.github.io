@@ -66,8 +66,13 @@ def install_telemetry(search_main) -> None:
             telemetry["candidate_count"] = len(candidates)
         return candidates
 
-    def experiential_order(candidates, judgments, intent):
-        ordered = original_experiential_order(candidates, judgments, intent)
+    def experiential_order(candidates, judgments, intent, taste_adjustments=None):
+        ordered = original_experiential_order(
+            candidates,
+            judgments,
+            intent,
+            taste_adjustments,
+        )
         telemetry = telemetry_context.get()
         if telemetry is not None:
             diagnostic = [
@@ -85,7 +90,12 @@ def install_telemetry(search_main) -> None:
                     "fused_rank": candidate.fused_rank,
                     "final_rank": candidate.final_rank,
                     "fit": candidate.fit,
+                    "hard_pass": candidate.hard_pass,
+                    "situation_fit": candidate.situation_fit,
+                    "trajectory_fit": candidate.trajectory_fit,
+                    "sound_fit": candidate.sound_fit,
                     "confidence": candidate.confidence,
+                    "taste_adjustment": round(float(candidate.taste_adjustment), 6),
                     "fusion": round(float(candidate.fusion_score), 6),
                     "final_score": round(float(candidate.final_score), 6),
                     "source_ranks": candidate.source_ranks,
@@ -125,6 +135,7 @@ def install_telemetry(search_main) -> None:
                 resolved_text=str(payload["search_text"]),
                 retrieval_views=list(payload["retrieval_views"]),
                 intent=payload["intent"],
+                taste_profile=payload.get("taste_profile"),
                 limit=request.limit,
             )
             telemetry["retrieve_total_ms"] = round(
