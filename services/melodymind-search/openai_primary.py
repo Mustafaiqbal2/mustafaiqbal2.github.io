@@ -8,7 +8,6 @@ MelodyMind returns an error instead of silently lowering recommendation quality.
 from __future__ import annotations
 
 from contextvars import ContextVar
-import hashlib
 import json
 import os
 import re
@@ -210,68 +209,58 @@ def install_openai_primary(search_main) -> None:
             raw: object,
             *,
             history: Sequence[dict[str, str]],
-            probe_used: bool,
+            probes_used: int,
         ):
-            if not isinstance(raw, dict):
-                raise ValueError("Planner response was not an object")
-
-            action = str(raw.get("action", "")).strip().lower()
-            message = str(raw.get("message", "")).strip()[:1000]
-            if probe_used and action == "probe":
-                # A second probe is not allowed. Treat it as a provider failure
-                # instead of coercing an incomplete probe payload into search.
-                raise ValueError("Planner attempted a second probe")
-            if action == "probe":
-                if not message:
-                    raise ValueError("Planner returned an empty probe")
-                return agent_module.AgentDecision("probe", message, "", [])
-            if action != "search":
-                raise ValueError("Planner returned an invalid action")
-
-            search_text = str(raw.get("search_text", "")).strip()
-            if not 4 <= len(search_text) <= 1600:
-                raise ValueError("Planner returned invalid search_text")
-
-            parsed: dict[str, Any] = {}
-            raw_views = raw.get("retrieval_views")
-            if not isinstance(raw_views, list):
-                raise ValueError("Planner returned invalid retrieval_views")
-            for item in raw_views:
-                if not isinstance(item, dict):
-                    continue
-                kind = str(item.get("kind", "")).strip().lower()
-                text = str(item.get("text", "")).strip()
-                if (
-                    kind in agent_module.RETRIEVAL_KINDS
-                    and 12 <= len(text) <= 700
-                    and kind not in parsed
-                ):
-                    parsed[kind] = agent_module.RetrievalDraft(kind, text)
-            if set(parsed) != set(agent_module.RETRIEVAL_KINDS):
-                raise ValueError("Planner did not return all retrieval views")
-
-            views = [parsed[kind] for kind in agent_module.RETRIEVAL_KINDS]
-            return agent_module.AgentDecision("search", message, search_text, views)
+            return agent_module.parse_decision(raw, history, probes_used)
 
         async def plan(
             self,
             history: Sequence[dict[str, str]],
-            probe_used: bool = False,
+            probes_used: int = 0,
         ):
+            direct = agent_module._direct_reply(history)
+            if direct is not None:
+                return direct
             if not self.configured:
                 raise RuntimeError("No MelodyMind LLM provider is configured")
 
-            prompt = agent_module._conversation_prompt(history, probe_used)
+            prompt = agent_module._conversation_prompt(history, probes_used)
+            intent_properties = {
+                "situation": {"type": "string"},
+                "desired_effect": {"type": "string"},
+                "hard_constraints": {"type": "array", "items": {"type": "string"}, "maxItems": 8},
+                "soft_preferences": {"type": "array", "items": {"type": "string"}, "maxItems": 8},
+                "exclusions": {"type": "array", "items": {"type": "string"}, "maxItems": 8},
+                "required_tags": {"type": "array", "items": {"type": "string"}, "maxItems": 6},
+                "excluded_tags": {"type": "array", "items": {"type": "string"}, "maxItems": 6},
+                "lyric_topics": {"type": "array", "items": {"type": "string"}, "maxItems": 6},
+                "year_min": {"type": "integer", "minimum": 0, "maximum": 2100},
+                "year_max": {"type": "integer", "minimum": 0, "maximum": 2100},
+                "vocal_mode": {"type": "string", "enum": list(agent_module.VOCAL_MODES)},
+                "explicit_mode": {"type": "string", "enum": list(agent_module.EXPLICIT_MODES)},
+                "familiarity": {"type": "string", "enum": list(agent_module.FAMILIARITY_MODES)},
+                "energy_min": {"type": "number", "minimum": -1, "maximum": 1},
+                "energy_max": {"type": "number", "minimum": -1, "maximum": 1},
+                "lyrics_weight": {"type": "number", "minimum": 0, "maximum": 1},
+                "audio_weight": {"type": "number", "minimum": 0, "maximum": 1},
+            }
             schema = {
                 "type": "object",
                 "additionalProperties": False,
                 "properties": {
-                    "action": {"type": "string", "enum": ["probe", "search"]},
+                    "action": {"type": "string", "enum": ["probe", "search", "reply"]},
                     "message": {"type": "string"},
-                    "search_text": {"type": "string"},
+                    "summary": {"type": "string"},
+                    "resolved_request": {"type": "string"},
+                    "intent": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "properties": intent_properties,
+                        "required": list(intent_properties),
+                    },
                     "retrieval_views": {
                         "type": "array",
-                        "maxItems": 4,
+                        "maxItems": 2,
                         "items": {
                             "type": "object",
                             "additionalProperties": False,
@@ -281,12 +270,13 @@ def install_openai_primary(search_main) -> None:
                                     "enum": list(agent_module.RETRIEVAL_KINDS),
                                 },
                                 "text": {"type": "string"},
+                                "weight": {"type": "number", "minimum": 0, "maximum": 1},
                             },
-                            "required": ["kind", "text"],
+                            "required": ["kind", "text", "weight"],
                         },
                     },
                 },
-                "required": ["action", "message", "search_text", "retrieval_views"],
+                "required": ["action", "message", "summary", "resolved_request", "intent", "retrieval_views"],
             }
 
             openai_error: Exception | None = None
@@ -300,10 +290,10 @@ def install_openai_primary(search_main) -> None:
                         schema_name="melodymind_plan",
                         schema=schema,
                         reasoning_effort=self.openai_plan_reasoning,
-                        max_tokens=2200,
+                        max_tokens=3200,
                     )
                     decision = self._parse_plan(
-                        raw, history=history, probe_used=probe_used
+                        raw, history=history, probes_used=probes_used
                     )
                     self._mark_provider("plan", "openai")
                     return decision
@@ -325,10 +315,10 @@ def install_openai_primary(search_main) -> None:
                         system_prompt=agent_module.AGENT_SYSTEM_PROMPT,
                         user_prompt=prompt,
                         temperature=0.1,
-                        max_tokens=1100,
+                        max_tokens=2800,
                     )
                     decision = self._parse_plan(
-                        raw, history=history, probe_used=probe_used
+                        raw, history=history, probes_used=probes_used
                     )
                     self._mark_provider("plan", "gemini_fallback")
                     return decision
@@ -345,36 +335,7 @@ def install_openai_primary(search_main) -> None:
             raise RuntimeError("OpenAI planning failed and Gemini fallback is unavailable") from openai_error
 
         def _candidate_prompt(self, request: str, candidates: Sequence[object]):
-            indexed: list[tuple[int, object]] = list(enumerate(candidates))
-
-            def shuffle_key(item: tuple[int, object]) -> bytes:
-                _, candidate = item
-                match = getattr(candidate, "match", candidate)
-                identity = str(
-                    getattr(match, "spotify_id", "")
-                    or getattr(match, "track_id", "")
-                    or item[0]
-                )
-                return hashlib.sha256(
-                    (request + "\0" + identity).encode("utf-8")
-                ).digest()
-
-            indexed.sort(key=shuffle_key)
-            lines: list[str] = []
-            for original_index, candidate in indexed:
-                match = getattr(candidate, "match", candidate)
-                title = str(getattr(match, "title", "Unknown"))
-                artist = str(getattr(match, "artist", "Unknown"))
-                album = getattr(match, "album", None)
-                suffix = f" — {album}" if album else ""
-                lines.append(f"c{original_index:02d}: {title} — {artist}{suffix}")
-            return (
-                "COMPLETE LISTENING REQUEST:\n"
-                + request.strip()
-                + "\n\nCANDIDATES:\n"
-                + "\n".join(lines)
-                + "\n\nReturn a judgment for every candidate."
-            )
+            return agent_module._candidate_prompt(request, candidates)
 
         def _parse_openai_judgments(
             self, raw: object, candidate_count: int

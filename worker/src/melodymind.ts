@@ -23,7 +23,15 @@ export type CatalogueSearchReadyResponse = {
   type: "search_ready";
   query: string;
   message: string;
+  summary: string;
   planToken: string;
+};
+
+export type CatalogueReplyResponse = {
+  type: "reply";
+  query: string;
+  message: string;
+  conversationToken: string;
 };
 
 export type CatalogueResultsResponse = {
@@ -31,10 +39,11 @@ export type CatalogueResultsResponse = {
   query: string;
   message: string;
   results: CatalogueMatch[];
+  conversationToken?: string;
   telemetry?: Record<string, unknown>;
 };
 
-export type CataloguePlanResponse = CatalogueProbeResponse | CatalogueSearchReadyResponse;
+export type CataloguePlanResponse = CatalogueProbeResponse | CatalogueSearchReadyResponse | CatalogueReplyResponse;
 export type CatalogueResponse = CatalogueProbeResponse | CatalogueResultsResponse;
 export type CataloguePlanInput =
   | { query: string; clarification?: string }
@@ -146,6 +155,14 @@ export async function planCatalogue(
       ...(conversationToken ? { conversationToken } : {})
     };
   }
+  if (payload.type === "reply") {
+    return {
+      type: "reply",
+      query: requiredString(payload.query, "query"),
+      message: requiredString(payload.message, "reply message"),
+      conversationToken: requiredString(payload.conversation_token, "conversation token")
+    };
+  }
   if (payload.type !== "search_ready") {
     throw new Error("Invalid MelodyMind plan response");
   }
@@ -153,6 +170,7 @@ export async function planCatalogue(
     type: "search_ready",
     query: requiredString(payload.query, "query"),
     message: typeof payload.message === "string" ? payload.message : "",
+    summary: typeof payload.summary === "string" ? payload.summary : "",
     planToken: requiredString(payload.plan_token, "plan token")
   };
 }
@@ -194,6 +212,9 @@ export async function executeCataloguePlan(
     query: requiredString(payload.query, "query"),
     message: typeof payload.message === "string" ? payload.message : "",
     results,
+    ...(optionalString(payload.conversation_token)
+      ? { conversationToken: optionalString(payload.conversation_token) as string }
+      : {}),
     ...(optionalObject(payload.telemetry) ? { telemetry: optionalObject(payload.telemetry) } : {})
   };
 }
@@ -229,6 +250,9 @@ export async function searchCatalogue(
     type: "results",
     query: requiredString(payload.query, "query"),
     message: typeof payload.message === "string" ? payload.message : "",
-    results
+    results,
+    ...(optionalString(payload.conversation_token)
+      ? { conversationToken: optionalString(payload.conversation_token) as string }
+      : {})
   };
 }

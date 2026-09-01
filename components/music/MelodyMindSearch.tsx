@@ -28,7 +28,15 @@ type SearchReadyResponse = {
   type: "search_ready";
   query: string;
   message?: string;
+  summary?: string;
   plan_token: string;
+};
+
+type ReplyResponse = {
+  type: "reply";
+  query: string;
+  message: string;
+  conversation_token: string;
 };
 
 type ResultsResponse = {
@@ -37,12 +45,14 @@ type ResultsResponse = {
   message?: string;
   results: SongResult[];
   total: number;
+  conversation_token?: string;
 };
 
-type PlanResponse = ProbeResponse | SearchReadyResponse;
+type PlanResponse = ProbeResponse | SearchReadyResponse | ReplyResponse;
 type LegacySearchResponse = ProbeResponse | ResultsResponse;
 type SearchState = "idle" | "thinking" | "probe" | "searching" | "success" | "error";
 type Feedback = "hit" | "miss" | "";
+type SessionTurn = { id: number; role: "user" | "assistant"; text: string };
 
 const EXAMPLES = [
   "A close friendship ended quietly. Neither of us said goodbye.",
@@ -107,9 +117,10 @@ export function MelodyMindSearch() {
   const [query, setQuery] = useState("");
   const [submittedQuery, setSubmittedQuery] = useState("");
   const [clarification, setClarification] = useState("");
-  const [probeQuestion, setProbeQuestion] = useState("");
   const [conversationToken, setConversationToken] = useState("");
   const [agentMessage, setAgentMessage] = useState("");
+  const [searchSummary, setSearchSummary] = useState("");
+  const [turns, setTurns] = useState<SessionTurn[]>([]);
   const [state, setState] = useState<SearchState>("idle");
   const [results, setResults] = useState<SongResult[]>([]);
   const [error, setError] = useState("");
@@ -266,9 +277,10 @@ export function MelodyMindSearch() {
     setQuery("");
     setSubmittedQuery("");
     setClarification("");
-    setProbeQuestion("");
     setConversationToken("");
     setAgentMessage("");
+    setSearchSummary("");
+    setTurns([]);
     setResults([]);
     setError("");
     setSearchId("");
@@ -286,8 +298,11 @@ export function MelodyMindSearch() {
 
   const showProbe = (payload: ProbeResponse) => {
     probeShownAtRef.current = Date.now();
-    setProbeQuestion(payload.message);
     setConversationToken(payload.conversation_token?.trim() || "");
+    setTurns((current) => [
+      ...current,
+      { id: Date.now(), role: "assistant", text: payload.message }
+    ]);
     setClarification("");
     setState("probe");
   };
@@ -297,6 +312,8 @@ export function MelodyMindSearch() {
     setAgentMessage(
       payload.message?.trim() || "These are the closest matches I found for what you described."
     );
+    setConversationToken(payload.conversation_token?.trim() || "");
+    setSearchSummary("");
     setResults(Array.isArray(payload.results) ? payload.results : []);
     setResultsShownAt(shownAt);
     setState("success");
@@ -338,17 +355,18 @@ export function MelodyMindSearch() {
   const submit = async (event?: FormEvent<HTMLFormElement>) => {
     event?.preventDefault();
     const answeringProbe = state === "probe";
-    if (state !== "idle" && !answeringProbe) return;
+    const continuing = state === "success" && Boolean(conversationToken);
+    if (state !== "idle" && !answeringProbe && !continuing) return;
 
-    const cleanQuery = answeringProbe ? submittedQuery.trim() : query.trim();
-    const cleanClarification = answeringProbe ? clarification.trim() : "";
+    const cleanQuery = answeringProbe || continuing ? submittedQuery.trim() : query.trim();
+    const cleanClarification = answeringProbe || continuing ? clarification.trim() : "";
     if (cleanQuery.length < 4) return;
-    if (answeringProbe && !cleanClarification) return;
+    if ((answeringProbe || continuing) && !cleanClarification) return;
 
     const planEndpoint = apiUrl("plan");
     const searchEndpoint = apiUrl("search");
     if (!planEndpoint || !searchEndpoint) {
-      if (!answeringProbe) setSubmittedQuery(cleanQuery);
+      if (!answeringProbe && !continuing) setSubmittedQuery(cleanQuery);
       setResults([]);
       setError("The search server is not connected to this build.");
       setState("error");
@@ -361,17 +379,29 @@ export function MelodyMindSearch() {
 
     let currentSearchId = searchId;
     if (!answeringProbe) {
+      if (continuing && searchId) previousSearchIdRef.current = searchId;
       currentSearchId = newSearchId();
       attemptRef.current += 1;
       startedAtRef.current = Date.now();
       setSearchId(currentSearchId);
       searchIdRef.current = currentSearchId;
-      setSubmittedQuery(cleanQuery);
-      setProbeQuestion("");
-      setConversationToken("");
+      if (!continuing) {
+        setSubmittedQuery(cleanQuery);
+        setTurns([]);
+        setResults([]);
+      }
+      if (!continuing) setConversationToken("");
       setClarification("");
       setFeedback("");
       setResultsShownAt(0);
+    }
+
+    if (answeringProbe || continuing) {
+      setTurns((current) => [
+        ...current,
+        { id: Date.now(), role: "user", text: cleanClarification }
+      ]);
+      setClarification("");
     }
 
     const analytics: Record<string, unknown> = {
@@ -386,12 +416,12 @@ export function MelodyMindSearch() {
     }
 
     setAgentMessage("");
-    setResults([]);
+    setSearchSummary("");
     setError("");
     setState("thinking");
 
     try {
-      const planBody = answeringProbe && conversationToken
+      const planBody = (answeringProbe || continuing) && conversationToken
         ? { conversation_token: conversationToken, message: cleanClarification, analytics }
         : {
             query: cleanQuery,
@@ -425,10 +455,21 @@ export function MelodyMindSearch() {
         showProbe(plan);
         return;
       }
+      if (plan.type === "reply") {
+        setConversationToken(plan.conversation_token);
+        setTurns((current) => [
+          ...current,
+          { id: Date.now() + 1, role: "assistant", text: plan.message }
+        ]);
+        setAgentMessage("");
+        setState("success");
+        return;
+      }
       if (plan.type !== "search_ready" || !plan.plan_token) {
         throw new Error("Invalid MelodyMind plan response");
       }
 
+      setSearchSummary(plan.summary?.trim() || plan.message?.trim() || "I’m searching the catalogue using the details you gave me.");
       setState("searching");
       const searchResponse = await fetch(searchEndpoint, {
         method: "POST",
@@ -587,26 +628,27 @@ export function MelodyMindSearch() {
                   <p>{submittedQuery}</p>
                 </article>
 
-                {probeQuestion && (
-                  <article className="mm-turn mm-turn--assistant">
-                    <span className="mm-turn__role lv-mono">MELODYMIND</span>
-                    <p>{probeQuestion}</p>
+                {turns.map((turn) => (
+                  <article
+                    className={`mm-turn mm-turn--${turn.role}${turn.role === "user" ? " mm-turn--followup" : ""}`}
+                    key={turn.id}
+                  >
+                    <span className="mm-turn__role lv-mono">
+                      {turn.role === "user" ? "YOU" : "MELODYMIND"}
+                    </span>
+                    <p>{turn.text}</p>
                   </article>
-                )}
-
-                {clarification && state !== "probe" && (
-                  <article className="mm-turn mm-turn--user mm-turn--followup">
-                    <span className="mm-turn__role lv-mono">YOU</span>
-                    <p>{clarification}</p>
-                  </article>
-                )}
+                ))}
 
                 {isBusy && (
                   <article className="mm-turn mm-turn--assistant mm-turn--status" role="status">
                     <span className="mm-turn__role lv-mono">MELODYMIND</span>
                     <div className="mm-agent-status">
                       <ThinkingDots />
-                      <span>{busyLabel} · {busySeconds}s</span>
+                      <span>
+                        {state === "searching" && searchSummary ? searchSummary : busyLabel}
+                        {` · ${busySeconds}s`}
+                      </span>
                     </div>
                   </article>
                 )}
@@ -621,13 +663,14 @@ export function MelodyMindSearch() {
                   </article>
                 )}
 
-                {state === "success" && (
-                  <>
+                {state === "success" && agentMessage && (
                     <article className="mm-turn mm-turn--assistant">
                       <span className="mm-turn__role lv-mono">MELODYMIND</span>
                       <p>{agentMessage}</p>
                     </article>
+                )}
 
+                {results.length > 0 && (
                     <section ref={resultsRef} className="mm-agent-results" aria-label="Song results">
                       <header>
                         <div>
@@ -637,7 +680,6 @@ export function MelodyMindSearch() {
                         <span className="lv-mono">TITLE / ARTIST / ALBUM</span>
                       </header>
 
-                      {results.length > 0 ? (
                         <>
                           <ol className="mm-result-list" aria-label="Matching tracks">
                             {results.map((song, index) => (
@@ -674,21 +716,20 @@ export function MelodyMindSearch() {
                             )}
                           </div>
                         </>
-                      ) : (
-                        <div className="mm-no-results">
-                          <p>No songs came back for this wording.</p>
-                          <button type="button" onClick={beginAgain}>Try another situation</button>
-                        </div>
-                      )}
                     </section>
-                  </>
+                )}
+
+                {state === "success" && results.length === 0 && Boolean(agentMessage) && (
+                  <div className="mm-no-results">
+                    <p>Change one detail or tell me which part matters most.</p>
+                  </div>
                 )}
               </div>
             </div>
 
             <footer className="mm-agent-footer">
               <div className="mm-agent-footer__inner">
-                {state === "probe" && (
+                {(state === "probe" || (state === "success" && Boolean(conversationToken))) && (
                   <form className="mm-agent-composer" onSubmit={submit}>
                     <textarea
                       ref={composerRef}
@@ -696,7 +737,7 @@ export function MelodyMindSearch() {
                       rows={1}
                       maxLength={500}
                       aria-label="Reply to MelodyMind"
-                      placeholder="Reply to MelodyMind…"
+                      placeholder={state === "probe" ? "Reply to MelodyMind…" : "Change the direction, ask about a result, or keep talking…"}
                       onChange={(event) => {
                         setClarification(event.target.value);
                         resizeComposer();
@@ -719,9 +760,9 @@ export function MelodyMindSearch() {
                   </div>
                 )}
 
-                {(state === "success" || state === "error") && (
+                {state === "error" && (
                   <div className="mm-agent-finish">
-                    <span>Want to try a different situation?</span>
+                    <span>That request did not complete.</span>
                     <button type="button" onClick={beginAgain}>
                       <RotateCcw aria-hidden="true" />
                       New search

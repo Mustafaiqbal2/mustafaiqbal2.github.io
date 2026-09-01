@@ -1,157 +1,89 @@
-# MelodyMind demo search service
+# MelodyMind search service
 
-This is the private model service used by the portfolio's Cloudflare Worker. It
-contains no song-ingestion code and does not depend on the original MelodyMind
-backend's database, auth, persistence, voice, stem-separation, or Spotify account
-stack.
+This is the private recommendation service behind the portfolio demo. It is
+separate from the original MelodyMind backend.
 
-The service uses the frozen CLaMP3 text tower to search Model A in:
+## Search flow
 
 ```text
-index: melodymind-embeddings
-namespace: clamp3-reddit-evidence-a-v1
-metric: cosine
+conversation
+  -> agent decides: clarify, search, or reply
+  -> agent separates hard constraints, soft preferences, and exclusions
+  -> one plain search summary is shown to the user
+  -> hard metadata filters run before semantic retrieval
+  -> written situations/topics search the lyrics and evidence namespace
+  -> sound/energy/atmosphere searches Model A's audio namespace
+  -> the two candidate lists are fused without duplicate chunk voting
+  -> an LLM checks the complete request against the available evidence
+  -> weak or uncertain candidates are removed instead of padding the list
+  -> a signed session token lets the user refine or discuss the results
 ```
 
-The query encoder must remain CLaMP3 for this namespace. Do not replace it with
-Nomic or another text model unless the catalogue is re-embedded into a matching
-space.
+The agent usually asks at most one useful question before a recommendation. It
+may ask a second when the first answer still leaves a specific retrieval choice
+unresolved. A follow-up after results starts a new cycle, so the conversation
+does not stop after the first playlist.
 
-## Lightweight agent layer
+## Search data
 
-The useful conversational/retrieval behavior from the original MelodyMind agent
-has been ported into this service without its backend baggage.
+Both namespaces use the Pinecone index `melodymind-embeddings` with 768
+dimensions and cosine similarity.
 
-The request flow is now:
+- `melodymind-audio-curated-v1`: a smaller, genre-balanced subset of Model A.
+  Audio queries use the frozen CLaMP3 text encoder because Model A preserved
+  that text space.
+- `melodymind-lyrics-mpnet-v1`: lyric chunks embedded with
+  `sentence-transformers/all-mpnet-base-v2`. The same local model embeds the
+  written query at search time.
 
-```text
-user situation
-  -> MelodyMind probe/search decision (one clarification maximum)
-  -> original wording and resolved conversation remain retrieval views
-  -> four purpose-built views shaped like the Reddit music discussions used for training
-  -> one batched CLaMP3 text-encoder pass
-  -> independent Pinecone retrieval for each query view
-  -> rank, cosine-strength, and cross-view fusion into an 80-song candidate pool
-  -> experiential LLM ranking using song/artist knowledge when available
-  -> final results
+The old namespaces remain untouched.
+
+## Catalogue maintenance
+
+Audit the selected catalogue without writing:
+
+```powershell
+python services/melodymind-search/build_catalogue.py `
+  --source-root C:\path\to\melodymind-backend
 ```
 
-The four generated views cover the recommendation request, a plain listener
-account, the requested emotional movement, and the likely musical character.
-They preserve the user's situation and requested direction while matching the
-kind of music discussion Model A learned from. Unknown songs keep their retrieval
-score during final ranking; familiarity is not required.
+Add current Spotify tracks and exact LRCLIB matches to the external catalogue:
 
-If `GEMINI_API_KEY` is missing, the service still searches Model A with deterministic
-views rather than taking search offline. `/health` reports
-`agent_configured: true|false` so the deployment can be checked directly.
+```powershell
+python services/melodymind-search/modernize_catalogue.py `
+  --source-root C:\path\to\melodymind-backend `
+  --start-year 2020 `
+  --end-year 2026
+```
+
+Build the two production namespaces explicitly:
+
+```powershell
+python services/melodymind-search/build_catalogue.py `
+  --source-root C:\path\to\melodymind-backend `
+  --commit-audio
+
+python services/melodymind-search/build_catalogue.py `
+  --source-root C:\path\to\melodymind-backend `
+  --commit-lyrics
+```
+
+The commands are resumable and never delete the source namespaces.
 
 ## Modal deployment
 
-Modal is the primary runtime for this service. `modal_app.py` reuses the existing
-Dockerfile and FastAPI app, but gives the model enough memory to load without the
-OOM restart loop seen on small Railway containers.
+Modal uses two secrets:
 
-The Modal function requests 2 GiB of memory, permits a 6 GiB startup ceiling,
-keeps at most one model container alive, and scales back to zero after idle time.
+- `melodymind-search`: `PINECONE_API_KEY`, `MELODYMIND_SERVICE_TOKEN`, and
+  `GEMINI_API_KEY`
+- `melodymind-openai`: `OPENAI_API_KEY`
 
-### 1. Install and authenticate Modal
-
-From the repository root:
-
-```powershell
-python -m pip install "modal>=1.3,<2"
-modal setup
-```
-
-### 2. Create/update the service secret
-
-In the Modal dashboard, create or edit the secret named:
-
-```text
-melodymind-search
-```
-
-It should contain:
-
-```text
-PINECONE_API_KEY
-MELODYMIND_SERVICE_TOKEN
-GEMINI_API_KEY
-```
-
-Use the same `MELODYMIND_SERVICE_TOKEN` that is stored in the Cloudflare Worker.
-`GEMINI_API_KEY` enables probing, strict paraphrase generation, and reranking.
-Do not commit any of these values to this repository.
-
-Optional:
-
-```text
-MELODYMIND_AGENT_MODEL=gemini-2.5-flash
-```
-
-The index, namespace, and model label already have the correct defaults in the
-image:
-
-```text
-PINECONE_INDEX=melodymind-embeddings
-PINECONE_NAMESPACE=clamp3-reddit-evidence-a-v1
-MELODYMIND_MODEL_VERSION=clamp3-reddit-evidence-a-v1
-```
-
-### 3. Deploy
-
-From the repository root:
+Deploy the model service and then the Worker:
 
 ```powershell
 modal deploy services/melodymind-search/modal_app.py
-```
-
-Modal prints the public HTTPS endpoint for the `api` web function. Verify it:
-
-```text
-GET <modal-url>/health
-```
-
-A healthy agent-enabled deployment returns the model label, dimension `768`,
-index, namespace, and:
-
-```json
-{"agent_configured": true}
-```
-
-### 4. Deploy the Cloudflare Worker
-
-The Worker already knows the Modal URL and service token. The agent contract adds
-the optional clarification field and the `probe | results` response type, so the
-Worker code must be redeployed after pulling this version:
-
-```powershell
 npm run worker:deploy
 ```
 
-The browser still talks only to the Cloudflare Worker. No model or Pinecone
-credentials are exposed to the static site.
-
-## Local/container behavior
-
-`Dockerfile` builds the standalone service image. Its build stage downloads the
-official CLaMP3 SAAS checkpoint, exports only the frozen text tower and
-projection, then discards the original multimodal checkpoint from the final
-runtime image.
-
-Required runtime secrets for basic search:
-
-```text
-PINECONE_API_KEY
-MELODYMIND_SERVICE_TOKEN
-```
-
-Agent-enabled search additionally uses:
-
-```text
-GEMINI_API_KEY
-```
-
-`railway.json` is retained only as a fallback deployment configuration; Modal is
-the intended runtime for the portfolio demo.
+The browser talks only to the Cloudflare Worker. It never receives model,
+Pinecone, Gemini, OpenAI, or Spotify credentials.

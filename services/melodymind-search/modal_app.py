@@ -66,8 +66,8 @@ def install_telemetry(search_main) -> None:
             telemetry["candidate_count"] = len(candidates)
         return candidates
 
-    def experiential_order(candidates, judgments):
-        ordered = original_experiential_order(candidates, judgments)
+    def experiential_order(candidates, judgments, intent):
+        ordered = original_experiential_order(candidates, judgments, intent)
         telemetry = telemetry_context.get()
         if telemetry is not None:
             diagnostic = [
@@ -124,6 +124,7 @@ def install_telemetry(search_main) -> None:
                 original_text=str(payload["original"]),
                 resolved_text=str(payload["search_text"]),
                 retrieval_views=list(payload["retrieval_views"]),
+                intent=payload["intent"],
                 limit=request.limit,
             )
             telemetry["retrieve_total_ms"] = round(
@@ -151,11 +152,14 @@ def install_telemetry(search_main) -> None:
         return {
             "type": "results",
             "query": str(payload["original"]),
-            "message": str(payload.get("message", "")),
+            "message": search_main._result_message(len(results)),
             "results": dumped_results,
             "total": len(results),
             "model": current.settings.model_version,
             "retrieval_queries": query_count,
+            "conversation_token": search_main._result_session_token(
+                current, payload, results
+            ),
             "telemetry": telemetry,
         }
 
@@ -181,9 +185,7 @@ def api():
 
     import main as search_main
     from openai_primary import install_openai_primary
-    from quality_patch import install_quality_patch
 
     install_openai_primary(search_main)
-    install_quality_patch(search_main)
     install_telemetry(search_main)
     return search_main.app

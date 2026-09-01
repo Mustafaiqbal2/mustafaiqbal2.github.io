@@ -90,7 +90,7 @@ function json(
 
 async function requestBody(request: Request): Promise<Record<string, unknown>> {
   const raw = await request.text();
-  if (raw.length > 12_000) throw new Error("request_too_large");
+  if (raw.length > 24_000) throw new Error("request_too_large");
   const parsed = JSON.parse(raw) as unknown;
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
     throw new Error("invalid_json");
@@ -116,7 +116,7 @@ function readConversationToken(body: Record<string, unknown>): string | undefine
   if (body.conversation_token === undefined || body.conversation_token === null) return undefined;
   if (typeof body.conversation_token !== "string") throw new Error("invalid_conversation");
   const token = body.conversation_token.trim();
-  if (token.length < 16 || token.length > 8192) throw new Error("invalid_conversation");
+  if (token.length < 16 || token.length > 16384) throw new Error("invalid_conversation");
   return token;
 }
 
@@ -205,6 +205,9 @@ async function enrichCatalogue(
     type: "results" as const,
     query: catalogue.query,
     message: catalogue.message,
+    ...(catalogue.conversationToken
+      ? { conversation_token: catalogue.conversationToken }
+      : {}),
     results,
     total: results.length
   };
@@ -348,15 +351,37 @@ export function createRouter(deps: RouterDeps = {}) {
           );
         }
 
+        if (plan.type === "reply") {
+          track({
+            event: "melodymind_agent_reply",
+            data: withSearchMeta(analytics, { message: plan.message, elapsed_ms: elapsedMs })
+          });
+          return json(
+            {
+              type: "reply",
+              query: plan.query,
+              message: plan.message,
+              conversation_token: plan.conversationToken
+            },
+            200,
+            origin
+          );
+        }
+
         track({
           event: "melodymind_search_ready",
-          data: withSearchMeta(analytics, { acknowledgement: plan.message, elapsed_ms: elapsedMs })
+          data: withSearchMeta(analytics, {
+            acknowledgement: plan.message,
+            summary: plan.summary,
+            elapsed_ms: elapsedMs
+          })
         });
         return json(
           {
             type: "search_ready",
             query: plan.query,
             message: plan.message,
+            summary: plan.summary,
             plan_token: plan.planToken
           },
           200,
@@ -392,7 +417,7 @@ export function createRouter(deps: RouterDeps = {}) {
 
         if (typeof body.plan_token === "string" && body.plan_token.trim()) {
           const planToken = body.plan_token.trim();
-          if (planToken.length > 8192) return json({ error: "invalid_plan" }, 400, origin);
+          if (planToken.length > 16384) return json({ error: "invalid_plan" }, 400, origin);
           catalogue = await executeCataloguePlan(
             planToken,
             limit,

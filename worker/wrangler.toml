@@ -9,3 +9,4 @@ head_sampling_rate = 0.1
 
 [[d1_databases]]
 binding = "ANALYTICS_DB"
+database_id = "39932259-1bea-407e-922c-2e80d9c3894b"
