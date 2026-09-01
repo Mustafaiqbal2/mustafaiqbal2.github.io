@@ -60,9 +60,9 @@ type Feedback = "hit" | "miss" | "";
 type SessionTurn = { id: number; role: "user" | "assistant"; text: string };
 
 const EXAMPLES = [
-  "A close friendship ended quietly. Neither of us said goodbye.",
-  "I got the job. I am walking home alone at midnight and it finally feels real.",
-  "I am leaving home for the first time. I am excited, but I do not want to look back."
+  "My friends moved away. I feel left behind. Let me feel it, then help me move forward. No slow piano songs.",
+  "Political, soul-sampled rap. Catchy and upbeat. The politics need to be in the lyrics.",
+  "I have a 5k in an hour. Give me something fast that makes me want to start running. No metal."
 ];
 
 const API_BASE = process.env.NEXT_PUBLIC_MUSIC_API_URL?.replace(/\/$/, "");
@@ -575,23 +575,31 @@ export function MelodyMindSearch() {
               <span className="mm-intro__index lv-mono">TEXT SEARCH</span>
               <h2>Find music for what actually happened.</h2>
               <p>
-                Write the event, the people, and the feeling in one sentence. MelodyMind searches for songs that fit the complete situation.
+                Tell me what happened, how it feels, and where you want the music to take you. Add anything you do not want.
               </p>
               <div className="mm-intro__rule" aria-hidden="true"><i /></div>
             </div>
 
             <form className="mm-query-card" onSubmit={submit}>
               <div className="mm-query-card__head">
-                <label htmlFor="melodymind-query">Describe the situation</label>
+                <label htmlFor="melodymind-query">Tell MelodyMind what happened</label>
                 <span className="lv-mono">{query.length} / 500</span>
               </div>
+              <p className="mm-query-card__guide" id="melodymind-query-help">
+                <span>WHAT HAPPENED</span>
+                <i aria-hidden="true">→</i>
+                <span>HOW IT FEELS</span>
+                <i aria-hidden="true">→</i>
+                <span>WHERE THE MUSIC SHOULD TAKE YOU</span>
+              </p>
               <textarea
                 ref={initialTextareaRef}
                 id="melodymind-query"
                 value={query}
                 maxLength={500}
                 rows={6}
-                placeholder="A sad song about losing a friend feels different from a sad song about a breakup. Tell MelodyMind what actually happened."
+                aria-describedby="melodymind-query-help"
+                placeholder="My friends moved away. I feel left behind. Let me sit with that for a minute, then help me move forward. No slow piano songs."
                 onChange={(event) => {
                   querySourceRef.current = "typed";
                   setQuery(event.target.value);
@@ -601,7 +609,7 @@ export function MelodyMindSearch() {
                 autoFocus
               />
               <div className="mm-query-card__action">
-                <span className="lv-mono">CTRL + ENTER</span>
+                <span className="lv-mono">WRITE NORMALLY · I MAY ASK ONE QUESTION</span>
                 <button type="submit" disabled={query.trim().length < 4}>
                   Ask MelodyMind
                   <ArrowRight aria-hidden="true" />
@@ -787,7 +795,7 @@ export function MelodyMindSearch() {
                       rows={1}
                       maxLength={500}
                       aria-label="Reply to MelodyMind"
-                      placeholder={state === "probe" ? "Reply to MelodyMind…" : "Change the direction, ask about a result, or keep talking…"}
+                      placeholder={state === "probe" ? "Answer the question above. One sentence is enough…" : "Tell me what missed: more upbeat, stronger lyrics, less obvious songs…"}
                       onChange={(event) => {
                         setClarification(event.target.value);
                         resizeComposer();

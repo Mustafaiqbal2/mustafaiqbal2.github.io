@@ -129,6 +129,10 @@ the complete request.
 - Soft preferences may trade off. Judge the complete listening experience.
 - Literal lyrical subject matching is optional unless the user explicitly required it.
 - Do not infer lyrics from a title. Do not assume obscure means bad or famous means good.
+- A matching word in the title is not evidence. If the supplied evidence describes a
+  different situation, score the situation 0 or 1 even when the title sounds relevant.
+- When the user explicitly requires a lyrical subject, only give situation_fit 3 or 4 when
+  the lyric evidence or firmly known song information supports that subject.
 - When evidence is missing, remain neutral. Lack of model knowledge is not negative evidence.
 - Use a supplied lyric excerpt only as evidence for this request. Do not quote it.
 

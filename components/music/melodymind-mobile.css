@@ -155,10 +155,20 @@
     padding: 0 18px;
   }
 
+  .mu--melodymind .mm-query-card__guide {
+    top: 64px;
+    left: 18px;
+    right: 18px;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto minmax(0, 1.6fr);
+    gap: 5px;
+    font-size: 7px;
+    letter-spacing: 0.06em;
+  }
+
   .mu--melodymind .mm-query-card textarea {
     min-height: 170px;
     max-height: none;
-    padding: 22px 18px;
+    padding: 58px 18px 22px;
     font-size: clamp(20px, 5.8vw, 26px);
     line-height: 1.3;
   }

@@ -935,6 +935,27 @@ def _artist_parts(value: str) -> set[str]:
     return {re.sub(r"\s+", " ", part).strip() for part in parts if part.strip()}
 
 
+def _strongly_disliked(
+    candidate: FusedCandidate,
+    profile: TasteProfileInput | None,
+) -> bool:
+    """Keep repeated skips out of the verifier's limited candidate budget."""
+    if profile is None:
+        return False
+    if any(
+        item.track_id == candidate.match.track_id and item.score <= -0.6
+        for item in profile.negative_tracks
+    ):
+        return True
+    candidate_artists = _artist_parts(candidate.match.artist)
+    return any(
+        item.signals >= 4
+        and item.score <= -0.2
+        and bool(candidate_artists.intersection(_artist_parts(item.artist)))
+        for item in profile.negative_artists
+    )
+
+
 def _taste_adjustments(
     candidates: list[FusedCandidate],
     profile: TasteProfileInput | None,
@@ -973,13 +994,17 @@ def _taste_adjustments(
         positive = positive_tracks.get(match.track_id)
         negative = negative_tracks.get(match.track_id)
         if positive:
-            score += min(0.2, max(0.0, positive.score) * 0.04)
+            score += min(0.26, 0.04 + max(0.0, positive.score) * 0.08)
         if negative:
-            score -= min(0.25, abs(min(0.0, negative.score)) * 0.05)
+            score -= min(0.38, 0.08 + abs(min(0.0, negative.score)) * 0.18)
 
         for artist_key in _artist_parts(match.artist):
-            score += min(0.1, max(0.0, positive_artist_scores.get(artist_key, 0.0)) * 0.025)
-            score -= min(0.12, abs(min(0.0, negative_artist_scores.get(artist_key, 0.0))) * 0.03)
+            positive_artist = max(0.0, positive_artist_scores.get(artist_key, 0.0))
+            negative_artist = abs(min(0.0, negative_artist_scores.get(artist_key, 0.0)))
+            if positive_artist:
+                score += min(0.22, 0.04 + positive_artist * 0.12)
+            if negative_artist:
+                score -= min(0.45, 0.1 + negative_artist * 0.9)
 
         candidate_vector = vectors.get(match.track_id)
         if candidate_vector and positive_vectors:
@@ -991,7 +1016,7 @@ def _taste_adjustments(
             if nearest_negative >= 0.45:
                 score -= min(0.16, 0.03 + (nearest_negative - 0.45) * 0.4)
 
-        adjustments[match.track_id] = max(-0.25, min(0.22, score * strength))
+        adjustments[match.track_id] = max(-0.55, min(0.3, score * strength))
     return adjustments
 
 
@@ -1266,17 +1291,22 @@ async def _retrieve(
     result_sets = list(zip(views, raw_sets))
 
     strict_metadata = any(match.tags for _, results in result_sets for match in results)
+    fused_pool = _hybrid_fuse(
+        result_sets,
+        limit=64 if taste_profile and taste_profile.negative_artists else 32,
+    )
     candidates = [
         candidate
-            for candidate in _hybrid_fuse(result_sets, limit=32)
+            for candidate in fused_pool
         if _hard_match(candidate.match, intent, strict_metadata)
+        and not _strongly_disliked(candidate, taste_profile)
         and not (
             strict_metadata
             and intent.lyrics_weight >= 0.5
             and intent.lyric_topics
             and not candidate.match.evidence
         )
-    ]
+    ][:32]
     if not candidates:
         print(
             "MELODYMIND_TIMING "

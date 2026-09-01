@@ -273,7 +273,7 @@ export const SpotifyResultPlayer = forwardRef<SpotifyResultPlayerHandle, {
           {activeSong.artwork ? <img src={activeSong.artwork} alt="" /> : <i />}
         </span>
         <span className="mm-player__copy">
-          <small className="lv-mono">NOW IN THE PLAYER</small>
+          <small className="lv-mono">PLAY HERE · NEXT SEARCHES ADAPT</small>
           <strong>{activeSong.title}</strong>
           <span>{activeSong.artist}</span>
         </span>
