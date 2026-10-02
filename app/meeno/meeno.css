@@ -66,7 +66,7 @@ html.meeno-page .lightbox {
 .meeno-root {
   position: relative;
   isolation: isolate;
-  min-height: 100svh;
+  min-height: 100dvh;
   overflow: clip;
   background: #041512;
   color: #e9fffa;
@@ -75,7 +75,7 @@ html.meeno-page .lightbox {
 
 .meeno-next {
   position: relative;
-  min-height: 100svh;
+  min-height: 100dvh;
   background: #050b19;
 }
 
@@ -291,7 +291,7 @@ html.meeno-page .lightbox {
 .meeno-trail__scene {
   position: sticky;
   top: 0;
-  height: 100svh;
+  height: 100dvh;
   overflow: hidden;
   isolation: isolate;
   background: #030807;
