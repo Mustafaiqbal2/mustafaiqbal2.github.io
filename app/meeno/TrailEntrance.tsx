@@ -13,7 +13,7 @@ export function preloadTrailRenderer() {
   return trailRendererPromise;
 }
 
-export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; onBurst: (strength: number) => void; active: boolean }) {
+export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: TrailStory; onLaunch: (pan?: number) => void; onBurst: (strength: number, pan?: number) => void; active: boolean }) {
   const stageRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wordsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -84,6 +84,7 @@ export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; o
     let sceneTime = 0;
     let done = false;
     let lastBurst = -1;
+    let lastLaunch = -1;
     let finalNoteShown = false;
     let scrollStart = 0;
     let walkDistance = 1;
@@ -146,9 +147,18 @@ export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; o
       if (elapsedRef.current !== null) {
         elapsedRef.current += delta/1000;
         const sequence = celebrationAt(elapsedRef.current, reducedMotion.matches);
+        SHELLS.forEach((shell,index) => {
+          const launchAt=shell.at-2.2;
+          if(sequence.fireworks>=launchAt && index>lastLaunch) {
+            onLaunch(shell.x*5);
+            lastLaunch=index;
+          }
+        });
         FIREWORK_BURSTS.forEach((burst,index) => {
           if (sequence.fireworks >= burst.at && index > lastBurst) {
-            onBurst(burst.strength);
+            const shell=SHELLS.reduce((nearest,candidate)=>
+              Math.abs(candidate.at-burst.at)<Math.abs(nearest.at-burst.at)?candidate:nearest,SHELLS[0]);
+            onBurst(burst.strength,shell.x*5);
             lastBurst = index;
           }
         });
@@ -193,6 +203,7 @@ export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; o
       elapsedRef.current=null;
       progress=target=sceneTime=0;
       lastBurst=-1;
+      lastLaunch=-1;
       finalNoteShown=false;
       stage.dataset.finalNote="false";
       lastDodgeRef.current=0;
@@ -253,7 +264,7 @@ export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; o
       canvas.removeEventListener("webglcontextlost",contextLost);
       canvas.removeEventListener("webglcontextrestored",prepare);
     };
-  }, [onBurst]);
+  }, [onLaunch,onBurst,story]);
 
   function moveNo(clientX?: number, clientY?: number) {
     const arena=choicesRef.current,button=noRef.current;
