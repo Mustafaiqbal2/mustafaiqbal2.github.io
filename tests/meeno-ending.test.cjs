@@ -1,0 +1,104 @@
+const test = require('node:test');
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const path = require('node:path');
+const ts = require('typescript');
+const THREE = require('three');
+const cache = new Map();
+function load(name) {
+  if (cache.has(name)) return cache.get(name);
+  const filename = path.join(__dirname, '../app/meeno', name + '.ts');
+  const source = ts.transpileModule(fs.readFileSync(filename, 'utf8'), {
+    compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 }
+  }).outputText;
+  const result = { exports: {} };
+  new Function('exports', 'module', 'require', source)(result.exports, result,
+    name => name.startsWith('./') ? load(name.slice(2)) : require(name));
+  cache.set(name, result.exports);
+  return result.exports;
+}
+const { MESSAGE_WINDOWS, messageVisibility, followupVisibility, questionVisible, celebrationAt,
+  PAN_SECONDS, SHOW_SECONDS, SHELLS, evadePosition, isTrailStory } = load('trailSequence');
+
+test('narrative groups have readable pauses and never overlap', () => {
+  MESSAGE_WINDOWS.forEach(([start, end],index) => assert.equal(messageVisibility((start+end)/2,index),1));
+  for (let i=0;i<=10000;i++) {
+    const visible = MESSAGE_WINDOWS.filter((_,index)=>messageVisibility(i/10000,index)>0);
+    assert.ok(visible.length<=1);
+  }
+});
+
+test('both delayed lines arrive beneath an already visible first sentence', () => {
+  for (const index of [0,2]) {
+    const [start,,after] = MESSAGE_WINDOWS[index];
+    assert.equal(messageVisibility(start+.03,index),1);
+    assert.equal(followupVisibility(start+.03,index),0);
+    assert.ok(followupVisibility(after+.01,index)>0 && followupVisibility(after+.01,index)<1);
+    assert.equal(followupVisibility(after+.03,index),1);
+    assert.equal(messageVisibility(after+.03,index),1);
+  }
+});
+
+test('the question waits until scrolling is complete, with previous text cleared', () => {
+  for (const progress of [0,.8,.935,.98,.999]) assert.equal(questionVisible(progress),false);
+  assert.equal(questionVisible(1),true);
+  assert.ok(MESSAGE_WINDOWS.every((_,index)=>messageVisibility(1,index)===0));
+});
+
+test('camera tilt completes before launch and return waits for every final ember', () => {
+  for (const reduced of [false,true]) {
+    const pan = reduced ? .5 : PAN_SECONDS;
+    assert.equal(celebrationAt(0,reduced).pan,0);
+    assert.equal(celebrationAt(pan,reduced).pan,1);
+    assert.equal(celebrationAt(pan-.01,reduced).finished,false);
+    assert.ok(celebrationAt(pan-.01,reduced).fireworks<0);
+    for (const shell of SHELLS) {
+      assert.ok(shell.at>=1.8);
+      assert.equal(celebrationAt(pan+shell.at+shell.life,reduced).finished,false);
+    }
+    assert.equal(celebrationAt(pan+SHOW_SECONDS,reduced).finished,true);
+  }
+});
+
+test('No stays on the mobile choice area and clears the finger and Yes button', () => {
+  for (const width of [240,258,284]) for (const height of [102,132]) {
+    let position = {x:width-112,y:0};
+    for(let tap=0;tap<12;tap++) {
+      const pointerX=position.x+56, pointerY=position.y+22.5;
+      const next=evadePosition(width,height,112,45,pointerX,pointerY,position.x,position.y);
+      assert.ok(next.x>=0 && next.x+112<=width && next.y>=0 && next.y+45<=height);
+      assert.ok(next.y>=45 || next.x>=112,'must never cover Yes');
+      assert.ok(pointerX<next.x || pointerX>next.x+112 || pointerY<next.y || pointerY>next.y+45,'must clear the touch point');
+      position=next;
+    }
+  }
+});
+
+test('encrypted story schema rejects incomplete or malformed narratives', () => {
+  const valid={segments:Array.from({length:7},()=>({text:'test'})),question:'test?'};
+  assert.equal(isTrailStory(valid),true);
+  for(const value of [null,[],{}, {...valid,segments:[{text:'short'}]}, {...valid,question:null},
+    {...valid,segments:valid.segments.map(()=>({text:'test',after:7}))}]) assert.equal(isTrailStory(value),false);
+});
+
+test('firework particles have finite trajectories, bounded allocation and complete cleanup', () => {
+  const scene=new THREE.Scene();
+  const fireworks=load('trailFireworks').createFireworks(scene);
+  const points=scene.children[0];
+  assert.ok(points.geometry.attributes.aStart.count>10000);
+  assert.ok(points.geometry.attributes.aStart.count<36000);
+  for(const attribute of Object.values(points.geometry.attributes)) {
+    assert.ok(attribute.array.every(Number.isFinite));
+  }
+  const start=points.geometry.attributes.aStart;
+  const velocity=points.geometry.attributes.aVelocity;
+  for(let i=0;i<start.count;i++) assert.ok(start.getW(i)+velocity.getW(i)<SHOW_SECONDS);
+  const camera=new THREE.PerspectiveCamera(58,390/844,.09,480);
+  fireworks.update(null,camera,0,600,false);
+  assert.equal(points.visible,false);
+  fireworks.update(3,camera,0,600,false);
+  assert.equal(points.visible,true);
+  assert.ok(points.position.length()>100);
+  fireworks.dispose();
+  assert.equal(scene.children.length,0);
+});
