@@ -10,7 +10,7 @@ export type WorldRenderer = { draw: (progress: number, time: number, animate: bo
 export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArtwork): WorldRenderer | null {
   let renderer: THREE.WebGLRenderer;
   try {
-    renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "low-power" });
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "high-performance" });
   } catch {
     return null;
   }
@@ -250,14 +250,22 @@ export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArt
     lastProgress=progress;
     renderer.render(scene,camera);
   };
+  let renderWidth=0, renderHeight=0;
   const resize = () => {
     const width=canvas.clientWidth, height=canvas.clientHeight;
     if (!width || !height) return;
     // Deliberate fine pixels. Cap fill-rate without reducing the walking framerate.
     const ratio=Math.min(.8, Math.sqrt(690000/(width*height)));
-    renderer.setSize(Math.round(width*ratio),Math.round(height*ratio),false);
-    camera.aspect=width/height;
-    camera.updateProjectionMatrix();
+    const nextWidth=Math.round(width*ratio), nextHeight=Math.round(height*ratio);
+    if (nextWidth!==renderWidth || nextHeight!==renderHeight) {
+      renderWidth=nextWidth;renderHeight=nextHeight;
+      renderer.setSize(renderWidth,renderHeight,false);
+    }
+    const aspect=width/height;
+    if (camera.aspect!==aspect) {
+      camera.aspect=aspect;
+      camera.updateProjectionMatrix();
+    }
   };
   const dispose = () => {
     fireworks.dispose();

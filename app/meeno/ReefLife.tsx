@@ -283,10 +283,15 @@ export function ReefLife() {
     const motion = window.matchMedia("(prefers-reduced-motion: reduce)");
     let frame = 0;
     let previous = 0;
+    let width = 0;
+    let height = 0;
+    let unit = 0;
+    let creatures: Array<{ x: number; y: number; r: number; color: Color; phase: number }> = [];
 
     const resize = () => {
-      const width = canvas.clientWidth;
-      const height = canvas.clientHeight;
+      width = canvas.clientWidth;
+      height = canvas.clientHeight;
+      unit = Math.min(width, height);
       const ratio = Math.min(window.devicePixelRatio || 1, 1.25, 1200 / Math.max(1, width));
       canvas.width = Math.round(width * ratio);
       canvas.height = Math.round(height * ratio);
@@ -295,35 +300,32 @@ export function ReefLife() {
       context.setTransform(ratio, 0, 0, ratio, 0, 0);
       coralContext.setTransform(ratio, 0, 0, ratio, 0, 0);
       coral(coralContext, width, height);
+      const mobile = width < 650;
+      creatures = mobile
+        ? [
+            { x: 0.13, y: 0.21, r: unit * 0.105, color: [51, 178, 255], phase: 0.2 },
+            { x: 0.82, y: 0.69, r: unit * 0.13, color: [168, 127, 255], phase: 2.4 },
+            { x: 0.25, y: 0.73, r: unit * 0.065, color: [255, 99, 196], phase: 4.6 }
+          ]
+        : [
+            { x: 0.13, y: 0.23, r: unit * 0.11, color: [51, 178, 255], phase: 0.2 },
+            { x: 0.83, y: 0.33, r: unit * 0.13, color: [168, 127, 255], phase: 2.4 },
+            { x: 0.22, y: 0.76, r: unit * 0.065, color: [255, 99, 196], phase: 4.6 },
+            { x: 0.74, y: 0.11, r: unit * 0.043, color: [221, 235, 117], phase: 6.1 }
+          ];
     };
 
     const render = (now: number) => {
       if (now - previous >= 32 || previous === 0) {
         previous = now;
-        const width = canvas.clientWidth;
-        const height = canvas.clientHeight;
         const time = motion.matches ? 0 : now * 0.001;
         context.clearRect(0, 0, width, height);
-        const mobile = width < 650;
-        const unit = Math.min(width, height);
         distantFish(context, width, height, time);
         // Smaller, dimmer animals behind the main four add depth.
         context.globalAlpha = .32;
         jellyfish(context, width * .37, height * .16, unit * .023, [110, 184, 230], 3.1, time * .8);
         jellyfish(context, width * .66, height * .77, unit * .029, [206, 142, 217], 5.7, time * .83);
         context.globalAlpha = 1;
-        const creatures: Array<{ x: number; y: number; r: number; color: Color; phase: number }> = mobile
-          ? [
-              { x: 0.13, y: 0.21, r: unit * 0.105, color: [51, 178, 255], phase: 0.2 },
-              { x: 0.82, y: 0.69, r: unit * 0.13, color: [168, 127, 255], phase: 2.4 },
-              { x: 0.25, y: 0.73, r: unit * 0.065, color: [255, 99, 196], phase: 4.6 }
-            ]
-          : [
-              { x: 0.13, y: 0.23, r: unit * 0.11, color: [51, 178, 255], phase: 0.2 },
-              { x: 0.83, y: 0.33, r: unit * 0.13, color: [168, 127, 255], phase: 2.4 },
-              { x: 0.22, y: 0.76, r: unit * 0.065, color: [255, 99, 196], phase: 4.6 },
-              { x: 0.74, y: 0.11, r: unit * 0.043, color: [221, 235, 117], phase: 6.1 }
-            ];
         creatures.forEach((creature) => jellyfish(context, width * creature.x, height * creature.y, creature.r, creature.color, creature.phase, time));
         bubbles(context, width, height, time);
         seaGrass(context, width, height, time);

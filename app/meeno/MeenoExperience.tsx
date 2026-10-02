@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useLayoutEffect, useState } from "react";
 import sealedContent from "./content.json";
 import { ReefLife } from "./ReefLife";
-import { TrailEntrance } from "./TrailEntrance";
+import { preloadTrailRenderer, TrailEntrance } from "./TrailEntrance";
 import { loadTrailArtwork } from "./trailAssets";
 import { UnderwaterCanvas } from "./UnderwaterCanvas";
 import { isTrailStory, type TrailStory } from "./trailSequence";
@@ -60,8 +60,10 @@ export function MeenoExperience() {
   }, [phase]);
 
   useEffect(() => {
-    // Decode the individual woodland sprites behind the gate.
-    const timeout = window.setTimeout(() => { void loadTrailArtwork().catch(() => {}); }, 700);
+    // Decode the woodland sprites and parse the lazy Three.js bundle while the gate is idle.
+    const timeout = window.setTimeout(() => {
+      void Promise.all([loadTrailArtwork(), preloadTrailRenderer()]).catch(() => {});
+    }, 700);
     return () => window.clearTimeout(timeout);
   }, []);
 
@@ -85,7 +87,7 @@ export function MeenoExperience() {
       return;
     }
     await Promise.race([
-      loadTrailArtwork().catch(() => {}),
+      Promise.all([loadTrailArtwork(), preloadTrailRenderer()]).then(() => undefined).catch(() => {}),
       new Promise<void>(resolve => window.setTimeout(resolve, 4000))
     ]);
     setBusy(false);
@@ -100,7 +102,7 @@ export function MeenoExperience() {
     <main id="main" className={`meeno-root meeno-root--${phase}`}
       onPointerDownCapture={event => { if (!(event.target as HTMLElement).closest(".meeno-sound")) sound.start(); }}
       onFocusCapture={event => { if (!(event.target as HTMLElement).closest(".meeno-sound")) sound.start(); }}>
-      <div className="meeno-next">{phase !== "locked" && story && <TrailEntrance story={story} onBurst={sound.burst} />}</div>
+      <div className="meeno-next">{phase !== "locked" && story && <TrailEntrance story={story} onBurst={sound.burst} active={phase === "open"} />}</div>
 
       <button className="meeno-sound" type="button" onClick={sound.toggle} aria-label={sound.active ? "Mute ambience" : "Turn sound on"} aria-pressed={sound.active}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

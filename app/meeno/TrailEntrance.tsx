@@ -5,7 +5,15 @@ import { loadTrailArtwork } from "./trailAssets";
 import { celebrationAt, evadePosition, FIREWORK_BURSTS, followupVisibility, messageVisibility, questionVisible, type TrailStory } from "./trailSequence";
 import type { WorldRenderer } from "./trailRenderer";
 
-export function TrailEntrance({ story, onBurst }: { story: TrailStory; onBurst: (strength: number) => void }) {
+type TrailRendererModule = typeof import("./trailRenderer");
+let trailRendererPromise: Promise<TrailRendererModule> | null = null;
+
+export function preloadTrailRenderer() {
+  trailRendererPromise ??= import("./trailRenderer");
+  return trailRendererPromise;
+}
+
+export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; onBurst: (strength: number) => void; active: boolean }) {
   const stageRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wordsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -18,9 +26,16 @@ export function TrailEntrance({ story, onBurst }: { story: TrailStory; onBurst: 
   const startShowRef = useRef<() => void>(() => {});
   const restartWalkRef = useRef<() => void>(() => {});
   const restoreScrollRef = useRef(0);
+  const activeRef = useRef(active);
+  const resumeRef = useRef<() => void>(() => {});
   const [ending, setEnding] = useState(false);
   const [finished, setFinished] = useState(false);
   const [noPosition, setNoPosition] = useState<{ x: number; y: number } | null>(null);
+
+  useEffect(() => {
+    activeRef.current = active;
+    if (active) resumeRef.current();
+  }, [active]);
 
   useLayoutEffect(() => {
     if (!ending) return;
@@ -68,6 +83,8 @@ export function TrailEntrance({ story, onBurst }: { story: TrailStory; onBurst: 
     let sceneTime = 0;
     let done = false;
     let lastBurst = -1;
+    let scrollStart = 0;
+    let scrollDistance = 1;
 
     const updateWords = (position: number) => {
       const celebrating = elapsedRef.current !== null;
@@ -92,16 +109,21 @@ export function TrailEntrance({ story, onBurst }: { story: TrailStory; onBurst: 
     };
     const readProgress = () => {
       if (elapsedRef.current !== null) return;
-      const bounds = stage.getBoundingClientRect();
-      const distance = Math.max(1, bounds.height-window.innerHeight);
-      target = Math.max(0, Math.min(1, -bounds.top/distance));
-      if (distance+bounds.top <= 2) target = 1;
+      const travelled = window.scrollY-scrollStart;
+      target = Math.max(0, Math.min(1, travelled/scrollDistance));
+      if (travelled >= scrollDistance-2) target = 1;
       stage.dataset.walked = String(target > .01);
       if (reducedMotion.matches) { updateWords(target); start(); }
     };
+    const measure = () => {
+      const bounds = stage.getBoundingClientRect();
+      scrollStart = bounds.top+window.scrollY;
+      scrollDistance = Math.max(1, stage.offsetHeight-window.innerHeight);
+      readProgress();
+    };
     const tick = (now: number) => {
       frame = 0;
-      if (disposed || document.hidden) return;
+      if (disposed || document.hidden || !activeRef.current) return;
       const delta = Math.min(now-(lastFrame || now),64);
       lastFrame = now;
       if (elapsedRef.current !== null) {
@@ -125,11 +147,12 @@ export function TrailEntrance({ story, onBurst }: { story: TrailStory; onBurst: 
         renderer?.draw(reducedMotion.matches ? 0 : progress,sceneTime,!reducedMotion.matches,elapsedRef.current);
         lastPaint = now;
       }
-      if (!reducedMotion.matches || (elapsedRef.current !== null && !done)) frame=requestAnimationFrame(tick);
+      if (activeRef.current && (!reducedMotion.matches || (elapsedRef.current !== null && !done))) frame=requestAnimationFrame(tick);
     };
     function start() {
-      if (!frame && !document.hidden) { lastFrame=0; lastPaint=0; frame=requestAnimationFrame(tick); }
+      if (activeRef.current && !frame && !document.hidden) { lastFrame=0; lastPaint=0; frame=requestAnimationFrame(tick); }
     }
+    resumeRef.current=start;
     startShowRef.current = () => {
       if (elapsedRef.current !== null || !questionVisible(target)) return;
       progress=target=1;
@@ -154,11 +177,11 @@ export function TrailEntrance({ story, onBurst }: { story: TrailStory; onBurst: 
       renderer?.draw(0,0,!reducedMotion.matches,null);
       start();
     };
-    const resize = () => { renderer?.resize(); readProgress(); start(); };
+    const resize = () => { renderer?.resize(); measure(); start(); };
     const prepare = async () => {
       const request=++revision;
       try {
-        const [artwork,engine] = await Promise.all([loadTrailArtwork(),import("./trailRenderer")]);
+        const [artwork,engine] = await Promise.all([loadTrailArtwork(),preloadTrailRenderer()]);
         if (disposed || request !== revision) return;
         renderer?.dispose();
         renderer=engine.createTrailRenderer(canvas,artwork);
@@ -182,7 +205,7 @@ export function TrailEntrance({ story, onBurst }: { story: TrailStory; onBurst: 
       renderer?.dispose(); renderer=null;
       stage.dataset.renderer="fallback";
     };
-    readProgress(); start(); void prepare();
+    measure(); start(); void prepare();
     const observer=new ResizeObserver(resize);
     observer.observe(canvas);
     window.addEventListener("scroll",readProgress,{passive:true});
@@ -194,6 +217,7 @@ export function TrailEntrance({ story, onBurst }: { story: TrailStory; onBurst: 
       disposed=true;revision++;
       startShowRef.current=()=>{};
       restartWalkRef.current=()=>{};
+      resumeRef.current=()=>{};
       cancelAnimationFrame(frame);observer.disconnect();renderer?.dispose();
       window.removeEventListener("scroll",readProgress);
       document.removeEventListener("visibilitychange",visibility);
