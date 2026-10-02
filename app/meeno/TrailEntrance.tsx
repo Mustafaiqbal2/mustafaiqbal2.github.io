@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import { loadTrailArtwork } from "./trailAssets";
-import { celebrationAt, evadePosition, FIREWORK_BURSTS, followupVisibility, messageVisibility, questionVisible, type TrailStory } from "./trailSequence";
+import { celebrationAt, evadePosition, FIREWORK_BURSTS, followupVisibility, messageVisibility, questionVisible, SHELLS, type TrailStory } from "./trailSequence";
 import type { WorldRenderer } from "./trailRenderer";
 
 type TrailRendererModule = typeof import("./trailRenderer");
@@ -17,6 +17,7 @@ export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; o
   const stageRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wordsRef = useRef<(HTMLDivElement | null)[]>([]);
+  const afterRefs = useRef<(HTMLParagraphElement | null)[]>([]);
   const questionRef = useRef<HTMLDivElement>(null);
   const choicesRef = useRef<HTMLDivElement>(null);
   const noRef = useRef<HTMLButtonElement>(null);
@@ -83,42 +84,58 @@ export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; o
     let sceneTime = 0;
     let done = false;
     let lastBurst = -1;
+    let finalNoteShown = false;
     let scrollStart = 0;
-    let scrollDistance = 1;
+    let walkDistance = 1;
+    let questionWasVisible = false;
+    const lastOpacity = story.segments.map(() => -1);
+    const lastAfter = story.segments.map(() => -1);
 
     const updateWords = (position: number) => {
       const celebrating = elapsedRef.current !== null;
       wordsRef.current.forEach((node, index) => {
         if (!node) return;
         const opacity = celebrating ? 0 : messageVisibility(position, index);
-        node.style.opacity = String(opacity);
-        node.style.visibility = opacity > 0 ? "visible" : "hidden";
-        const after = node.querySelector<HTMLElement>(".meeno-trail__after");
+        if (Math.abs(opacity-lastOpacity[index]) > .001) {
+          lastOpacity[index]=opacity;
+          node.style.opacity=opacity.toFixed(3);
+        }
+        const after = afterRefs.current[index];
         if (after) {
           const arrival = followupVisibility(position, index);
-          after.style.opacity = String(arrival);
-          after.style.transform = `translateY(${(1-arrival)*7}px)`;
+          if (Math.abs(arrival-lastAfter[index]) > .001) {
+            lastAfter[index]=arrival;
+            after.style.opacity=arrival.toFixed(3);
+            after.style.transform=`translateY(${((1-arrival)*7).toFixed(2)}px)`;
+          }
         }
       });
       const visible = !celebrating && questionVisible(position);
-      stage.dataset.atEnd = String(visible);
-      if (questionRef.current) {
-        questionRef.current.inert = !visible;
-        questionRef.current.setAttribute("aria-hidden", String(!visible));
+      if (visible !== questionWasVisible) {
+        questionWasVisible=visible;
+        stage.dataset.atEnd=String(visible);
+        if (questionRef.current) {
+          questionRef.current.inert=!visible;
+          questionRef.current.setAttribute("aria-hidden",String(!visible));
+        }
       }
     };
     const readProgress = () => {
       if (elapsedRef.current !== null) return;
       const travelled = window.scrollY-scrollStart;
-      target = Math.max(0, Math.min(1, travelled/scrollDistance));
-      if (travelled >= scrollDistance-2) target = 1;
+      target = Math.max(0, Math.min(1, travelled/walkDistance));
+      if (travelled >= walkDistance-2) target = 1;
       stage.dataset.walked = String(target > .01);
       if (reducedMotion.matches) { updateWords(target); start(); }
     };
     const measure = () => {
       const bounds = stage.getBoundingClientRect();
       scrollStart = bounds.top+window.scrollY;
-      scrollDistance = Math.max(1, stage.offsetHeight-window.innerHeight);
+      const fullDistance = Math.max(1, stage.offsetHeight-window.innerHeight);
+      // Reveal the question several viewports before the real document boundary.
+      // Mobile browsers are much less likely to restore their chrome when we never hit the scroll limit.
+      const chromeBuffer = Math.min(fullDistance*.08, window.innerHeight*3);
+      walkDistance = Math.max(1, fullDistance-chromeBuffer);
       readProgress();
     };
     const tick = (now: number) => {
@@ -135,6 +152,10 @@ export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; o
             lastBurst = index;
           }
         });
+        if (!finalNoteShown && sequence.fireworks >= SHELLS[SHELLS.length-1].at) {
+          finalNoteShown=true;
+          stage.dataset.finalNote="true";
+        }
         if (sequence.finished && !done) { done = true; setFinished(true); }
       } else {
         progress += (target-progress)*(1-Math.exp(-delta/80));
@@ -155,8 +176,13 @@ export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; o
     resumeRef.current=start;
     startShowRef.current = () => {
       if (elapsedRef.current !== null || !questionVisible(target)) return;
+      if (document.fullscreenEnabled && !document.fullscreenElement) {
+        void document.documentElement.requestFullscreen().catch(()=>{});
+      }
       progress=target=1;
       elapsedRef.current=0;
+      finalNoteShown=false;
+      stage.dataset.finalNote="false";
       setEnding(true);
       updateWords(1);
       start();
@@ -167,6 +193,8 @@ export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; o
       elapsedRef.current=null;
       progress=target=sceneTime=0;
       lastBurst=-1;
+      finalNoteShown=false;
+      stage.dataset.finalNote="false";
       lastDodgeRef.current=0;
       done=false;
       setEnding(false);
@@ -253,7 +281,7 @@ export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; o
           {story.segments.map((segment,index) => (
             <div className="meeno-trail__speech" key={index} ref={node=>{wordsRef.current[index]=node;}}>
               <p>{segment.text}</p>
-              {segment.after && <p className="meeno-trail__after">{segment.after}</p>}
+              {segment.after && <p className="meeno-trail__after" ref={node=>{afterRefs.current[index]=node;}}>{segment.after}</p>}
             </div>
           ))}
         </div>
@@ -268,6 +296,7 @@ export function TrailEntrance({ story, onBurst, active }: { story: TrailStory; o
               style={noPosition ? {right:"auto",left:0,transform:`translate(${noPosition.x}px,${noPosition.y}px)`} : undefined}>No</button>
           </div>
         </div>
+        <p className="meeno-fireworks-note" aria-hidden="true">Idk if we'll get to see japanese fireworks so this will have to do for now :)</p>
         {ending && <p className="meeno-trail__transcript" role="status">{finished ? "The fireworks have finished." : "Fireworks above the forest."}</p>}
         {finished && <button ref={returnRef} className="meeno-return" type="button" onClick={()=>restartWalkRef.current()}>Back to start <span aria-hidden="true">↺</span></button>}
         <button className="meeno-trail__step" type="button" onClick={()=>window.scrollBy({top:window.innerHeight*.65,behavior:"smooth"})} aria-label="Walk forward. You can also scroll to follow the trail.">
