@@ -347,6 +347,7 @@ html.meeno-page .lightbox {
 
 .meeno-trail__words p {
   margin: 0;
+  white-space: pre-line;
   color: #fff;
   font-family: var(--font-sans), system-ui, sans-serif;
   font-size: clamp(16px, 1.28vw, 20px);

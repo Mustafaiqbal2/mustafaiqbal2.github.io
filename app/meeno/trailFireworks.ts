@@ -1,9 +1,9 @@
 import * as THREE from "three";
 import { seededRandom } from "./trailWorld";
-import { SHELLS } from "./trailSequence";
+import { FIREWORK_DRAG, FIREWORK_GRAVITY, secondaryFlowers, SHELLS } from "./trailSequence";
 
-// Chrysanthemum, coloured peony, double pistil, and long golden willow shells.
-// Each star follows a ballistic arc; its trailing samples share the same arc.
+// One rocket opens a large shell; its travelling seeds blossom into smaller shells.
+// Parent, seed, and flower trajectories share the same drag and gravity.
 const VERTEX = `
 attribute vec4 aStart;
 attribute vec4 aVelocity;
@@ -21,16 +21,21 @@ void main() {
   float t=max(0.0,age-lag);
   vec3 p;
   float alive=step(0.0,age)*step(age,aVelocity.w);
-  if (aSpark.w>.5) {
+  if (aSpark.w>.5 && aSpark.w<1.5) {
     t=clamp((age-aSpark.x*.12)/aVelocity.w,0.0,1.0);
     p=aStart.xyz+vec3(sin(t*9.0+aSpark.y)*.12,-78.0*(1.0-t)*(1.0-t),0.0);
     alive*=smoothstep(0.0,.12,age)*(1.0-smoothstep(.86,1.0,t));
   } else {
-    float drag=.46;
+    float drag=${FIREWORK_DRAG};
     p=aStart.xyz+aVelocity.xyz*((1.0-exp(-drag*t))/drag);
-    p.y-=.8*t*t;
-    alive*=smoothstep(0.0,.075,t)*pow(max(0.0,1.0-age/aVelocity.w),.58);
-    alive*=1.0-smoothstep(.72,1.0,age/aVelocity.w);
+    p.y-=${FIREWORK_GRAVITY}*t*t;
+    alive*=smoothstep(0.0,.075,t);
+    if (aSpark.w>1.5) {
+      alive*=1.0-smoothstep(aVelocity.w-.05,aVelocity.w,age);
+    } else {
+      alive*=pow(max(0.0,1.0-age/aVelocity.w),.58);
+      alive*=1.0-smoothstep(.72,1.0,age/aVelocity.w);
+    }
   }
   p.xy*=uFit;
   vec4 mv=modelViewMatrix*vec4(p,1.0);
@@ -67,9 +72,9 @@ export function createFireworks(scene: THREE.Scene) {
     sparks.push(tail,seed,size,launch); colors.push(color.r,color.g,color.b);
   }
   SHELLS.forEach((shell,index) => {
-    const x=shell.x*48,y=shell.y*45,z=(random()-.5)*9;
+    const x=shell.x*48,y=shell.y*45,z=0;
     const palette=palettes[shell.kind].map(color=>new THREE.Color(color));
-    const count=shell.kind===3?310:245;
+    const count=shell.kind===3?400:340;
     for(let star=0;star<count;star++) {
       // Uniform spherical distribution, with a smaller contrasting inner pistil.
       const inner=star%5===0;
@@ -83,15 +88,41 @@ export function createFireworks(scene: THREE.Scene) {
       const life=shell.life*(.84+random()*.16);
       const seed=random();
       const color=palette[inner?1:0];
-      const trailCount=shell.kind===3?15:10;
+      const trailCount=shell.kind===3?13:11;
       for(let tail=0;tail<trailCount;tail++) {
         particle(x,y,z,shell.at,vx,vy,vz,life,tail/trailCount,seed,
-          tail===0?.58:.39,0,color);
+          tail===0?.66:.42,0,color);
       }
     }
+    secondaryFlowers(shell).forEach((flower,flowerIndex)=>{
+      const seed=random();
+      // These embers actually travel from the main burst to each smaller flower.
+      for(let tail=0;tail<5;tail++) {
+        particle(x,y,z,shell.at,flower.vx,flower.vy,flower.vz,flower.delay,
+          tail/5,seed,.57,2,palette[1]);
+      }
+      const flowerColor=flower.tint===0?palette[1]:flower.tint===1?palette[0]:
+        new THREE.Color(shell.kind===3?"#fff0c9":["#9debe4","#c1b6ff","#f6b5d5"][shell.kind]);
+      const drift=Math.exp(-FIREWORK_DRAG*flower.delay)*.18;
+      for(let star=0;star<42;star++) {
+        const latitude=1-2*(star+.5)/42;
+        const longitude=star*2.39996323+flowerIndex*.4;
+        const radius=Math.sqrt(1-latitude*latitude);
+        const speed=(3.2+random()*.7)*shell.size;
+        const vx=Math.cos(longitude)*radius*speed+flower.vx*drift;
+        const vy=latitude*speed+flower.vy*drift-2*FIREWORK_GRAVITY*flower.delay*.18;
+        const vz=Math.sin(longitude)*radius*speed+flower.vz*drift;
+        const life=flower.life*(.88+random()*.12);
+        const sparkle=random();
+        for(let tail=0;tail<6;tail++) {
+          particle(flower.x,flower.y,flower.z,flower.at,vx,vy,vz,life,
+            tail/6,sparkle,tail===0?.61:.36,0,flowerColor);
+        }
+      }
+    });
     // The ascending ember is deliberately narrow and warm, without a screen flash.
     for(let tail=0;tail<22;tail++) {
-      particle(x,y,z,shell.at-1.8,0,0,0,1.8,tail/22,index,.62,1,palette[0]);
+      particle(x,y,z,shell.at-2.2,0,0,0,2.2,tail/22,index,.72,1,palette[0]);
     }
   });
   const geometry=new THREE.BufferGeometry();

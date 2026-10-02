@@ -2,10 +2,10 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import { loadTrailArtwork } from "./trailAssets";
-import { celebrationAt, evadePosition, followupVisibility, messageVisibility, questionVisible, SHELLS, type TrailStory } from "./trailSequence";
+import { celebrationAt, evadePosition, FIREWORK_BURSTS, followupVisibility, messageVisibility, questionVisible, type TrailStory } from "./trailSequence";
 import type { WorldRenderer } from "./trailRenderer";
 
-export function TrailEntrance({ story, onRestart, onBurst }: { story: TrailStory; onRestart: () => void; onBurst: (strength: number) => void }) {
+export function TrailEntrance({ story, onBurst }: { story: TrailStory; onBurst: (strength: number) => void }) {
   const stageRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wordsRef = useRef<(HTMLDivElement | null)[]>([]);
@@ -16,6 +16,7 @@ export function TrailEntrance({ story, onRestart, onBurst }: { story: TrailStory
   const lastDodgeRef = useRef(0);
   const elapsedRef = useRef<number | null>(null);
   const startShowRef = useRef<() => void>(() => {});
+  const restartWalkRef = useRef<() => void>(() => {});
   const restoreScrollRef = useRef(0);
   const [ending, setEnding] = useState(false);
   const [finished, setFinished] = useState(false);
@@ -66,7 +67,7 @@ export function TrailEntrance({ story, onRestart, onBurst }: { story: TrailStory
     let lastPaint = 0;
     let sceneTime = 0;
     let done = false;
-    let lastShell = -1;
+    let lastBurst = -1;
 
     const updateWords = (position: number) => {
       const celebrating = elapsedRef.current !== null;
@@ -106,10 +107,10 @@ export function TrailEntrance({ story, onRestart, onBurst }: { story: TrailStory
       if (elapsedRef.current !== null) {
         elapsedRef.current += delta/1000;
         const sequence = celebrationAt(elapsedRef.current, reducedMotion.matches);
-        SHELLS.forEach((shell,index) => {
-          if (sequence.fireworks >= shell.at && index > lastShell) {
-            onBurst(shell.kind === 3 ? .7 : .48);
-            lastShell = index;
+        FIREWORK_BURSTS.forEach((burst,index) => {
+          if (sequence.fireworks >= burst.at && index > lastBurst) {
+            onBurst(burst.strength);
+            lastBurst = index;
           }
         });
         if (sequence.finished && !done) { done = true; setFinished(true); }
@@ -135,6 +136,22 @@ export function TrailEntrance({ story, onRestart, onBurst }: { story: TrailStory
       elapsedRef.current=0;
       setEnding(true);
       updateWords(1);
+      start();
+    };
+    restartWalkRef.current = () => {
+      // Reuse the decoded story and live renderer; only rewind the walk/show.
+      restoreScrollRef.current=0;
+      elapsedRef.current=null;
+      progress=target=sceneTime=0;
+      lastBurst=-1;
+      lastDodgeRef.current=0;
+      done=false;
+      setEnding(false);
+      setFinished(false);
+      setNoPosition(null);
+      stage.dataset.walked="false";
+      updateWords(0);
+      renderer?.draw(0,0,!reducedMotion.matches,null);
       start();
     };
     const resize = () => { renderer?.resize(); readProgress(); start(); };
@@ -176,6 +193,7 @@ export function TrailEntrance({ story, onRestart, onBurst }: { story: TrailStory
     return () => {
       disposed=true;revision++;
       startShowRef.current=()=>{};
+      restartWalkRef.current=()=>{};
       cancelAnimationFrame(frame);observer.disconnect();renderer?.dispose();
       window.removeEventListener("scroll",readProgress);
       document.removeEventListener("visibilitychange",visibility);
@@ -201,8 +219,6 @@ export function TrailEntrance({ story, onRestart, onBurst }: { story: TrailStory
     const dy=Math.max(rect.top-event.clientY,0,event.clientY-rect.bottom);
     if (Math.hypot(dx,dy)<(event.pointerType === "touch" ? 48 : 34)) moveNo(event.clientX,event.clientY);
   }
-  function restart() { restoreScrollRef.current=0;onRestart(); }
-
   return (
     <section ref={stageRef} className={`meeno-trail${ending ? " meeno-trail--ending" : ""}`} aria-label="A walk through the moonlit woods">
       <div className="meeno-trail__scene">
@@ -229,7 +245,7 @@ export function TrailEntrance({ story, onRestart, onBurst }: { story: TrailStory
           </div>
         </div>
         {ending && <p className="meeno-trail__transcript" role="status">{finished ? "The fireworks have finished." : "Fireworks above the forest."}</p>}
-        {finished && <button ref={returnRef} className="meeno-return" type="button" onClick={restart}>Back to start <span aria-hidden="true">↺</span></button>}
+        {finished && <button ref={returnRef} className="meeno-return" type="button" onClick={()=>restartWalkRef.current()}>Back to start <span aria-hidden="true">↺</span></button>}
         <button className="meeno-trail__step" type="button" onClick={()=>window.scrollBy({top:window.innerHeight*.65,behavior:"smooth"})} aria-label="Walk forward. You can also scroll to follow the trail.">
           <span aria-hidden="true" />
         </button>

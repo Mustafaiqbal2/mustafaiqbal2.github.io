@@ -25,19 +25,43 @@ export function followupVisibility(progress: number, index: number) {
 export const questionVisible = (progress: number) => progress >= .9999;
 
 export const PAN_SECONDS = 3.2;
-// Pauses between individual shells, followed by a layered golden finale.
+export const FIREWORK_DRAG = .46;
+export const FIREWORK_GRAVITY = .8;
+// Each ascending rocket opens a large shell, then releases many smaller flowers.
+// Leave breathing room for each compound shell to finish before the next launch.
 export const SHELLS = [
-  { at: 1.8, x: 0, y: 0, size: 1, kind: 0, life: 4.4 },
-  { at: 5.5, x: -.29, y: .07, size: .86, kind: 1, life: 4.1 },
-  { at: 8.9, x: .25, y: .16, size: .95, kind: 2, life: 4.7 },
-  { at: 12.5, x: -.08, y: .29, size: 1.04, kind: 3, life: 5.4 },
-  { at: 16.3, x: -.28, y: -.05, size: .8, kind: 1, life: 4.2 },
-  { at: 16.9, x: .29, y: .10, size: .8, kind: 0, life: 4.4 },
-  { at: 20.8, x: -.31, y: .13, size: .82, kind: 3, life: 5.6 },
-  { at: 21.4, x: .31, y: .17, size: .82, kind: 3, life: 5.6 },
-  { at: 22.3, x: 0, y: .35, size: 1.15, kind: 3, life: 5.8 }
+  { at: 2.2, x: 0, y: .1, size: 1.35, kind: 0, life: 5.1, flowers: 12 },
+  { at: 10, x: -.07, y: .18, size: 1.4, kind: 1, life: 5.1, flowers: 14 },
+  { at: 17.8, x: .07, y: .2, size: 1.45, kind: 2, life: 5.1, flowers: 16 },
+  { at: 25.6, x: 0, y: .22, size: 1.55, kind: 3, life: 5.6, flowers: 18 }
 ];
-export const SHOW_SECONDS = Math.max(...SHELLS.map(shell => shell.at+shell.life)) + 1;
+export function sparkDisplacement(vx: number, vy: number, vz: number, seconds: number) {
+  const drag = (1-Math.exp(-FIREWORK_DRAG*seconds))/FIREWORK_DRAG;
+  return { x:vx*drag, y:vy*drag-FIREWORK_GRAVITY*seconds*seconds, z:vz*drag };
+}
+export function secondaryFlowers(shell: typeof SHELLS[number]) {
+  return Array.from({length:shell.flowers},(_,index)=>{
+    const latitude=1-2*(index+.5)/shell.flowers;
+    const longitude=index*2.39996323+shell.kind*.7;
+    const radius=Math.sqrt(1-latitude*latitude);
+    const speed=11.2*shell.size;
+    const vx=Math.cos(longitude)*radius*speed,vy=latitude*speed,vz=Math.sin(longitude)*radius*speed;
+    const delay=1.12+(index*7%11)*.046;
+    const displacement=sparkDisplacement(vx,vy,vz,delay);
+    return {
+      at:shell.at+delay, delay, life:2.65+(index%3)*.17,
+      x:shell.x*48+displacement.x, y:shell.y*45+displacement.y, z:displacement.z,
+      vx,vy,vz, tint:index%3
+    };
+  });
+}
+export const FIREWORK_BURSTS = SHELLS.flatMap(shell=>[
+  {at:shell.at,strength:shell.kind===3?.8:.65},
+  ...secondaryFlowers(shell).map(flower=>({at:flower.at,strength:.07}))
+]).sort((a,b)=>a.at-b.at);
+export const SHOW_SECONDS = Math.max(...SHELLS.flatMap(shell=>[
+  shell.at+shell.life,...secondaryFlowers(shell).map(flower=>flower.at+flower.life)
+]))+1;
 export function celebrationAt(elapsed: number, reduced = false) {
   const panDuration = reduced ? .5 : PAN_SECONDS;
   const raw = clamp(elapsed/panDuration);

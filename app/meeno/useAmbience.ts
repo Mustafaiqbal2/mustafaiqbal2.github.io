@@ -83,13 +83,15 @@ function createAmbience() {
     burst(strength: number) {
       if(context.state!=="running") return;
       const now=context.currentTime+.16;
+      const small=strength<.2;
+      const decay=small?.3:1.7;
       const source=context.createBufferSource();source.buffer=noise;
-      const filter=context.createBiquadFilter();filter.type="lowpass";filter.frequency.value=190;
+      const filter=context.createBiquadFilter();filter.type="lowpass";filter.frequency.value=small?1250:190;
       const gain=context.createGain();gain.gain.setValueAtTime(0,now);
       gain.gain.linearRampToValueAtTime(.38*strength,now+.018);
-      gain.gain.exponentialRampToValueAtTime(.0001,now+1.7);
+      gain.gain.exponentialRampToValueAtTime(.0001,now+decay);
       source.connect(filter);filter.connect(gain);gain.connect(master);
-      source.start(now,Math.random()*4,1.8);
+      source.start(now,Math.random()*4,decay+.1);
       source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();};
     },
     dispose() { window.clearInterval(timer);sources.forEach(source=>source.stop());void context.close(); }

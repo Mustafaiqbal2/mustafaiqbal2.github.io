@@ -18,7 +18,8 @@ function load(name) {
   return result.exports;
 }
 const { MESSAGE_WINDOWS, messageVisibility, followupVisibility, questionVisible, celebrationAt,
-  PAN_SECONDS, SHOW_SECONDS, SHELLS, evadePosition, isTrailStory } = load('trailSequence');
+  PAN_SECONDS, SHOW_SECONDS, SHELLS, secondaryFlowers, sparkDisplacement, FIREWORK_BURSTS,
+  evadePosition, isTrailStory } = load('trailSequence');
 
 test('narrative groups have readable pauses and never overlap', () => {
   MESSAGE_WINDOWS.forEach(([start, end],index) => assert.equal(messageVisibility((start+end)/2,index),1));
@@ -55,9 +56,33 @@ test('camera tilt completes before launch and return waits for every final ember
     for (const shell of SHELLS) {
       assert.ok(shell.at>=1.8);
       assert.equal(celebrationAt(pan+shell.at+shell.life,reduced).finished,false);
+      for (const flower of secondaryFlowers(shell)) {
+        assert.equal(celebrationAt(pan+flower.at+flower.life,reduced).finished,false);
+      }
     }
     assert.equal(celebrationAt(pan+SHOW_SECONDS,reduced).finished,true);
   }
+});
+
+test('smaller flowers erupt from the travelling seeds of a single parent rocket', () => {
+  SHELLS.forEach((shell,index)=>{
+    const flowers=secondaryFlowers(shell);
+    assert.ok(flowers.length>=12 && flowers.length<=18);
+    for(const flower of flowers) {
+      assert.ok(flower.at>shell.at+1 && flower.at<shell.at+1.7);
+      const arrival=sparkDisplacement(flower.vx,flower.vy,flower.vz,flower.delay);
+      assert.equal(flower.x,shell.x*48+arrival.x);
+      assert.equal(flower.y,shell.y*45+arrival.y);
+      assert.equal(flower.z,arrival.z);
+      assert.ok(Math.hypot(arrival.x,arrival.y,arrival.z)>10);
+      assert.ok(FIREWORK_BURSTS.some(burst=>burst.at===flower.at && burst.strength<.2));
+    }
+    if(index<SHELLS.length-1) {
+      assert.ok(SHELLS[index+1].at-2.2>Math.max(shell.at+shell.life,...flowers.map(flower=>flower.at+flower.life)),
+        'finish one compound shell before launching the next rocket');
+    }
+  });
+  assert.deepEqual(FIREWORK_BURSTS.map(burst=>burst.at),FIREWORK_BURSTS.map(burst=>burst.at).sort((a,b)=>a-b));
 });
 
 test('No stays on the mobile choice area and clears the finger and Yes button', () => {
@@ -92,6 +117,10 @@ test('firework particles have finite trajectories, bounded allocation and comple
   }
   const start=points.geometry.attributes.aStart;
   const velocity=points.geometry.attributes.aVelocity;
+  const spark=points.geometry.attributes.aSpark;
+  const rocketLaunches=new Set();
+  for(let i=0;i<start.count;i++) if(spark.getW(i)===1) rocketLaunches.add(start.getW(i).toFixed(3));
+  assert.deepEqual([...rocketLaunches],SHELLS.map(shell=>(shell.at-2.2).toFixed(3)));
   for(let i=0;i<start.count;i++) assert.ok(start.getW(i)+velocity.getW(i)<SHOW_SECONDS);
   const camera=new THREE.PerspectiveCamera(58,390/844,.09,480);
   fireworks.update(null,camera,0,600,false);
