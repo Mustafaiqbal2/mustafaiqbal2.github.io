@@ -19,7 +19,7 @@ function load(name) {
 }
 const { MESSAGE_WINDOWS, messageVisibility, followupVisibility, questionVisible, celebrationAt,
   PAN_SECONDS, SHOW_SECONDS, SHELLS, secondaryFlowers, sparkDisplacement, FIREWORK_BURSTS,
-  evadePosition, isTrailStory } = load('trailSequence');
+  evadePosition, isTrailStory, measureTrail, trailProgress } = load('trailSequence');
 
 test('narrative groups have readable pauses and never overlap', () => {
   MESSAGE_WINDOWS.forEach(([start, end],index) => assert.equal(messageVisibility((start+end)/2,index),1));
@@ -74,15 +74,36 @@ test('smaller flowers erupt from the travelling seeds of a single parent rocket'
       assert.equal(flower.x,shell.x*48+arrival.x);
       assert.equal(flower.y,shell.y*45+arrival.y);
       assert.equal(flower.z,arrival.z);
-      assert.ok(Math.hypot(arrival.x,arrival.y,arrival.z)>10);
+      assert.ok(Math.hypot(arrival.x,arrival.y,arrival.z)>7*shell.size);
       assert.ok(FIREWORK_BURSTS.some(burst=>burst.at===flower.at && burst.strength<.2));
-    }
-    if(index<SHELLS.length-1) {
-      assert.ok(SHELLS[index+1].at-2.2>Math.max(shell.at+shell.life,...flowers.map(flower=>flower.at+flower.life)),
-        'finish one compound shell before launching the next rocket');
     }
   });
   assert.deepEqual(FIREWORK_BURSTS.map(burst=>burst.at),FIREWORK_BURSTS.map(burst=>burst.at).sort((a,b)=>a-b));
+});
+
+test('three or four rockets launch together and volleys overlap without long gaps', () => {
+  const groups=[];
+  for(const shell of SHELLS) {
+    const last=groups.at(-1);
+    if(last && shell.at-last[0].at<.8) last.push(shell);
+    else groups.push([shell]);
+  }
+  assert.ok(groups.every(group=>group.length>=3 && group.length<=4));
+  for(let i=1;i<groups.length;i++) {
+    const previous=groups[i-1];
+    assert.ok(groups[i][0].at-2.2<Math.max(...previous.map(shell=>shell.at+shell.life)));
+  }
+  assert.ok(SHOW_SECONDS+PAN_SECONDS<27);
+});
+
+test('fullscreen resizing during the show cannot poison the origin after restart', () => {
+  const measured=measureTrail(0,0,9200,800,false,{start:0,distance:1});
+  const locked=measureTrail(-8400,0,9200,900,true,measured);
+  assert.deepEqual(locked,measured);
+  const restarted=measureTrail(0,0,9200,900,false,locked);
+  assert.equal(trailProgress(0,restarted),0);
+  assert.ok(trailProgress(585,restarted)>0 && trailProgress(585,restarted)<.1);
+  assert.equal(trailProgress(restarted.distance,restarted),1);
 });
 
 test('No stays on the mobile choice area and clears the finger and Yes button', () => {
@@ -90,10 +111,12 @@ test('No stays on the mobile choice area and clears the finger and Yes button', 
     let position = {x:width-112,y:0};
     for(let tap=0;tap<12;tap++) {
       const pointerX=position.x+56, pointerY=position.y+22.5;
-      const next=evadePosition(width,height,112,45,pointerX,pointerY,position.x,position.y);
+      const next=evadePosition(width,height,112,45,tap);
       assert.ok(next.x>=0 && next.x+112<=width && next.y>=0 && next.y+45<=height);
       assert.ok(next.y>=45 || next.x>=112,'must never cover Yes');
       assert.ok(pointerX<next.x || pointerX>next.x+112 || pointerY<next.y || pointerY>next.y+45,'must clear the touch point');
+      assert.equal(next.y,height-45);
+      assert.equal(next.x,tap%2===0?width-112:0);
       position=next;
     }
   }
@@ -111,7 +134,7 @@ test('firework particles have finite trajectories, bounded allocation and comple
   const fireworks=load('trailFireworks').createFireworks(scene);
   const points=scene.children[0];
   assert.ok(points.geometry.attributes.aStart.count>10000);
-  assert.ok(points.geometry.attributes.aStart.count<36000);
+  assert.ok(points.geometry.attributes.aStart.count<40000);
   for(const attribute of Object.values(points.geometry.attributes)) {
     assert.ok(attribute.array.every(Number.isFinite));
   }
@@ -129,5 +152,24 @@ test('firework particles have finite trajectories, bounded allocation and comple
   assert.equal(points.visible,true);
   assert.ok(points.position.length()>100);
   fireworks.dispose();
+  assert.equal(scene.children.length,0);
+});
+
+test('iron lantern geometry is grounded and flames sit inside each hanging cage', () => {
+  const {lanternGeometry,createLanternFlames,LANTERN_X,FLAME_HEIGHT}=load('trailLanterns');
+  const geometry=lanternGeometry();geometry.computeBoundingBox();
+  assert.ok(Math.abs(geometry.boundingBox.min.y)<.001);
+  assert.ok(geometry.boundingBox.max.y>2.9 && geometry.boundingBox.max.y<3.1);
+  assert.ok(geometry.attributes.position.array.every(Number.isFinite));
+  const scene=new THREE.Scene();
+  const lamps=load('trailWorld').woodlandLayout().lamps;
+  const flames=createLanternFlames(scene,lamps,new THREE.Vector3(1,0,0));
+  const mesh=scene.children[0],matrix=new THREE.Matrix4(),position=new THREE.Vector3();
+  lamps.forEach((lamp,index)=>{
+    mesh.getMatrixAt(index,matrix);position.setFromMatrixPosition(matrix);
+    assert.ok(Math.abs(position.x-(lamp.x-lamp.flip*LANTERN_X))<.00001);
+    assert.ok(Math.abs(position.y-(lamp.y+FLAME_HEIGHT-.08))<.00001);
+  });
+  flames.dispose();geometry.dispose();
   assert.equal(scene.children.length,0);
 });

@@ -8,6 +8,7 @@ import { loadTrailArtwork } from "./trailAssets";
 import { UnderwaterCanvas } from "./UnderwaterCanvas";
 import { isTrailStory, type TrailStory } from "./trailSequence";
 import { useAmbience } from "./useAmbience";
+import { useFullscreen } from "./useFullscreen";
 
 type Phase = "locked" | "fading" | "open";
 
@@ -49,6 +50,7 @@ export function MeenoExperience() {
   const [busy, setBusy] = useState(false);
   const [story, setStory] = useState<TrailStory | null>(null);
   const sound = useAmbience(phase === "locked" ? "ocean" : "forest");
+  const screen = useFullscreen();
 
   useLayoutEffect(() => {
     document.documentElement.classList.add("meeno-page");
@@ -103,6 +105,13 @@ export function MeenoExperience() {
       onPointerDownCapture={event => { if (!(event.target as HTMLElement).closest(".meeno-sound")) sound.start(); }}
       onFocusCapture={event => { if (!(event.target as HTMLElement).closest(".meeno-sound")) sound.start(); }}>
       <div className="meeno-next">{phase !== "locked" && story && <TrailEntrance story={story} onLaunch={sound.launch} onBurst={sound.burst} active={phase === "open"} />}</div>
+
+      <button className="meeno-fullscreen" type="button" onClick={screen.toggle} aria-label={screen.fullscreen ? "Exit fullscreen" : "Enter fullscreen"} aria-pressed={screen.fullscreen}>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d={screen.fullscreen ? "M8 3v5H3m13-5v5h5M8 21v-5H3m13 5v-5h5" : "M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"} />
+        </svg>
+      </button>
+      {screen.notice && <p className="meeno-fullscreen-notice" role="status">{screen.notice}</p>}
 
       <button className="meeno-sound" type="button" onClick={sound.toggle} aria-label={sound.active ? "Mute ambience" : "Turn sound on"} aria-pressed={sound.active}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

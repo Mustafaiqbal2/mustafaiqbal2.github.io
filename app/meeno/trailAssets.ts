@@ -1,4 +1,4 @@
-export type TrailArtwork = { trees: HTMLImageElement; details: HTMLImageElement };
+export type TrailArtwork = { trees: HTMLImageElement; pine: HTMLImageElement; details: HTMLImageElement };
 const images = new Map<string, Promise<HTMLImageElement>>();
 
 function loadImage(src: string) {
@@ -16,9 +16,10 @@ function loadImage(src: string) {
 }
 
 export async function loadTrailArtwork(): Promise<TrailArtwork> {
-  const [trees, details] = await Promise.all([
+  const [trees, pine, details] = await Promise.all([
     loadImage("/meeno/woodland-trees.webp"),
+    loadImage("/meeno/woodland-pine.webp"),
     loadImage("/meeno/woodland-details.webp")
   ]);
-  return { trees, details };
+  return { trees, pine, details };
 }

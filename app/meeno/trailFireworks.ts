@@ -9,10 +9,12 @@ attribute vec4 aStart;
 attribute vec4 aVelocity;
 attribute vec4 aSpark;
 attribute vec3 aColor;
+attribute float aRootY;
 uniform float uTime;
 uniform float uFit;
 uniform float uResolution;
 uniform float uGentle;
+uniform float uSpread;
 varying vec3 vColor;
 varying float vAlpha;
 void main() {
@@ -38,6 +40,7 @@ void main() {
     }
   }
   p.xy*=uFit;
+  p.y+=aRootY*uFit*(uSpread-1.0);
   vec4 mv=modelViewMatrix*vec4(p,1.0);
   gl_Position=projectionMatrix*mv;
   float tail=1.0-aSpark.x*.86;
@@ -61,7 +64,8 @@ void main() {
 
 export function createFireworks(scene: THREE.Scene) {
   const random=seededRandom(92571);
-  const starts: number[]=[], velocities: number[]=[], sparks: number[]=[], colors: number[]=[];
+  const starts: number[]=[], velocities: number[]=[], sparks: number[]=[], colors: number[]=[], roots: number[]=[];
+  let rootY=0;
   const palettes = [
     ["#ffc36b", "#ffedc2"], ["#f385b5", "#96f0e4"],
     ["#aac5ff", "#c7a4ff"], ["#e9ad50", "#ffdf9e"]
@@ -70,11 +74,13 @@ export function createFireworks(scene: THREE.Scene) {
     life: number,tail: number,seed: number,size: number,launch: number,color: THREE.Color) {
     starts.push(x,y,z,birth); velocities.push(vx,vy,vz,life);
     sparks.push(tail,seed,size,launch); colors.push(color.r,color.g,color.b);
+    roots.push(rootY);
   }
   SHELLS.forEach((shell,index) => {
     const x=shell.x*48,y=shell.y*45,z=0;
+    rootY=y;
     const palette=palettes[shell.kind].map(color=>new THREE.Color(color));
-    const count=shell.kind===3?400:340;
+    const count=200;
     for(let star=0;star<count;star++) {
       // Uniform spherical distribution, with a smaller contrasting inner pistil.
       const inner=star%5===0;
@@ -88,7 +94,7 @@ export function createFireworks(scene: THREE.Scene) {
       const life=shell.life*(.84+random()*.16);
       const seed=random();
       const color=palette[inner?1:0];
-      const trailCount=shell.kind===3?13:11;
+      const trailCount=7;
       for(let tail=0;tail<trailCount;tail++) {
         particle(x,y,z,shell.at,vx,vy,vz,life,tail/trailCount,seed,
           tail===0?.66:.42,0,color);
@@ -97,15 +103,15 @@ export function createFireworks(scene: THREE.Scene) {
     secondaryFlowers(shell).forEach((flower,flowerIndex)=>{
       const seed=random();
       // These embers actually travel from the main burst to each smaller flower.
-      for(let tail=0;tail<5;tail++) {
+      for(let tail=0;tail<4;tail++) {
         particle(x,y,z,shell.at,flower.vx,flower.vy,flower.vz,flower.delay,
-          tail/5,seed,.57,2,palette[1]);
+          tail/4,seed,.57,2,palette[1]);
       }
       const flowerColor=flower.tint===0?palette[1]:flower.tint===1?palette[0]:
         new THREE.Color(shell.kind===3?"#fff0c9":["#9debe4","#c1b6ff","#f6b5d5"][shell.kind]);
       const drift=Math.exp(-FIREWORK_DRAG*flower.delay)*.18;
-      for(let star=0;star<42;star++) {
-        const latitude=1-2*(star+.5)/42;
+      for(let star=0;star<24;star++) {
+        const latitude=1-2*(star+.5)/24;
         const longitude=star*2.39996323+flowerIndex*.4;
         const radius=Math.sqrt(1-latitude*latitude);
         const speed=(3.2+random()*.7)*shell.size;
@@ -114,9 +120,9 @@ export function createFireworks(scene: THREE.Scene) {
         const vz=Math.sin(longitude)*radius*speed+flower.vz*drift;
         const life=flower.life*(.88+random()*.12);
         const sparkle=random();
-        for(let tail=0;tail<6;tail++) {
+        for(let tail=0;tail<4;tail++) {
           particle(flower.x,flower.y,flower.z,flower.at,vx,vy,vz,life,
-            tail/6,sparkle,tail===0?.61:.36,0,flowerColor);
+            tail/4,sparkle,tail===0?.61:.36,0,flowerColor);
         }
       }
     });
@@ -131,8 +137,9 @@ export function createFireworks(scene: THREE.Scene) {
   geometry.setAttribute("aVelocity",new THREE.Float32BufferAttribute(velocities,4));
   geometry.setAttribute("aSpark",new THREE.Float32BufferAttribute(sparks,4));
   geometry.setAttribute("aColor",new THREE.Float32BufferAttribute(colors,3));
+  geometry.setAttribute("aRootY",new THREE.Float32BufferAttribute(roots,1));
   const material=new THREE.ShaderMaterial({
-    uniforms:{uTime:{value:-1},uFit:{value:1},uResolution:{value:650},uGentle:{value:0}},
+    uniforms:{uTime:{value:-1},uFit:{value:1},uResolution:{value:650},uGentle:{value:0},uSpread:{value:1}},
     vertexShader:VERTEX,fragmentShader:FRAGMENT,
     transparent:true,depthWrite:false,blending:THREE.AdditiveBlending
   });
@@ -155,7 +162,8 @@ export function createFireworks(scene: THREE.Scene) {
       points.quaternion.setFromRotationMatrix(rotation);
       material.uniforms.uTime.value=time;
       // Keep complete shells within a portrait viewport, including the finale.
-      material.uniforms.uFit.value=Math.min(1.35,Math.max(.22,camera.aspect*1.25));
+      material.uniforms.uFit.value=Math.min(1,Math.max(.22,camera.aspect*1.2));
+      material.uniforms.uSpread.value=Math.max(1,Math.min(1.8,1/camera.aspect));
       material.uniforms.uResolution.value=resolution;
       material.uniforms.uGentle.value=reduced?1:0;
     },

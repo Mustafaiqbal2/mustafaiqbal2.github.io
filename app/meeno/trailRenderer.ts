@@ -4,6 +4,7 @@ import { cameraAt, CAMERA_FOV, ENCOUNTERS, groundHeight, pathCenter, seededRando
 import { SKY_FRAGMENT, SKY_VERTEX, WOODLAND_FRAGMENT, WOODLAND_VERTEX } from "./trailShaders";
 import { createFireworks } from "./trailFireworks";
 import { celebrationAt } from "./trailSequence";
+import { createLanternFlames, FLAME_HEIGHT, LANTERN_X, lanternGeometry } from "./trailLanterns";
 
 export type WorldRenderer = { draw: (progress: number, time: number, animate: boolean, celebration?: number | null) => void; resize: () => void; dispose: () => void };
 
@@ -28,7 +29,7 @@ export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArt
   const materials = new Set<THREE.Material>();
   const textures = new Set<THREE.Texture>();
   const animatedMaterials: THREE.ShaderMaterial[] = [];
-  const lampPositions = world.lamps.map(lamp => new THREE.Vector3(lamp.x, lamp.y + 1.77, lamp.z));
+  const lampPositions = world.lamps.map(lamp => new THREE.Vector3(lamp.x-lamp.flip*LANTERN_X, lamp.y+FLAME_HEIGHT, lamp.z));
 
   function texture(image: HTMLImageElement) {
     const map = new THREE.Texture(image);
@@ -40,6 +41,7 @@ export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArt
     return map;
   }
   const treeMap = texture(artwork.trees);
+  const pineMap = texture(artwork.pine);
   const detailMap = texture(artwork.details);
 
   function material(map: THREE.Texture, kind = 0, billboard = true, wind = 0) {
@@ -58,8 +60,9 @@ export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArt
     return result;
   }
   const treeMaterial = material(treeMap, 0, true, 1);
+  const pineMaterial = material(pineMap, 0, true, 1);
   const leafMaterial = material(detailMap, 0, true, .5);
-  const lampMaterial = material(detailMap, 3);
+  const lampMaterial = material(detailMap, 3, false);
   const animalMaterial = material(detailMap);
 
   function atlasCell(index: number, columns: number, rows: number, mirrored = false) {
@@ -79,7 +82,7 @@ export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArt
   function instances(objects: WoodlandObject[], geometry: THREE.BufferGeometry, surface: THREE.Material) {
     const mesh = new THREE.InstancedMesh(geometry, surface, objects.length);
     objects.forEach((object, index) => {
-      const anchor = surface === treeMaterial ? .024 : .035;
+      const anchor = surface === treeMaterial || surface === pineMaterial ? .024 : .035;
       dummy.position.set(object.x, object.y - object.height * anchor, object.z);
       dummy.rotation.set(0, 0, 0);
       dummy.scale.set(object.width * object.flip, object.height, object.width);
@@ -93,10 +96,20 @@ export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArt
     return mesh;
   }
   for (let i = 0; i < 3; i++) {
-    instances(world.trees.filter(object => object.variant === i), atlasCell(i, 3, 1), treeMaterial);
+    // The old middle atlas cell contained neighboring oak branches. A separate
+    // pine texture removes those floating cutouts without changing the oaks.
+    instances(world.trees.filter(object => object.variant === i), i===1?atlasCell(0,1,1):atlasCell(i,3,1), i===1?pineMaterial:treeMaterial);
     instances(world.undergrowth.filter(object => object.variant === i), atlasCell(i, 3, 2), leafMaterial);
   }
-  instances(world.lamps, atlasCell(3, 3, 2), lampMaterial);
+  const ironGeometry=lanternGeometry();geometries.add(ironGeometry);
+  const ironwork=new THREE.InstancedMesh(ironGeometry,lampMaterial,world.lamps.length);
+  world.lamps.forEach((lamp,index)=>{
+    dummy.position.set(lamp.x,lamp.y,lamp.z);
+    dummy.rotation.set(0,lamp.flip>0?Math.PI:0,0);dummy.scale.set(1,1,1);dummy.updateMatrix();
+    ironwork.setMatrixAt(index,dummy.matrix);
+  });
+  scene.add(ironwork);
+  const flames=createLanternFlames(scene,world.lamps,right);
 
   // Actual sloping ground under the camera, with a footpath defined in world metres.
   const ground = new THREE.PlaneGeometry(74, 158, 112, 256);
@@ -223,6 +236,7 @@ export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArt
     sky.material.uniforms.uTime.value = animate ? time : 0;
     sky.material.uniforms.uMotion.value = animate ? 1 : 0;
     animatedMaterials.forEach(surface => { surface.uniforms.uTime.value = animate ? time : 0; });
+    flames.update(animate?time:0);
     flameGlows.forEach((flame, i) => {
       const flicker = animate ? Math.sin(time*3.3+i*1.7)*.012+Math.sin(time*8.7+i)*.007+Math.sin(time*13.1+i*2.3)*.004 : 0;
       flame.material.opacity = .085+flicker;
@@ -268,6 +282,7 @@ export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArt
     }
   };
   const dispose = () => {
+    flames.dispose();
     fireworks.dispose();
     scene.clear();
     geometries.forEach(geometry=>geometry.dispose());

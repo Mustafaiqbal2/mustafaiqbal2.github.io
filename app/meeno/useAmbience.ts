@@ -13,8 +13,19 @@ function createAmbience() {
   master.gain.value=.65;
   master.connect(context.destination);
   const ocean=context.createGain(),forest=context.createGain(),effects=context.createGain();
-  ocean.gain.value=0;forest.gain.value=0;effects.gain.value=1.18;
+  ocean.gain.value=0;forest.gain.value=0;effects.gain.value=.65;
   ocean.connect(master);forest.connect(master);effects.connect(master);
+  let burstSample: AudioBuffer | null=null;
+  void fetch('/meeno/firework-burst.mp3').then(response=>{
+    if(!response.ok) throw new Error('Audio unavailable');
+    return response.arrayBuffer();
+  }).then(data=>context.decodeAudioData(data)).then(buffer=>{burstSample=buffer;}).catch(()=>{});
+  // A low, diffuse outdoor tail; no pitched whistle or synthesized sub-thump.
+  const echo=context.createDelay(1);echo.delayTime.value=.21;
+  const echoTone=context.createBiquadFilter();echoTone.type='lowpass';echoTone.frequency.value=780;
+  const echoGain=context.createGain();echoGain.gain.value=.20;
+  effects.connect(echo);echo.connect(echoTone);echoTone.connect(echoGain);echoGain.connect(master);
+  echoGain.connect(echo);
   const sources: AudioScheduledSourceNode[]=[];
   const noise=context.createBuffer(2,context.sampleRate*8,context.sampleRate);
   for(let channel=0;channel<2;channel++) {
@@ -82,89 +93,29 @@ function createAmbience() {
     mute(muted: boolean) { ramp(master,muted?0:.65,.12); },
     launch(panValue = 0) {
       if(context.state!=="running") return;
-      const now=context.currentTime+.025;
-      const duration=2.05;
-      const pan=context.createStereoPanner();pan.pan.value=Math.max(-.7,Math.min(.7,panValue));
-      pan.connect(effects);
-
-      // Airy rocket hiss.
-      const hiss=context.createBufferSource();hiss.buffer=noise;
-      const band=context.createBiquadFilter();band.type="bandpass";band.frequency.setValueAtTime(900,now);
-      band.frequency.exponentialRampToValueAtTime(3200,now+duration);
-      band.Q.value=.7;
-      const hissGain=context.createGain();hissGain.gain.setValueAtTime(.0001,now);
-      hissGain.gain.exponentialRampToValueAtTime(.055,now+.12);
-      hissGain.gain.exponentialRampToValueAtTime(.018,now+duration*.82);
-      hissGain.gain.exponentialRampToValueAtTime(.0001,now+duration);
-      hiss.connect(band);band.connect(hissGain);hissGain.connect(pan);
-
-      // Rising whistle gives the launch a readable trajectory on phone speakers.
-      const whistle=context.createOscillator();whistle.type="sine";
-      whistle.frequency.setValueAtTime(250,now);
-      whistle.frequency.exponentialRampToValueAtTime(1180,now+duration*.92);
-      const whistleGain=context.createGain();whistleGain.gain.setValueAtTime(.0001,now);
-      whistleGain.gain.exponentialRampToValueAtTime(.032,now+.16);
-      whistleGain.gain.exponentialRampToValueAtTime(.014,now+duration*.72);
-      whistleGain.gain.exponentialRampToValueAtTime(.0001,now+duration);
-      whistle.connect(whistleGain);whistleGain.connect(pan);
-
-      hiss.start(now,Math.random()*4,duration+.05);
-      whistle.start(now);whistle.stop(now+duration+.03);
-      whistle.onended=()=>{hiss.disconnect();band.disconnect();hissGain.disconnect();whistle.disconnect();whistleGain.disconnect();pan.disconnect();};
+      const now=context.currentTime+.02;
+      const source=context.createBufferSource();source.buffer=noise;
+      const band=context.createBiquadFilter();band.type="bandpass";band.Q.value=.4;
+      band.frequency.setValueAtTime(460,now);band.frequency.exponentialRampToValueAtTime(1250,now+1.8);
+      const gain=context.createGain();gain.gain.setValueAtTime(.0001,now);
+      gain.gain.exponentialRampToValueAtTime(.022,now+.1);
+      gain.gain.exponentialRampToValueAtTime(.0001,now+1.95);
+      const pan=context.createStereoPanner();pan.pan.value=Math.max(-.75,Math.min(.75,panValue));
+      source.connect(band);band.connect(gain);gain.connect(pan);pan.connect(effects);
+      source.start(now,Math.random()*4,2);
+      source.onended=()=>{source.disconnect();band.disconnect();gain.disconnect();pan.disconnect();};
     },
     burst(strength: number, panValue = 0) {
-      if(context.state!=="running") return;
-      const now=context.currentTime+.045;
+      if(context.state!=="running" || !burstSample) return;
       const small=strength<.2;
+      const source=context.createBufferSource();source.buffer=burstSample;
+      source.playbackRate.value=small?1.28+Math.random()*.22:.86+Math.random()*.14;
+      const filter=context.createBiquadFilter();filter.type="lowpass";filter.frequency.value=small?2100:1450;
+      const gain=context.createGain();gain.gain.value=small?.026:strength*.34;
       const pan=context.createStereoPanner();pan.pan.value=Math.max(-.8,Math.min(.8,panValue));
-      pan.connect(effects);
-
-      if(small) {
-        // Secondary flowers: sharp sparkling crack instead of an inaudible mini-boom.
-        const source=context.createBufferSource();source.buffer=noise;
-        const filter=context.createBiquadFilter();filter.type="bandpass";filter.frequency.value=2300+Math.random()*1400;filter.Q.value=.55;
-        const gain=context.createGain();gain.gain.setValueAtTime(.0001,now);
-        gain.gain.exponentialRampToValueAtTime(.09+strength*.28,now+.006);
-        gain.gain.exponentialRampToValueAtTime(.0001,now+.19+Math.random()*.09);
-        source.connect(filter);filter.connect(gain);gain.connect(pan);
-        source.start(now,Math.random()*5,.34);
-        source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();pan.disconnect();};
-        return;
-      }
-
-      // Initial supersonic crack.
-      const crack=context.createBufferSource();crack.buffer=noise;
-      const crackFilter=context.createBiquadFilter();crackFilter.type="highpass";crackFilter.frequency.value=900;
-      const crackGain=context.createGain();crackGain.gain.setValueAtTime(.0001,now);
-      crackGain.gain.exponentialRampToValueAtTime(.34*strength,now+.004);
-      crackGain.gain.exponentialRampToValueAtTime(.0001,now+.13);
-      crack.connect(crackFilter);crackFilter.connect(crackGain);crackGain.connect(pan);
-
-      // Heavy body/rumble that survives small phone speakers.
-      const boom=context.createBufferSource();boom.buffer=noise;
-      const boomFilter=context.createBiquadFilter();boomFilter.type="lowpass";boomFilter.frequency.value=260;
-      const boomGain=context.createGain();boomGain.gain.setValueAtTime(.0001,now+.025);
-      boomGain.gain.exponentialRampToValueAtTime(.52*strength,now+.055);
-      boomGain.gain.exponentialRampToValueAtTime(.0001,now+1.85);
-      boom.connect(boomFilter);boomFilter.connect(boomGain);boomGain.connect(pan);
-
-      // Sub-thump adds impact without needing a prerecorded sample.
-      const thump=context.createOscillator();thump.type="sine";
-      thump.frequency.setValueAtTime(88,now+.02);
-      thump.frequency.exponentialRampToValueAtTime(38,now+.55);
-      const thumpGain=context.createGain();thumpGain.gain.setValueAtTime(.0001,now+.02);
-      thumpGain.gain.exponentialRampToValueAtTime(.22*strength,now+.045);
-      thumpGain.gain.exponentialRampToValueAtTime(.0001,now+.62);
-      thump.connect(thumpGain);thumpGain.connect(pan);
-
-      crack.start(now,Math.random()*4,.2);
-      boom.start(now+.02,Math.random()*4,1.95);
-      thump.start(now+.02);thump.stop(now+.66);
-      boom.onended=()=>{
-        crack.disconnect();crackFilter.disconnect();crackGain.disconnect();
-        boom.disconnect();boomFilter.disconnect();boomGain.disconnect();
-        thump.disconnect();thumpGain.disconnect();pan.disconnect();
-      };
+      source.connect(filter);filter.connect(gain);gain.connect(pan);pan.connect(effects);
+      source.start(context.currentTime+.13+Math.random()*.045);
+      source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();pan.disconnect();};
     },
     dispose() { window.clearInterval(timer);sources.forEach(source=>source.stop());void context.close(); }
   };
@@ -185,7 +136,7 @@ export function useAmbience(scene: Soundscape) {
       }
       const audio=audioRef.current;
       if(!audio) return;
-      // Called directly from a tap/focus gesture, as required by mobile Safari.
+      // Try immediately; a later gesture resumes contexts blocked by autoplay policy.
       void audio.context.resume().then(()=>{
         if(audioRef.current===audio) setActive(!mutedRef.current && audio.context.state==="running");
       }).catch(()=>setActive(false));
@@ -206,5 +157,6 @@ export function useAmbience(scene: Soundscape) {
     document.addEventListener("visibilitychange",visibility);
     return ()=>{document.removeEventListener("visibilitychange",visibility);audioRef.current?.dispose();audioRef.current=null;};
   },[start]);
+  useEffect(()=>{start();},[start]);
   return {active,start,toggle,launch,burst};
 }

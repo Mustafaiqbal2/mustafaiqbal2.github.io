@@ -29,15 +29,20 @@ void main() {
   vFace = .5 + max(0.0, dot(n, normalize(vec3(-.3, .8, -.5)))) * .7;
   // The ambient floor is deliberately low. Amber light is local to each lamp.
   float pathX = sin(world.z * .075) * 2.7 + sin(world.z * .031) * 3.2;
-  float bankShadow = mix(1.0, .52, smoothstep(1.3, 5.0, abs(world.x - pathX)));
-  vLight = vec3(.078, .125, .19) * bankShadow;
+  float bankShadow = mix(1.0, .36, smoothstep(1.3, 5.0, abs(world.x - pathX)));
+  vLight = vec3(.032, .055, .087) * bankShadow;
   if (uBillboard < .5) vLight *= vFace;
   for (int i = 0; i < 10; i++) {
     vec3 delta = world.xyz - uLamps[i];
     float d2 = dot(delta, delta);
-    float flame = .88 + .08 * sin(uTime * 3.3 + float(i) * 1.7) + .045 * sin(uTime * 8.7 + float(i)) + .025 * sin(uTime * 13.1 + float(i) * 2.3);
-    float reach = 1.0 - smoothstep(7.0, 28.0, d2);
-    vLight += vec3(1.05, .47, .14) * flame * reach / (1.0 + d2 * 1.25);
+    float phase=float(i)*1.7;
+    float flame = .88 + .09*sin(uTime*5.2+phase) + .055*sin(uTime*12.7+phase) + .035*sin(uTime*4.1+phase);
+    // The shade directs most light down into a distinct, soft-edged pool.
+    float down=-delta.y/max(.01,sqrt(d2));
+    float cone=smoothstep(.61,.92,down);
+    float reach=1.0-smoothstep(8.0,18.0,d2);
+    float bars=.90+.10*sin(atan(delta.x,delta.z)*4.0+uTime*.10);
+    vLight += vec3(4.6,2.55,1.0)*flame*reach*(cone*bars+.035)/(1.0+d2*1.18);
   }
   gl_Position = projectionMatrix * viewMatrix * world;
 }`;
@@ -60,7 +65,7 @@ float noise(vec2 p) {
 }
 void main() {
   vec3 albedo;
-  if (uKind < .5 || uKind > 2.5) {
+  if (uKind < .5) {
     vec4 texel = texture2D(uMap, vUv);
     if (texel.a < .6) discard;
     albedo = texel.rgb;
@@ -76,17 +81,19 @@ void main() {
     albedo = mix(moss, dirt, path) * (.76 + grain * .45);
     float chips = step(.975, hash(floor(vWorld.xz * 24.0)));
     albedo += vec3(.08,.09,.092) * chips * path;
-  } else {
+  } else if (uKind < 2.5) {
     float grain = hash(floor(vWorld.xz * 48.0 + vWorld.y * 21.0));
     albedo = uBase * (.7 + grain * .5);
     float moss = smoothstep(.64, .78, noise(vWorld.xz * 12.0));
     albedo = mix(albedo, vec3(.034,.064,.026), moss * .6);
+  } else {
+    // Cool iron highlights and restrained tarnish, without the old wooden texture.
+    float grain=hash(floor(vWorld.xy*175.0+vWorld.z));
+    albedo=mix(vec3(.11,.14,.16),vec3(.22,.25,.27),grain)*vFace;
   }
   vec3 color = albedo * vLight;
   if (uKind > 2.5) {
-    float flame = smoothstep(.2, .6, albedo.r - albedo.b) * smoothstep(.4,.8,albedo.r);
-    float flutter = .88 + .065*sin(uTime*3.3+vWorld.z) + .035*sin(uTime*8.7+vWorld.z*1.7);
-    color = mix(color, albedo * flutter, flame);
+    color+=albedo*vec3(.018,.028,.043)*vFace;
   }
   float fog = 1.0 - exp(-pow(vDistance * .017, 1.7));
   color = mix(color, uFog, fog);

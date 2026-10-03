@@ -2,7 +2,7 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import { loadTrailArtwork } from "./trailAssets";
-import { celebrationAt, evadePosition, FIREWORK_BURSTS, followupVisibility, messageVisibility, questionVisible, SHELLS, type TrailStory } from "./trailSequence";
+import { celebrationAt, evadePosition, FIREWORK_BURSTS, followupVisibility, messageVisibility, measureTrail, questionVisible, SHELLS, trailProgress, type TrailStory } from "./trailSequence";
 import type { WorldRenderer } from "./trailRenderer";
 
 type TrailRendererModule = typeof import("./trailRenderer");
@@ -23,12 +23,15 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
   const noRef = useRef<HTMLButtonElement>(null);
   const returnRef = useRef<HTMLButtonElement>(null);
   const lastDodgeRef = useRef(0);
+  const dodgeStepRef = useRef(0);
   const elapsedRef = useRef<number | null>(null);
   const startShowRef = useRef<() => void>(() => {});
   const restartWalkRef = useRef<() => void>(() => {});
   const restoreScrollRef = useRef(0);
   const activeRef = useRef(active);
   const resumeRef = useRef<() => void>(() => {});
+  const measureRef = useRef<() => void>(() => {});
+  const resettingRef = useRef(false);
   const [ending, setEnding] = useState(false);
   const [finished, setFinished] = useState(false);
   const [noPosition, setNoPosition] = useState<{ x: number; y: number } | null>(null);
@@ -39,7 +42,14 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
   }, [active]);
 
   useLayoutEffect(() => {
-    if (!ending) return;
+    if (!ending) {
+      if (resettingRef.current) {
+        window.scrollTo({top:0,behavior:"instant"});
+        resettingRef.current=false;
+        measureRef.current();
+      }
+      return;
+    }
     const body = document.body;
     const saved = { position: body.style.position, top: body.style.top, width: body.style.width, left: body.style.left };
     restoreScrollRef.current = window.scrollY;
@@ -86,8 +96,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
     let lastBurst = -1;
     let lastLaunch = -1;
     let finalNoteShown = false;
-    let scrollStart = 0;
-    let walkDistance = 1;
+    let measurement = {start:0,distance:1};
     let questionWasVisible = false;
     const lastOpacity = story.segments.map(() => -1);
     const lastAfter = story.segments.map(() => -1);
@@ -122,23 +131,18 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
       }
     };
     const readProgress = () => {
-      if (elapsedRef.current !== null) return;
-      const travelled = window.scrollY-scrollStart;
-      target = Math.max(0, Math.min(1, travelled/walkDistance));
-      if (travelled >= walkDistance-2) target = 1;
+      if (elapsedRef.current !== null || resettingRef.current) return;
+      target = trailProgress(window.scrollY,measurement);
       stage.dataset.walked = String(target > .01);
       if (reducedMotion.matches) { updateWords(target); start(); }
     };
     const measure = () => {
       const bounds = stage.getBoundingClientRect();
-      scrollStart = bounds.top+window.scrollY;
-      const fullDistance = Math.max(1, stage.offsetHeight-window.innerHeight);
-      // Reveal the question several viewports before the real document boundary.
-      // Mobile browsers are much less likely to restore their chrome when we never hit the scroll limit.
-      const chromeBuffer = Math.min(fullDistance*.08, window.innerHeight*3);
-      walkDistance = Math.max(1, fullDistance-chromeBuffer);
+      measurement=measureTrail(bounds.top,window.scrollY,stage.offsetHeight,window.innerHeight,
+        elapsedRef.current!==null || resettingRef.current,measurement);
       readProgress();
     };
+    measureRef.current=measure;
     const tick = (now: number) => {
       frame = 0;
       if (disposed || document.hidden || !activeRef.current) return;
@@ -150,15 +154,13 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
         SHELLS.forEach((shell,index) => {
           const launchAt=shell.at-2.2;
           if(sequence.fireworks>=launchAt && index>lastLaunch) {
-            onLaunch(shell.x*5);
+            onLaunch(shell.x*1.7);
             lastLaunch=index;
           }
         });
         FIREWORK_BURSTS.forEach((burst,index) => {
           if (sequence.fireworks >= burst.at && index > lastBurst) {
-            const shell=SHELLS.reduce((nearest,candidate)=>
-              Math.abs(candidate.at-burst.at)<Math.abs(nearest.at-burst.at)?candidate:nearest,SHELLS[0]);
-            onBurst(burst.strength,shell.x*5);
+            onBurst(burst.strength,burst.pan);
             lastBurst = index;
           }
         });
@@ -186,9 +188,6 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
     resumeRef.current=start;
     startShowRef.current = () => {
       if (elapsedRef.current !== null || !questionVisible(target)) return;
-      if (document.fullscreenEnabled && !document.fullscreenElement) {
-        void document.documentElement.requestFullscreen().catch(()=>{});
-      }
       progress=target=1;
       elapsedRef.current=0;
       finalNoteShown=false;
@@ -200,6 +199,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
     restartWalkRef.current = () => {
       // Reuse the decoded story and live renderer; only rewind the walk/show.
       restoreScrollRef.current=0;
+      resettingRef.current=true;
       elapsedRef.current=null;
       progress=target=sceneTime=0;
       lastBurst=-1;
@@ -207,6 +207,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
       finalNoteShown=false;
       stage.dataset.finalNote="false";
       lastDodgeRef.current=0;
+      dodgeStepRef.current=0;
       done=false;
       setEnding(false);
       setFinished(false);
@@ -257,6 +258,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
       startShowRef.current=()=>{};
       restartWalkRef.current=()=>{};
       resumeRef.current=()=>{};
+      measureRef.current=()=>{};
       cancelAnimationFrame(frame);observer.disconnect();renderer?.dispose();
       window.removeEventListener("scroll",readProgress);
       document.removeEventListener("visibilitychange",visibility);
@@ -266,21 +268,19 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
     };
   }, [onLaunch,onBurst,story]);
 
-  function moveNo(clientX?: number, clientY?: number) {
+  function moveNo() {
     const arena=choicesRef.current,button=noRef.current;
     if (ending || !arena || !button || Date.now()-lastDodgeRef.current<180) return;
     lastDodgeRef.current=Date.now();
     const bounds=arena.getBoundingClientRect(),rect=button.getBoundingClientRect();
-    setNoPosition(evadePosition(bounds.width,bounds.height,rect.width,rect.height,
-      (clientX ?? rect.left+rect.width/2)-bounds.left,(clientY ?? rect.top+rect.height/2)-bounds.top,
-      rect.left-bounds.left,rect.top-bounds.top));
+    setNoPosition(evadePosition(bounds.width,bounds.height,rect.width,rect.height,dodgeStepRef.current++));
   }
   function approachNo(event: PointerEvent<HTMLDivElement>) {
     if (!noRef.current || ending) return;
     const rect=noRef.current.getBoundingClientRect();
     const dx=Math.max(rect.left-event.clientX,0,event.clientX-rect.right);
     const dy=Math.max(rect.top-event.clientY,0,event.clientY-rect.bottom);
-    if (Math.hypot(dx,dy)<(event.pointerType === "touch" ? 48 : 34)) moveNo(event.clientX,event.clientY);
+    if (Math.hypot(dx,dy)<(event.pointerType === "touch" ? 48 : 34)) moveNo();
   }
   return (
     <section ref={stageRef} className={`meeno-trail${ending ? " meeno-trail--ending" : ""}`} aria-label="A walk through the moonlit woods">
@@ -302,8 +302,8 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
           <div ref={choicesRef} className="meeno-trail__choices" onPointerMove={approachNo} onPointerDown={approachNo}>
             <button className="meeno-choice meeno-choice--yes" type="button" onClick={()=>startShowRef.current()}>Yes</button>
             <button ref={noRef} className="meeno-choice meeno-choice--no" type="button"
-              onPointerDown={event=>{event.preventDefault();moveNo(event.clientX,event.clientY);}}
-              onClick={()=>moveNo()}
+              onPointerDown={event=>{event.preventDefault();moveNo();}}
+              onClick={event=>{if(event.detail===0) moveNo();}}
               style={noPosition ? {right:"auto",left:0,transform:`translate(${noPosition.x}px,${noPosition.y}px)`} : undefined}>No</button>
           </div>
         </div>

@@ -38,7 +38,8 @@ html.meeno-celebrating body { overscroll-behavior: none; }
   text-shadow: 0 2px 20px rgba(0, 24, 38, .7);
 }
 
-.meeno-sound {
+.meeno-sound,
+.meeno-fullscreen {
   position: fixed;
   z-index: 30;
   top: max(15px, env(safe-area-inset-top));
@@ -57,6 +58,11 @@ html.meeno-celebrating body { overscroll-behavior: none; }
 }
 .meeno-sound svg { width: 21px; height: 21px; }
 .meeno-sound:focus-visible { outline: 1px solid #dcebe7; outline-offset: 4px; }
+.meeno-fullscreen { right: auto; left: max(15px, env(safe-area-inset-left)); }
+.meeno-fullscreen svg { width: 21px; height: 21px; }
+.meeno-fullscreen:focus-visible { outline: 1px solid #dcebe7; outline-offset: 4px; }
+.meeno-fullscreen-notice { position: fixed; z-index: 31; top: max(65px, calc(env(safe-area-inset-top) + 50px)); left: 15px; max-width: calc(100vw - 30px); padding: 10px 14px; color: #dcebe7; background: #081a23; font-size: 12px; }
+html.meeno-page:fullscreen { width: 100%; height: 100%; background: #041512; }
 
 html.meeno-page body {
   background: #041512;

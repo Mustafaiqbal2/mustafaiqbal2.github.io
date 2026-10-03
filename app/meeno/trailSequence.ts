@@ -27,14 +27,17 @@ export const questionVisible = (progress: number) => progress >= .9999;
 export const PAN_SECONDS = 3.2;
 export const FIREWORK_DRAG = .46;
 export const FIREWORK_GRAVITY = .8;
-// Each ascending rocket opens a large shell, then releases many smaller flowers.
-// Leave breathing room for each compound shell to finish before the next launch.
-export const SHELLS = [
-  { at: 2.2, x: 0, y: .1, size: 1.35, kind: 0, life: 5.1, flowers: 12 },
-  { at: 10, x: -.07, y: .18, size: 1.4, kind: 1, life: 5.1, flowers: 14 },
-  { at: 17.8, x: .07, y: .2, size: 1.45, kind: 2, life: 5.1, flowers: 16 },
-  { at: 25.6, x: 0, y: .22, size: 1.55, kind: 3, life: 5.6, flowers: 18 }
+// Overlapping volleys spread three or four compound shells across the sky.
+const VOLLEYS = [
+  { at:2.2, positions:[[-.40,.02],[0,.67],[.40,.12]] },
+  { at:6.5, positions:[[-.43,.39],[-.14,-.22],[.16,.70],[.43,.15]] },
+  { at:10.8, positions:[[-.39,.06],[.02,.66],[.41,.25]] },
+  { at:15.1, positions:[[-.43,.37],[-.15,-.16],[.15,.69],[.43,.15]] }
 ];
+export const SHELLS = VOLLEYS.flatMap((wave,waveIndex)=>wave.positions.map(([x,y],index)=>({
+  at:wave.at+index*.16, x,y, size:waveIndex===3?1.03:.90+index*.025,
+  kind:waveIndex===3?3:(waveIndex+index)%3, life:waveIndex===3?5.6:5.1, flowers:12
+})));
 export function sparkDisplacement(vx: number, vy: number, vz: number, seconds: number) {
   const drag = (1-Math.exp(-FIREWORK_DRAG*seconds))/FIREWORK_DRAG;
   return { x:vx*drag, y:vy*drag-FIREWORK_GRAVITY*seconds*seconds, z:vz*drag };
@@ -56,8 +59,8 @@ export function secondaryFlowers(shell: typeof SHELLS[number]) {
   });
 }
 export const FIREWORK_BURSTS = SHELLS.flatMap(shell=>[
-  {at:shell.at,strength:shell.kind===3?.8:.65},
-  ...secondaryFlowers(shell).map(flower=>({at:flower.at,strength:.07}))
+  {at:shell.at,strength:shell.kind===3?.63:.52,pan:shell.x*1.7},
+  ...secondaryFlowers(shell).map(flower=>({at:flower.at,strength:.045,pan:shell.x*1.7}))
 ]).sort((a,b)=>a.at-b.at);
 export const SHOW_SECONDS = Math.max(...SHELLS.flatMap(shell=>[
   shell.at+shell.life,...secondaryFlowers(shell).map(flower=>flower.at+flower.life)
@@ -68,19 +71,22 @@ export function celebrationAt(elapsed: number, reduced = false) {
   return { pan: raw*raw*(3-2*raw), fireworks: elapsed-panDuration, finished: elapsed >= panDuration+SHOW_SECONDS };
 }
 
-// Work in the button's local coordinate system, with enough room for fingers.
-export function evadePosition(width: number, height: number, buttonWidth: number, buttonHeight: number,
-  pointerX: number, pointerY: number, previousX: number, previousY: number) {
-  const maxX = Math.max(0, width-buttonWidth);
-  const maxY = Math.max(0, height-buttonHeight);
-  const candidates = [
-    { x: 0, y: maxY }, { x: maxX, y: maxY },
-    { x: maxX, y: 0 }, { x: maxX*.5, y: maxY }
-  ];
-  return candidates.reduce((best, point) => {
-    const score = (p: { x: number; y: number }) =>
-      Math.hypot(p.x+buttonWidth/2-pointerX, p.y+buttonHeight/2-pointerY) +
-      Math.min(70, Math.hypot(p.x-previousX, p.y-previousY))*.6;
-    return score(point) > score(best) ? point : best;
-  });
+// The first dodge is straight down; subsequent taps alternate along the bottom.
+export function evadePosition(width: number, height: number, buttonWidth: number, buttonHeight: number, step: number) {
+  const x=Math.max(0,width-buttonWidth), y=Math.max(0,height-buttonHeight);
+  return {x:step%2===0?x:0,y};
+}
+
+export type TrailMeasurement = {start:number;distance:number};
+export function measureTrail(top: number, scrollY: number, height: number, viewport: number,
+  locked: boolean, previous: TrailMeasurement): TrailMeasurement {
+  // A fixed body has a negative visual offset and scrollY=0. It must never
+  // overwrite the real document origin while the fireworks/fullscreen resize.
+  if(locked) return previous;
+  const distance=Math.max(1,height-viewport);
+  return {start:top+scrollY,distance:Math.max(1,distance-Math.min(distance*.08,viewport*3))};
+}
+export function trailProgress(scrollY: number, measurement: TrailMeasurement) {
+  const travelled=scrollY-measurement.start;
+  return travelled>=measurement.distance-2?1:clamp(travelled/measurement.distance);
 }
