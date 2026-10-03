@@ -2,8 +2,12 @@
 
 import { useEffect, useLayoutEffect, useRef, useState, type PointerEvent } from "react";
 import { loadTrailArtwork } from "./trailAssets";
-import { celebrationAt, evadePosition, FIREWORK_BURSTS, followupVisibility, messageVisibility, measureTrail, questionVisible, SHELLS, trailProgress, type TrailStory } from "./trailSequence";
+import { celebrationAt, evadePosition, FIREWORK_BURSTS, followupVisibility, messageVisibility, MESSAGE_WINDOWS, measureTrail, questionVisible, SHELLS, trailProgress, type TrailStory } from "./trailSequence";
 import type { WorldRenderer } from "./trailRenderer";
+import { bindTypewriter } from "./trailTypewriter";
+import { TypedWords } from "./TypedWords";
+
+const FINAL_NOTE = "Idk if we'll get to see japanese fireworks so this will have to do for now :)";
 
 type TrailRendererModule = typeof import("./trailRenderer");
 let trailRendererPromise: Promise<TrailRendererModule> | null = null;
@@ -13,11 +17,17 @@ export function preloadTrailRenderer() {
   return trailRendererPromise;
 }
 
-export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: TrailStory; onLaunch: (pan?: number) => void; onBurst: (strength: number, pan?: number) => void; active: boolean }) {
+export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay, active }: {
+  story: TrailStory; onLaunch: (pan?: number) => void; onBurst: (strength: number, pan?: number) => void;
+  onCelebrate: () => void; onReplay: () => void; active: boolean;
+}) {
   const stageRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wordsRef = useRef<(HTMLDivElement | null)[]>([]);
   const afterRefs = useRef<(HTMLParagraphElement | null)[]>([]);
+  const lineRefs = useRef<(HTMLParagraphElement | null)[]>([]);
+  const questionTextRef = useRef<HTMLHeadingElement>(null);
+  const finalNoteRef = useRef<HTMLParagraphElement>(null);
   const questionRef = useRef<HTMLDivElement>(null);
   const choicesRef = useRef<HTMLDivElement>(null);
   const noRef = useRef<HTMLButtonElement>(null);
@@ -98,21 +108,39 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
     let finalNoteShown = false;
     let measurement = {start:0,distance:1};
     let questionWasVisible = false;
+    let choicesWereReady = false;
     const lastOpacity = story.segments.map(() => -1);
     const lastAfter = story.segments.map(() => -1);
+    const typing = story.segments.map((segment,index) => ({
+      main: bindTypewriter(lineRefs.current[index],segment.text),
+      after: bindTypewriter(afterRefs.current[index],segment.after ?? ""),
+      length: Array.from(segment.text).length,
+      afterLength: Array.from(segment.after ?? "").length
+    }));
+    const questionTyping = bindTypewriter(questionTextRef.current,story.question);
+    const finalTyping = bindTypewriter(finalNoteRef.current,FINAL_NOTE);
 
-    const updateWords = (position: number) => {
+    const updateWords = (position: number, seconds = 0) => {
       const celebrating = elapsedRef.current !== null;
       wordsRef.current.forEach((node, index) => {
         if (!node) return;
         const opacity = celebrating ? 0 : messageVisibility(position, index);
+        const [enter,leave,followup] = MESSAGE_WINDOWS[index];
+        if (!celebrating && position <= enter) {
+          typing[index].main.reset();
+          typing[index].after.reset();
+        }
+        const catchup = Math.max(0,Math.min(1,(position-enter)/(leave-enter-.018)*2-1));
+        typing[index].main.advance(opacity>.04,seconds,reducedMotion.matches,typing[index].length*catchup);
         if (Math.abs(opacity-lastOpacity[index]) > .001) {
           lastOpacity[index]=opacity;
           node.style.opacity=opacity.toFixed(3);
         }
         const after = afterRefs.current[index];
         if (after) {
-          const arrival = followupVisibility(position, index);
+          const arrival = typing[index].main.complete ? followupVisibility(position, index) : 0;
+          const afterCatchup = Math.max(0,Math.min(1,(position-followup)/(leave-followup-.018)*2-1));
+          typing[index].after.advance(opacity>.04 && arrival>.04,seconds,reducedMotion.matches,typing[index].afterLength*afterCatchup);
           if (Math.abs(arrival-lastAfter[index]) > .001) {
             lastAfter[index]=arrival;
             after.style.opacity=arrival.toFixed(3);
@@ -121,6 +149,15 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
         }
       });
       const visible = !celebrating && questionVisible(position);
+      if (!visible && !celebrating) questionTyping.reset();
+      questionTyping.advance(visible,seconds,reducedMotion.matches);
+      finalTyping.advance(finalNoteShown,seconds,reducedMotion.matches);
+      const choicesReady = visible && questionTyping.complete;
+      if (choicesReady !== choicesWereReady) {
+        choicesWereReady=choicesReady;
+        stage.dataset.choicesReady=String(choicesReady);
+        if (choicesRef.current) choicesRef.current.inert=!choicesReady;
+      }
       if (visible !== questionWasVisible) {
         questionWasVisible=visible;
         stage.dataset.atEnd=String(visible);
@@ -160,6 +197,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
         });
         FIREWORK_BURSTS.forEach((burst,index) => {
           if (sequence.fireworks >= burst.at && index > lastBurst) {
+            if (lastBurst === -1) onCelebrate();
             onBurst(burst.strength,burst.pan);
             lastBurst = index;
           }
@@ -173,7 +211,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
         progress += (target-progress)*(1-Math.exp(-delta/80));
         if (Math.abs(target-progress)<.0001) progress=target;
       }
-      updateWords(reducedMotion.matches ? target : progress);
+      updateWords(reducedMotion.matches ? target : progress,delta/1000);
       const moving = Math.abs(target-progress)>.0001;
       if (moving || now-lastPaint >= 33 || reducedMotion.matches) {
         if (!reducedMotion.matches) sceneTime += Math.min(now-(lastPaint || now),80)/1000;
@@ -187,7 +225,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
     }
     resumeRef.current=start;
     startShowRef.current = () => {
-      if (elapsedRef.current !== null || !questionVisible(target)) return;
+      if (elapsedRef.current !== null || !questionVisible(target) || !questionTyping.complete) return;
       progress=target=1;
       elapsedRef.current=0;
       finalNoteShown=false;
@@ -201,11 +239,15 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
       restoreScrollRef.current=0;
       resettingRef.current=true;
       elapsedRef.current=null;
+      onReplay();
       progress=target=sceneTime=0;
       lastBurst=-1;
       lastLaunch=-1;
       finalNoteShown=false;
       stage.dataset.finalNote="false";
+      typing.forEach(line=>{line.main.reset();line.after.reset();});
+      questionTyping.reset();
+      finalTyping.reset();
       lastDodgeRef.current=0;
       dodgeStepRef.current=0;
       done=false;
@@ -266,7 +308,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
       canvas.removeEventListener("webglcontextlost",contextLost);
       canvas.removeEventListener("webglcontextrestored",prepare);
     };
-  }, [onLaunch,onBurst,story]);
+  }, [onLaunch,onBurst,onCelebrate,onReplay,story]);
 
   function moveNo() {
     const arena=choicesRef.current,button=noRef.current;
@@ -291,15 +333,15 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
         <div className="meeno-trail__words" aria-hidden="true">
           {story.segments.map((segment,index) => (
             <div className="meeno-trail__speech" key={index} ref={node=>{wordsRef.current[index]=node;}}>
-              <p>{segment.text}</p>
-              {segment.after && <p className="meeno-trail__after" ref={node=>{afterRefs.current[index]=node;}}>{segment.after}</p>}
+              <p ref={node=>{lineRefs.current[index]=node;}}><TypedWords text={segment.text} /></p>
+              {segment.after && <p className="meeno-trail__after" ref={node=>{afterRefs.current[index]=node;}}><TypedWords text={segment.after} /></p>}
             </div>
           ))}
         </div>
         <div ref={questionRef} className="meeno-invitation" aria-hidden="true" inert>
           <div className="meeno-invitation__rule" aria-hidden="true"><span /></div>
-          <h1>{story.question}</h1>
-          <div ref={choicesRef} className="meeno-trail__choices" onPointerMove={approachNo} onPointerDown={approachNo}>
+          <h1 ref={questionTextRef} aria-label={story.question}><TypedWords text={story.question} /></h1>
+          <div ref={choicesRef} className="meeno-trail__choices" inert onPointerMove={approachNo} onPointerDown={approachNo}>
             <button className="meeno-choice meeno-choice--yes" type="button" onClick={()=>startShowRef.current()}>Yes</button>
             <button ref={noRef} className="meeno-choice meeno-choice--no" type="button"
               onPointerDown={event=>{event.preventDefault();moveNo();}}
@@ -307,7 +349,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, active }: { story: Tra
               style={noPosition ? {right:"auto",left:0,transform:`translate(${noPosition.x}px,${noPosition.y}px)`} : undefined}>No</button>
           </div>
         </div>
-        <p className="meeno-fireworks-note" aria-hidden="true">Idk if we'll get to see japanese fireworks so this will have to do for now :)</p>
+        <p ref={finalNoteRef} className="meeno-fireworks-note" aria-hidden="true"><TypedWords text={FINAL_NOTE} /></p>
         {ending && <p className="meeno-trail__transcript" role="status">{finished ? "The fireworks have finished." : "Fireworks above the forest."}</p>}
         {finished && <button ref={returnRef} className="meeno-return" type="button" onClick={()=>restartWalkRef.current()}>Back to start <span aria-hidden="true">↺</span></button>}
         <button className="meeno-trail__step" type="button" onClick={()=>window.scrollBy({top:window.innerHeight*.65,behavior:"smooth"})} aria-label="Walk forward. You can also scroll to follow the trail.">

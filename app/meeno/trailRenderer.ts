@@ -5,6 +5,7 @@ import { SKY_FRAGMENT, SKY_VERTEX, WOODLAND_FRAGMENT, WOODLAND_VERTEX } from "./
 import { createFireworks } from "./trailFireworks";
 import { celebrationAt } from "./trailSequence";
 import { createLanternFlames, FLAME_HEIGHT, LANTERN_X, lanternGeometry } from "./trailLanterns";
+import { createFireflies } from "./trailFireflies";
 
 export type WorldRenderer = { draw: (progress: number, time: number, animate: boolean, celebration?: number | null) => void; resize: () => void; dispose: () => void };
 
@@ -110,6 +111,7 @@ export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArt
   });
   scene.add(ironwork);
   const flames=createLanternFlames(scene,world.lamps,right);
+  const fireflies=createFireflies(scene);
 
   // Actual sloping ground under the camera, with a footpath defined in world metres.
   const ground = new THREE.PlaneGeometry(74, 158, 112, 256);
@@ -237,6 +239,7 @@ export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArt
     sky.material.uniforms.uMotion.value = animate ? 1 : 0;
     animatedMaterials.forEach(surface => { surface.uniforms.uTime.value = animate ? time : 0; });
     flames.update(animate?time:0);
+    fireflies.update(time,canvas.height,animate);
     flameGlows.forEach((flame, i) => {
       const flicker = animate ? Math.sin(time*3.3+i*1.7)*.012+Math.sin(time*8.7+i)*.007+Math.sin(time*13.1+i*2.3)*.004 : 0;
       flame.material.opacity = .085+flicker;
@@ -283,6 +286,7 @@ export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArt
   };
   const dispose = () => {
     flames.dispose();
+    fireflies.dispose();
     fireworks.dispose();
     scene.clear();
     geometries.forEach(geometry=>geometry.dispose());

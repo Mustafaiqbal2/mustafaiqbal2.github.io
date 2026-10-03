@@ -173,3 +173,150 @@ test('iron lantern geometry is grounded and flames sit inside each hanging cage'
   flames.dispose();geometry.dispose();
   assert.equal(scene.children.length,0);
 });
+
+test('typing pauses with the scene, preserves punctuation and resets for a second walk', () => {
+  const {createTypewriter}=load('trailTypewriter');
+  const text='Hello, you.\nStill here?';
+  const writer=createTypewriter(text);
+  assert.equal(writer.advance(false,20),0);
+  assert.equal(writer.advance(true,0),1);
+  const first=writer.advance(true,.12);
+  assert.ok(first>1 && first<text.length);
+  assert.equal(writer.advance(false,20),first);
+  assert.equal(writer.advance(true,10),Array.from(text).length);
+  assert.equal(writer.complete,true);
+  writer.reset();
+  assert.equal(writer.count,0);
+  assert.equal(writer.complete,false);
+  assert.equal(writer.advance(true,0,true),Array.from(text).length);
+});
+
+test('fast scrolling can finish a line and its following speech without moving letters backwards', () => {
+  const {createTypewriter}=load('trailTypewriter');
+  const writer=createTypewriter('Keep the words exactly as written.');
+  assert.equal(writer.advance(true,.1,false,15),15);
+  assert.equal(writer.advance(true,.1,false,3),15);
+  assert.equal(writer.advance(true,0,false,1000),34);
+  assert.equal(writer.complete,true);
+});
+
+test('fireflies occupy the bushes along the entire walk and remain a single small draw call', () => {
+  const {groundHeight,pathCenter,WALK_LENGTH}=load('trailWorld');
+  const scene=new THREE.Scene();
+  const fireflies=load('trailFireflies').createFireflies(scene);
+  assert.equal(scene.children.length,1);
+  const swarm=scene.children[0];
+  assert.ok(swarm.isPoints);
+  const positions=swarm.geometry.attributes.position;
+  assert.ok(positions.count>=100 && positions.count<200);
+  let first=Infinity,last=-Infinity;
+  for(let i=0;i<positions.count;i++) {
+    const x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i);
+    const edge=Math.abs(x-pathCenter(z));
+    assert.ok(edge>1.29 && edge<3.91,'fireflies belong beside the walking corridor');
+    const height=y-groundHeight(x,z);
+    assert.ok(height>.47 && height<1.94,'hover above grounded foliage');
+    first=Math.min(first,z);last=Math.max(last,z);
+  }
+  assert.ok(first<3 && last>WALK_LENGTH);
+  assert.equal(swarm.material.depthWrite,false);
+  assert.equal(swarm.material.depthTest,true,'trees should occlude insects behind them');
+  fireflies.update(8,670,true);
+  assert.equal(swarm.material.uniforms.uTime.value,8);
+  fireflies.update(8,670,false);
+  assert.equal(swarm.material.uniforms.uTime.value,0);
+  assert.equal(swarm.material.uniforms.uMotion.value,0);
+  fireflies.dispose();
+  assert.equal(scene.children.length,0);
+});
+
+function musicHarness(t, fetcher) {
+  const gains=[],sources=[];
+  const originalDecoder=global.OfflineAudioContext;
+  global.OfflineAudioContext=class {
+    async decodeAudioData() { return {duration:120}; }
+  };
+  t.after(()=>{
+    if(originalDecoder) global.OfflineAudioContext=originalDecoder;
+    else delete global.OfflineAudioContext;
+  });
+  t.mock.method(global,'fetch',fetcher ?? (async()=>({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)})));
+  const context={
+    currentTime:0,
+    createGain() {
+      const events=[];
+      const node={connect(){},disconnect(){node.disconnected=true;},events,gain:{value:1,
+        cancelAndHoldAtTime(at){events.push(['hold',at]);},
+        linearRampToValueAtTime(value,at){events.push(['ramp',value,at]);},
+        setTargetAtTime(value,at,tau){events.push(['target',value,at,tau]);}
+      }};
+      gains.push(node);return node;
+    },
+    createBufferSource() {
+      const source={connect(){},disconnect(){source.disconnected=true;},
+        start(at,offset){source.started={at,offset};},stop(at){source.stoppedAt=at ?? context.currentTime;}};
+      sources.push(source);return source;
+    }
+  };
+  const music=load('trailMusic').createTrailMusic(context,{});
+  return {context,music,gains,sources,settle:()=>new Promise(setImmediate)};
+}
+
+test('music switches at the requested cue, ducks below bursts, and replays from the beginning', async t => {
+  const {MUSIC_TRACKS}=load('trailMusic');
+  const {context,music,gains,sources,settle}=musicHarness(t);
+  music.preload();await settle();
+  assert.equal(sources.length,0,'preloading must not start a song on the password screen');
+  context.currentTime=8;music.scene('forest');
+  assert.equal(sources.length,1);
+  assert.deepEqual(sources[0].started,{at:8,offset:0});
+  assert.equal(sources[0].loop,true);
+  assert.ok(gains[1].events.some(e=>e[0]==='ramp' && e[1]===MUSIC_TRACKS.forest.gain));
+  context.currentTime=24;music.scene('fireworks');
+  assert.equal(sources.length,2);
+  assert.equal(sources[0].stoppedAt,24.9);
+  assert.deepEqual(sources[1].started,{at:24,offset:0});
+  assert.ok(MUSIC_TRACKS.fireworks.gain<MUSIC_TRACKS.forest.gain*.4);
+  music.duck(.52);
+  assert.equal(gains[0].events.filter(e=>e[0]==='ramp').at(-1)[1],.30);
+  context.currentTime=24.16;music.duck(.045);
+  assert.equal(gains[0].events.filter(e=>e[0]==='ramp').at(-1)[1],.30,'a child burst cannot raise the existing duck');
+  assert.equal(gains[0].events.filter(e=>e[0]==='target').at(-1)[2],24.55,'a child burst cannot shorten the existing duck');
+  context.currentTime=50;music.scene('forest');
+  assert.equal(sources.length,3);
+  assert.deepEqual(sources[2].started,{at:50,offset:0});
+  sources[1].onended();
+  music.scene('forest');
+  assert.equal(sources.length,3,'a retiring track must not clear the current track');
+  music.dispose();
+  assert.ok(sources.every(source=>source.disconnected));
+  assert.ok(gains.every(gain=>gain.disconnected));
+});
+
+test('late music downloads respect the latest scene and join at its elapsed time', async t => {
+  const resolve={};
+  const {context,music,sources,settle}=musicHarness(t,url=>new Promise(done=>{resolve[url]=done;}));
+  const tracks=load('trailMusic').MUSIC_TRACKS;
+  const response={ok:true,arrayBuffer:async()=>new ArrayBuffer(1)};
+  music.preload();music.scene('forest');
+  context.currentTime=10;music.scene('fireworks');
+  context.currentTime=12;
+  resolve[tracks.forest.url](response);await settle();
+  assert.equal(sources.length,0,'a late walking download must not interrupt the fireworks');
+  resolve[tracks.fireworks.url](response);await settle();
+  assert.equal(sources.length,1);
+  assert.deepEqual(sources[0].started,{at:12,offset:2});
+  music.dispose();
+});
+
+test('music failure stays silent and an unmounted page cannot start a pending track', async t => {
+  let resolve;
+  const {music,sources,settle}=musicHarness(t,()=>new Promise(done=>{resolve=done;}));
+  music.scene('forest');
+  resolve({ok:false});await settle();
+  assert.equal(sources.length,0);
+  music.scene('forest');
+  music.dispose();
+  resolve({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)});await settle();
+  assert.equal(sources.length,0);
+});

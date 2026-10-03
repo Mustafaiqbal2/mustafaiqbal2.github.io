@@ -104,7 +104,7 @@ export function MeenoExperience() {
     <main id="main" className={`meeno-root meeno-root--${phase}`}
       onPointerDownCapture={event => { if (!(event.target as HTMLElement).closest(".meeno-sound")) sound.start(); }}
       onFocusCapture={event => { if (!(event.target as HTMLElement).closest(".meeno-sound")) sound.start(); }}>
-      <div className="meeno-next">{phase !== "locked" && story && <TrailEntrance story={story} onLaunch={sound.launch} onBurst={sound.burst} active={phase === "open"} />}</div>
+      <div className="meeno-next">{phase !== "locked" && story && <TrailEntrance story={story} onLaunch={sound.launch} onBurst={sound.burst} onCelebrate={sound.celebrate} onReplay={sound.replay} active={phase === "open"} />}</div>
 
       <button className="meeno-fullscreen" type="button" onClick={screen.toggle} aria-label={screen.fullscreen ? "Exit fullscreen" : "Enter fullscreen"} aria-pressed={screen.fullscreen}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -113,7 +113,7 @@ export function MeenoExperience() {
       </button>
       {screen.notice && <p className="meeno-fullscreen-notice" role="status">{screen.notice}</p>}
 
-      <button className="meeno-sound" type="button" onClick={sound.toggle} aria-label={sound.active ? "Mute ambience" : "Turn sound on"} aria-pressed={sound.active}>
+      <button className="meeno-sound" type="button" onClick={sound.toggle} aria-label={sound.active ? "Mute sound" : "Turn sound on"} aria-pressed={sound.active}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
           <path d="M4 9h4l5-4v14l-5-4H4z" />
           {sound.active ? <><path d="M16 8a6 6 0 0 1 0 8" /><path d="M19 5a10 10 0 0 1 0 14" /></> : <path d="m17 10 4 4m0-4-4 4" />}

@@ -8,3 +8,16 @@
 - Playback uses lower gain, low-pass filtering, slight speed variation, and a quiet delayed tail. The file itself is unmodified.
 
 Ocean, wind, insects, and the quiet launch hiss remain locally synthesized. The app attempts ambience on mount and retries after interaction if the browser blocks audible autoplay.
+
+## Selected instrumental recordings
+
+The user supplied these exact recordings for the private invitation on 2026-10-03:
+
+- `public/meeno/music-married-life.mp3`: **Married Life (From "Up")**, **Mellow Strings**, https://youtu.be/2LA8YECkcKg. Plays through the walk, with the wind/insects reduced underneath it.
+- `public/meeno/music-long-long-time.mp3`: **It's Been a Long, Long Time (Instrumental) - Harry James & Kitty Kallen**, supplied upload by **Another Bad Channel**, https://youtu.be/GdEWsNIW7DA. Starts at the first firework burst and crossfades back to the walking track on replay.
+
+These are the linked recordings, not synthesized arrangements. Neither recording is represented as CC0 or as original project music; the CC0 license above applies only to the explosion recording.
+
+Local copies use stereo MP3 at 112 kbps / 24 kHz. Measured source integrated levels were -25.52 LUFS (Mellow Strings) and -12.48 LUFS (Long, Long Time). Constant gains of +5.52 dB and -7.52 dB respectively bring both to approximately -20 LUFS while retaining musical dynamics. There are short endpoint fades; pitch and playback speed are unchanged.
+
+Runtime music gain is .34 for the walk and .12 for the ending (about 9 dB quieter), before the shared .65 master. Main explosions duck the ending track to 30% of its already quiet level; the smaller flowers use 65%, retaining any stronger duck already in progress. Recovery takes place gradually after each burst. Mute, tab suspension, replay, pending downloads and disposal share the existing Web Audio lifecycle. Decoding at 24 kHz keeps the combined PCM allocation below 60 MB.

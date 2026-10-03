@@ -377,6 +377,9 @@ html.meeno-page .lightbox {
   will-change: opacity, transform;
 }
 
+.meeno-typewriter__word { display: inline-block; white-space: nowrap; }
+.meeno-typewriter [data-letter] { visibility: hidden; }
+
 .meeno-invitation {
   position: absolute;
   top: 51%;
@@ -413,7 +416,11 @@ html.meeno-page .lightbox {
   height: 132px;
   margin: 0 auto;
   touch-action: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .4s ease, visibility .4s;
 }
+.meeno-trail[data-choices-ready='true'] .meeno-trail__choices { opacity: 1; visibility: visible; }
 
 .meeno-choice {
   position: absolute;

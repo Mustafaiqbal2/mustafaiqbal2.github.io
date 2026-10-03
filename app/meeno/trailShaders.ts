@@ -42,7 +42,7 @@ void main() {
     float cone=smoothstep(.61,.92,down);
     float reach=1.0-smoothstep(8.0,18.0,d2);
     float bars=.90+.10*sin(atan(delta.x,delta.z)*4.0+uTime*.10);
-    vLight += vec3(4.6,2.55,1.0)*flame*reach*(cone*bars+.035)/(1.0+d2*1.18);
+    vLight += vec3(5.05,2.40,.72)*flame*reach*(cone*bars+.035)/(1.0+d2*1.18);
   }
   gl_Position = projectionMatrix * viewMatrix * world;
 }`;
@@ -97,6 +97,10 @@ void main() {
   }
   float fog = 1.0 - exp(-pow(vDistance * .017, 1.7));
   color = mix(color, uFog, fog);
+  // A modest colour lift preserves the blue night and richer amber pools,
+  // without raising the ambient exposure of the forest banks.
+  float luminance=dot(color,vec3(.2126,.7152,.0722));
+  color=max(vec3(0.0),mix(vec3(luminance),color,1.12));
   gl_FragColor = vec4(color, 1.0);
   #include <tonemapping_fragment>
   #include <colorspace_fragment>
@@ -171,6 +175,7 @@ void main() {
   vec3 starColor=mix(vec3(.41,.62,.95),vec3(.92,.72,.53),hash(id+5.0));
   color+=starColor*star*(.25+hash(id+31.0)*.85)*mix(1.0,twinkle,uMotion)*smoothstep(0.0,.1,dir.y);
   color+=vec3(.65,.82,1.0)*(meteor(uv,uTime+12.0,3.0)+meteor(uv,uTime*.73+4.0,9.0)*.55)*uMotion;
+  color=max(vec3(0.0),mix(vec3(dot(color,vec3(.2126,.7152,.0722))),color,1.08));
   gl_FragColor=vec4(color,1.0);
   #include <colorspace_fragment>
 }`;

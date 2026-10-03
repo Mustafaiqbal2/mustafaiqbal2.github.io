@@ -1,10 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createTrailMusic } from "./trailMusic";
 
-type Soundscape = "ocean" | "forest";
+type Soundscape = "ocean" | "forest" | "fireworks";
 
-// Quiet, locally synthesised surf, wind and insects. No remote media requests.
+// Procedural surf/wind, a recorded burst, and the two selected instrumentals.
 function createAmbience() {
   const Audio = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Audio) return null;
@@ -12,6 +13,8 @@ function createAmbience() {
   const master=context.createGain();
   master.gain.value=.65;
   master.connect(context.destination);
+  const music=createTrailMusic(context,master);
+  music.preload();
   const ocean=context.createGain(),forest=context.createGain(),effects=context.createGain();
   ocean.gain.value=0;forest.gain.value=0;effects.gain.value=.65;
   ocean.connect(master);forest.connect(master);effects.connect(master);
@@ -89,7 +92,11 @@ function createAmbience() {
   }
   return {
     context,
-    scene(scene: Soundscape) { ramp(ocean,scene==="ocean"?1:0,.7);ramp(forest,scene==="forest"?1:0,.9); },
+    scene(scene: Soundscape) {
+      ramp(ocean,scene==="ocean"?1:0,.7);
+      ramp(forest,scene==="forest"?.28:scene==="fireworks"?.07:0,.9);
+      music.scene(scene==="ocean"?null:scene);
+    },
     mute(muted: boolean) { ramp(master,muted?0:.65,.12); },
     launch(panValue = 0) {
       if(context.state!=="running") return;
@@ -106,6 +113,7 @@ function createAmbience() {
       source.onended=()=>{source.disconnect();band.disconnect();gain.disconnect();pan.disconnect();};
     },
     burst(strength: number, panValue = 0) {
+      music.duck(strength);
       if(context.state!=="running" || !burstSample) return;
       const small=strength<.2;
       const source=context.createBufferSource();source.buffer=burstSample;
@@ -117,7 +125,7 @@ function createAmbience() {
       source.start(context.currentTime+.13+Math.random()*.045);
       source.onended=()=>{source.disconnect();filter.disconnect();gain.disconnect();pan.disconnect();};
     },
-    dispose() { window.clearInterval(timer);sources.forEach(source=>source.stop());void context.close(); }
+    dispose() { window.clearInterval(timer);music.dispose();sources.forEach(source=>source.stop());void context.close(); }
   };
 }
 
@@ -149,6 +157,8 @@ export function useAmbience(scene: Soundscape) {
   },[start]);
   const launch=useCallback((pan = 0)=>{ if(!mutedRef.current) audioRef.current?.launch(pan); },[]);
   const burst=useCallback((strength: number,pan = 0)=>{ if(!mutedRef.current) audioRef.current?.burst(strength,pan); },[]);
+  const celebrate=useCallback(()=>{sceneRef.current="fireworks";audioRef.current?.scene("fireworks");},[]);
+  const replay=useCallback(()=>{sceneRef.current="forest";audioRef.current?.scene("forest");},[]);
   useEffect(()=>{
     const visibility=()=>{
       if(document.hidden) { void audioRef.current?.context.suspend().catch(()=>{});setActive(false); }
@@ -158,5 +168,5 @@ export function useAmbience(scene: Soundscape) {
     return ()=>{document.removeEventListener("visibilitychange",visibility);audioRef.current?.dispose();audioRef.current=null;};
   },[start]);
   useEffect(()=>{start();},[start]);
-  return {active,start,toggle,launch,burst};
+  return {active,start,toggle,launch,burst,celebrate,replay};
 }
