@@ -1,19 +1,18 @@
 export type MusicCue = "forest" | "fireworks";
 
-// Both recordings are level-matched to about -20 LUFS before these gains.
-// The ending is deliberately quieter, and explosions temporarily lower it further.
+// One continuous Married Life recording. The ending lowers its gain without
+// restarting or seeking, and explosions temporarily lower it further.
 export const MUSIC_TRACKS = {
   forest: { url: "/meeno/music-married-life.mp3", gain: .34 },
-  // The local excerpt begins at 2:10 in the supplied Slowed + Reverb recording.
-  fireworks: { url: "/meeno/music-test-drive.mp3", gain: .12 }
+  fireworks: { url: "/meeno/music-married-life.mp3", gain: .12 }
 } as const;
 
 export function createTrailMusic(context: AudioContext, destination: AudioNode) {
   const bus = context.createGain();
   bus.connect(destination);
   const abort = new AbortController();
-  const buffers = new Map<MusicCue, AudioBuffer>();
-  const pending = new Map<MusicCue, Promise<AudioBuffer | null>>();
+  const buffers = new Map<string, AudioBuffer>();
+  const pending = new Map<string, Promise<AudioBuffer | null>>();
   type Voice = { cue: MusicCue; source: AudioBufferSourceNode; gain: GainNode };
   const voices = new Set<Voice>();
   let current: Voice | null = null;
@@ -29,24 +28,24 @@ export function createTrailMusic(context: AudioContext, destination: AudioNode) 
   }
 
   function load(cue: MusicCue): Promise<AudioBuffer | null> {
-    const cached = buffers.get(cue);
+    const url=MUSIC_TRACKS[cue].url;
+    const cached = buffers.get(url);
     if (cached) return Promise.resolve(cached);
-    const existing = pending.get(cue);
+    const existing = pending.get(url);
     if (existing) return existing;
-    const request = fetch(MUSIC_TRACKS[cue].url, { signal: abort.signal })
+    const request = fetch(url, { signal: abort.signal })
       .then(response => {
         if (!response.ok) throw new Error("Music unavailable");
         return response.arrayBuffer();
       }).then(async data => {
-        // Decode at the asset's sample rate, keeping the two recordings under
-        // 60 MB of PCM on mobile instead of upsampling both to 48 kHz in memory.
+        // Decode the shared recording once at 24 kHz to limit mobile memory.
         const decoder = new OfflineAudioContext(2, 1, 24000);
         const buffer = await decoder.decodeAudioData(data);
         if (disposed) return null;
-        buffers.set(cue, buffer);
+        buffers.set(url, buffer);
         return buffer;
-      }).catch(() => null).finally(() => pending.delete(cue));
-    pending.set(cue, request);
+      }).catch(() => null).finally(() => pending.delete(url));
+    pending.set(url, request);
     return request;
   }
 
@@ -58,6 +57,12 @@ export function createTrailMusic(context: AudioContext, destination: AudioNode) 
   function play(cue: MusicCue, buffer: AudioBuffer) {
     if (disposed || desired !== cue || current?.cue === cue) return;
     const now = context.currentTime;
+    if(current?.source.buffer===buffer) {
+      current.cue=cue;
+      hold(current.gain.gain,now);
+      current.gain.gain.linearRampToValueAtTime(MUSIC_TRACKS[cue].gain,now+2.8);
+      return;
+    }
     if (current) retire(current, now);
     const source = context.createBufferSource();
     source.buffer = buffer;
@@ -78,7 +83,7 @@ export function createTrailMusic(context: AudioContext, destination: AudioNode) 
   }
 
   return {
-    preload() { return Promise.all([load("forest"),load("fireworks")]).then(buffers=>buffers.every(Boolean)); },
+    preload() { return load("forest").then(Boolean); },
     scene(cue: MusicCue | null) {
       if (disposed || (desired === cue && (current || !cue))) return;
       desired = cue;
@@ -92,7 +97,7 @@ export function createTrailMusic(context: AudioContext, destination: AudioNode) 
         current = null;
         return;
       }
-      const cached = buffers.get(cue);
+      const cached = buffers.get(MUSIC_TRACKS[cue].url);
       if (cached) play(cue, cached);
       else void load(cue).then(buffer => { if (buffer) play(cue, buffer); });
     },

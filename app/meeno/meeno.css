@@ -379,7 +379,7 @@ html.meeno-page .lightbox {
 
 .meeno-typewriter { display: block; position: relative; }
 .meeno-typewriter [data-type-layout] { display: block; visibility: hidden; }
-.meeno-typewriter__canvas { position: absolute; left: -26px; top: -26px; width: calc(100% + 52px); height: calc(100% + 52px); pointer-events: none; }
+.meeno-typewriter__canvas { position: absolute; left: -26px; top: -26px; width: calc(100% + 52px); max-width: none; height: calc(100% + 52px); pointer-events: none; }
 
 .meeno-invitation {
   position: absolute;

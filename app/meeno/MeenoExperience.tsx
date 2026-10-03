@@ -104,7 +104,7 @@ export function MeenoExperience() {
     <main id="main" className={`meeno-root meeno-root--${phase}`}
       onPointerDownCapture={event => { if (!(event.target as HTMLElement).closest(".meeno-sound")) sound.start(); }}
       onFocusCapture={event => { if (!(event.target as HTMLElement).closest(".meeno-sound")) sound.start(); }}>
-      <div className="meeno-next">{phase !== "locked" && story && <TrailEntrance story={story} onLaunch={sound.launch} onBurst={sound.burst} onCelebrate={sound.celebrate} onReplay={sound.replay} onExportBusy={sound.exporting} active={phase === "open"} />}</div>
+      <div className="meeno-next">{phase !== "locked" && story && <TrailEntrance story={story} onLaunch={sound.launch} onBurst={sound.burst} onCelebrate={sound.celebrate} onReplay={sound.replay} onExportBusy={sound.exporting} onCaptureAudio={sound.capture} active={phase === "open"} />}</div>
 
       <button className="meeno-fullscreen" type="button" onClick={screen.toggle} aria-label={screen.fullscreen ? "Exit fullscreen" : "Enter fullscreen"} aria-pressed={screen.fullscreen}>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

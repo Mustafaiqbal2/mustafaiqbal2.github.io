@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { createAmbience } from "./useAmbience";
 import type { TrailStory } from "./trailSequence";
 
-export function TrailVideoDownload({story,onBusy}:{story:TrailStory;onBusy:(busy:boolean)=>void}) {
+export function TrailVideoDownload({story,onBusy,prepared,pending}:{story:TrailStory;onBusy:(busy:boolean)=>void;prepared:Blob|null;pending:boolean}) {
   const [busy,setBusy]=useState(false);
   const [progress,setProgress]=useState(0);
   const [error,setError]=useState("");
@@ -16,6 +16,12 @@ export function TrailVideoDownload({story,onBusy}:{story:TrailStory;onBusy:(busy
   const abortRef=useRef<AbortController|null>(null);
   const urlRef=useRef<string|null>(null);
   useEffect(()=>()=>{abortRef.current?.abort();if(urlRef.current) URL.revokeObjectURL(urlRef.current);},[]);
+  useEffect(()=>{
+    if(!prepared) return;
+    if(urlRef.current) URL.revokeObjectURL(urlRef.current);
+    const url=URL.createObjectURL(prepared);urlRef.current=url;
+    setFile({url,extension:prepared.type.includes("mp4")?"mp4":"webm"});
+  },[prepared]);
   useEffect(()=>{
     if(busy) cancelRef.current?.focus({preventScroll:true});
     else if(wasBusyRef.current) controlRef.current?.focus({preventScroll:true});
@@ -45,10 +51,10 @@ export function TrailVideoDownload({story,onBusy}:{story:TrailStory;onBusy:(busy
     }
   }
   return <>
-    {file ? <a ref={node=>{controlRef.current=node;}} className="meeno-download" href={file.url} download={`our-walk.${file.extension}`}>Save video <span aria-hidden="true">↓</span></a> :
-      <button ref={node=>{controlRef.current=node;}} className="meeno-download" type="button" onClick={()=>void prepare()} disabled={busy}>Download video <span aria-hidden="true">↓</span></button>}
+    {file ? <a ref={node=>{controlRef.current=node;}} className="meeno-download" href={file.url} download={`our-walk.${file.extension}`}>Download video <span aria-hidden="true">↓</span></a> :
+      <button ref={node=>{controlRef.current=node;}} className="meeno-download" type="button" onClick={()=>void prepare()} disabled={busy || pending}>{pending?"Finishing video…":"Download video"} <span aria-hidden="true">↓</span></button>}
     {error && <p className="meeno-export-error" role="status">{error}</p>}
-    {file && <p className="meeno-export-ready" role="status">Your video is ready to save.</p>}
+    {file && !prepared && <p className="meeno-export-ready" role="status">Your video is ready to save.</p>}
     {busy && <div className="meeno-export" role="dialog" aria-modal="true" aria-labelledby="meeno-export-title"
       onKeyDown={event=>{
         if(event.key==="Tab") {event.preventDefault();cancelRef.current?.focus();}

@@ -8,6 +8,7 @@ import { bindTypewriter } from "./trailTypewriter";
 import { TypedWords } from "./TypedWords";
 import { FINAL_NOTE } from "./trailVideoTimeline";
 import { TrailVideoDownload } from "./TrailVideoDownload";
+import { createTrailRecording, type AudioTap, type RecordedLayer, type RecordedChoices } from "./trailRecording";
 
 type TrailRendererModule = typeof import("./trailRenderer");
 let trailRendererPromise: Promise<TrailRendererModule> | null = null;
@@ -17,9 +18,9 @@ export function preloadTrailRenderer() {
   return trailRendererPromise;
 }
 
-export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay, onExportBusy, active }: {
+export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay, onExportBusy, onCaptureAudio, active }: {
   story: TrailStory; onLaunch: (pan?: number) => void; onBurst: (strength: number, pan?: number) => void;
-  onCelebrate: () => void; onReplay: () => void; onExportBusy: (busy:boolean)=>void; active: boolean;
+  onCelebrate: () => void; onReplay: () => void; onExportBusy: (busy:boolean)=>void; onCaptureAudio:()=>AudioTap|null; active: boolean;
 }) {
   const stageRef = useRef<HTMLElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -45,6 +46,8 @@ export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay,
   const exportingRef = useRef(false);
   const [ending, setEnding] = useState(false);
   const [finished, setFinished] = useState(false);
+  const [recordedVideo,setRecordedVideo]=useState<Blob|null>(null);
+  const [recordingPending,setRecordingPending]=useState(false);
   const [noPosition, setNoPosition] = useState<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
@@ -110,6 +113,10 @@ export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay,
     let measurement = {start:0,distance:1};
     let questionWasVisible = false;
     let choicesWereReady = false;
+    let capture:ReturnType<typeof createTrailRecording>=null;
+    let captureRevision=0,captureFinished=false;
+    let captureLayers:RecordedLayer[]=[],captureChoices:RecordedChoices|null=null;
+    let captureViewport={width:1,height:1};
     const lastOpacity = story.segments.map(() => -1);
     const lastAfter = story.segments.map(() => -1);
     const typing = story.segments.map((segment,index) => ({
@@ -120,6 +127,36 @@ export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay,
     }));
     const questionTyping = bindTypewriter(questionTextRef.current,story.question);
     const finalTyping = bindTypewriter(finalNoteRef.current,FINAL_NOTE);
+    const measureRecording = () => {
+      const view=canvas.getBoundingClientRect();
+      captureViewport={width:view.width,height:view.height};
+      captureLayers=[];
+      function layer(node:HTMLElement|null,opacity:()=>number,offsetY?:()=>number) {
+        const image=node?.querySelector<HTMLCanvasElement>("canvas");
+        if(!image) return;
+        const rect=image.getBoundingClientRect();
+        captureLayers.push({canvas:image,x:rect.left-view.left,y:rect.top-view.top,width:rect.width,height:rect.height,opacity,offsetY});
+      }
+      story.segments.forEach((_,index)=>{
+        layer(lineRefs.current[index],()=>lastOpacity[index]);
+        const measuredShift=(1-Math.max(0,lastAfter[index]))*7;
+        layer(afterRefs.current[index],()=>lastOpacity[index]*lastAfter[index],()=>((1-Math.max(0,lastAfter[index]))*7)-measuredShift);
+      });
+      layer(questionTextRef.current,()=>questionWasVisible?1:0);
+      layer(finalNoteRef.current,()=>finalNoteShown?1:0);
+      const choices=choicesRef.current?.getBoundingClientRect();
+      captureChoices=choices?{x:choices.left-view.left,y:choices.top-view.top,width:choices.width,height:choices.height,visible:()=>choicesWereReady}:null;
+    };
+    const beginRecording = () => {
+      const generation=++captureRevision;
+      capture?.dispose();captureFinished=false;
+      setRecordedVideo(null);
+      measureRecording();
+      capture=createTrailRecording(captureViewport.width,captureViewport.height,onCaptureAudio(),file=>{
+        if(!disposed && generation===captureRevision) {setRecordedVideo(file);setRecordingPending(false);}
+      });
+      setRecordingPending(Boolean(capture));
+    };
 
     const updateWords = (position: number, seconds = 0) => {
       const celebrating = elapsedRef.current !== null;
@@ -179,6 +216,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay,
       measurement=measureTrail(bounds.top,window.scrollY,stage.offsetHeight,window.innerHeight,
         elapsedRef.current!==null || resettingRef.current,measurement);
       readProgress();
+      measureRecording();
     };
     measureRef.current=measure;
     const tick = (now: number) => {
@@ -215,8 +253,10 @@ export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay,
         updateWords(reducedMotion.matches ? target : progress,Math.min(now-(lastPaint || now),80)/1000);
         if (!reducedMotion.matches) sceneTime += Math.min(now-(lastPaint || now),80)/1000;
         renderer?.draw(reducedMotion.matches ? 0 : progress,sceneTime,!reducedMotion.matches,elapsedRef.current);
+        if(renderer) capture?.frame(canvas,captureViewport,captureLayers,captureChoices,elapsedRef.current!==null);
         lastPaint = now;
       }
+      if(done && !captureFinished) {captureFinished=true;capture?.finish();}
       if (activeRef.current && (!reducedMotion.matches || (elapsedRef.current !== null && !done))) frame=requestAnimationFrame(tick);
     };
     function start() {
@@ -257,11 +297,13 @@ export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay,
       stage.dataset.walked="false";
       updateWords(0);
       renderer?.draw(0,0,!reducedMotion.matches,null);
+      beginRecording();
       start();
     };
     const rebuildWords = () => {
       typing.forEach(line=>{line.main.rebuild();line.after.rebuild();});
       questionTyping.rebuild();finalTyping.rebuild();
+      measureRecording();
     };
     void document.fonts.ready.then(()=>{if(!disposed) rebuildWords();});
     const resize = () => { renderer?.resize(); rebuildWords(); measure(); start(); };
@@ -275,6 +317,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay,
         if (renderer) {
           resize();
           renderer.draw(reducedMotion.matches ? 0 : progress,sceneTime,!reducedMotion.matches,elapsedRef.current);
+          if(!capture) beginRecording();
         }
         stage.dataset.renderer=renderer ? "spatial" : "fallback";
       } catch (error) {
@@ -283,6 +326,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay,
       }
     };
     const visibility = () => {
+      capture?.pause(document.hidden);
       if (document.hidden) { cancelAnimationFrame(frame); frame=0; }
       else start();
     };
@@ -306,6 +350,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay,
       restartWalkRef.current=()=>{};
       resumeRef.current=()=>{};
       measureRef.current=()=>{};
+      captureRevision++;capture?.dispose();
       cancelAnimationFrame(frame);observer.disconnect();renderer?.dispose();
       window.removeEventListener("scroll",readProgress);
       document.removeEventListener("visibilitychange",visibility);
@@ -313,7 +358,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay,
       canvas.removeEventListener("webglcontextlost",contextLost);
       canvas.removeEventListener("webglcontextrestored",prepare);
     };
-  }, [onLaunch,onBurst,onCelebrate,onReplay,story]);
+  }, [onLaunch,onBurst,onCelebrate,onReplay,onCaptureAudio,story]);
 
   function moveNo() {
     const arena=choicesRef.current,button=noRef.current;
@@ -359,7 +404,7 @@ export function TrailEntrance({ story, onLaunch, onBurst, onCelebrate, onReplay,
         {finished && <>
           <div className="meeno-ending-actions">
             <button ref={returnRef} className="meeno-return" type="button" onClick={()=>restartWalkRef.current()}>Back to start <span aria-hidden="true">↺</span></button>
-            <TrailVideoDownload story={story} onBusy={busy=>{
+            <TrailVideoDownload story={story} prepared={recordedVideo} pending={recordingPending} onBusy={busy=>{
               exportingRef.current=busy;onExportBusy(busy);
               if(!busy) resumeRef.current();
             }} />

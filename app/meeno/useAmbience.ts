@@ -2,10 +2,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { createTrailMusic } from "./trailMusic";
+import type { AudioTap } from "./trailRecording";
 
 type Soundscape = "ocean" | "forest" | "fireworks";
 
-// Procedural surf/wind, a recorded burst, and the two selected instrumentals.
+// Procedural surf/wind, a recorded burst, and the continuous Married Life track.
 export function createAmbience(record = false) {
   const Audio = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Audio) return null;
@@ -94,6 +95,16 @@ export function createAmbience(record = false) {
   return {
     context,
     recording,
+    capture():AudioTap {
+      const destination=context.createMediaStreamDestination();
+      master.connect(destination);
+      let released=false;
+      return {stream:destination.stream,dispose(){
+        if(released) return;
+        released=true;master.disconnect(destination);
+        destination.stream.getTracks().forEach(track=>track.stop());
+      }};
+    },
     ready() { return Promise.all([musicReady,burstReady]).then(loaded=>loaded.every(Boolean)); },
     scene(scene: Soundscape) {
       ramp(ocean,scene==="ocean"?1:0,.7);
@@ -163,6 +174,9 @@ export function useAmbience(scene: Soundscape) {
   const burst=useCallback((strength: number,pan = 0)=>{ if(!mutedRef.current) audioRef.current?.burst(strength,pan); },[]);
   const celebrate=useCallback(()=>{sceneRef.current="fireworks";audioRef.current?.scene("fireworks");},[]);
   const replay=useCallback(()=>{sceneRef.current="forest";audioRef.current?.scene("forest");},[]);
+  const capture=useCallback(()=>{
+    try {return audioRef.current?.capture() ?? null;} catch {return null;}
+  },[]);
   const exporting=useCallback((paused: boolean)=>{
     exportingRef.current=paused;
     document.documentElement.classList.toggle("meeno-exporting",paused);
@@ -178,5 +192,5 @@ export function useAmbience(scene: Soundscape) {
     return ()=>{document.removeEventListener("visibilitychange",visibility);document.documentElement.classList.remove("meeno-exporting");audioRef.current?.dispose();audioRef.current=null;};
   },[start]);
   useEffect(()=>{start();},[start]);
-  return {active,start,toggle,launch,burst,celebrate,replay,exporting};
+  return {active,start,toggle,launch,burst,celebrate,replay,exporting,capture};
 }

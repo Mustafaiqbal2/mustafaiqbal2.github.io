@@ -269,10 +269,11 @@ function musicHarness(t, fetcher) {
   return {context,music,gains,sources,settle:()=>new Promise(setImmediate)};
 }
 
-test('music switches at the requested cue, ducks below bursts, and replays from the beginning', async t => {
+test('Married Life plays continuously through Yes and replay while its level ducks below bursts', async t => {
   const {MUSIC_TRACKS}=load('trailMusic');
   const {context,music,gains,sources,settle}=musicHarness(t);
   music.preload();await settle();
+  assert.equal(global.fetch.mock.calls.length,1,'only one recording is fetched and decoded');
   assert.equal(sources.length,0,'preloading must not start a song on the password screen');
   context.currentTime=8;music.scene('forest');
   assert.equal(sources.length,1);
@@ -280,10 +281,9 @@ test('music switches at the requested cue, ducks below bursts, and replays from 
   assert.equal(sources[0].loop,true);
   assert.ok(gains[1].events.some(e=>e[0]==='ramp' && e[1]===MUSIC_TRACKS.forest.gain));
   context.currentTime=24;music.scene('fireworks');
-  assert.equal(sources.length,2);
-  assert.equal(sources[0].stoppedAt,26.9);
-  assert.ok(gains[2].events.some(e=>e[0]==='ramp' && e[2]===26.8),'new recording fades in over the same overlap');
-  assert.deepEqual(sources[1].started,{at:24,offset:0});
+  assert.equal(sources.length,1);
+  assert.equal(sources[0].stoppedAt,undefined,'Yes must not stop or restart Married Life');
+  assert.ok(gains[1].events.some(e=>e[0]==='ramp' && e[1]===MUSIC_TRACKS.fireworks.gain && e[2]===26.8));
   assert.ok(MUSIC_TRACKS.fireworks.gain<MUSIC_TRACKS.forest.gain*.4);
   music.duck(.52);
   assert.equal(gains[0].events.filter(e=>e[0]==='ramp').at(-1)[1],.30);
@@ -291,11 +291,10 @@ test('music switches at the requested cue, ducks below bursts, and replays from 
   assert.equal(gains[0].events.filter(e=>e[0]==='ramp').at(-1)[1],.30,'a child burst cannot raise the existing duck');
   assert.equal(gains[0].events.filter(e=>e[0]==='target').at(-1)[2],24.55,'a child burst cannot shorten the existing duck');
   context.currentTime=50;music.scene('forest');
-  assert.equal(sources.length,3);
-  assert.deepEqual(sources[2].started,{at:50,offset:0});
-  sources[1].onended();
+  assert.equal(sources.length,1);
+  assert.deepEqual(sources[0].started,{at:8,offset:0},'the playback cursor is retained on replay');
   music.scene('forest');
-  assert.equal(sources.length,3,'a retiring track must not clear the current track');
+  assert.equal(sources.length,1);
   music.dispose();
   assert.ok(sources.every(source=>source.disconnected));
   assert.ok(gains.every(gain=>gain.disconnected));
@@ -310,8 +309,6 @@ test('late music downloads respect the latest scene and join at its elapsed time
   context.currentTime=10;music.scene('fireworks');
   context.currentTime=12;
   resolve[tracks.forest.url](response);await settle();
-  assert.equal(sources.length,0,'a late walking download must not interrupt the fireworks');
-  resolve[tracks.fireworks.url](response);await settle();
   assert.equal(sources.length,1);
   assert.deepEqual(sources[0].started,{at:12,offset:2});
   music.dispose();
@@ -364,4 +361,66 @@ test('video export prefers supported MP4, falls back to WebM, and rejects unsupp
   assert.match(videoMime(type=>type.startsWith('video/mp4')),/^video\/mp4/);
   assert.match(videoMime(type=>type==='video/webm;codecs=vp8,opus'),/^video\/webm/);
   assert.equal(videoMime(()=>false),null);
+});
+
+function recordingHarness(t) {
+  const originals={document:global.document,MediaRecorder:global.MediaRecorder};
+  const recorders=[],draws=[];
+  let released=0;
+  const track=()=>({kind:'video',stopped:false,stop(){this.stopped=true;}});
+  const audio={...track(),kind:'audio'};
+  const tap={stream:{getAudioTracks:()=>[audio]},dispose(){released++;audio.stop();}};
+  global.document={createElement:()=>({width:0,height:0,
+    getContext:()=>({fillRect(){},drawImage(...args){draws.push(args);},save(){},restore(){},translate(){},scale(){},strokeRect(){},fillText(){},createLinearGradient:()=>({addColorStop(){}})}),
+    captureStream:()=>{
+      const tracks=[track()];
+      return {getTracks:()=>tracks,addTrack:track=>tracks.push(track)};
+    }
+  })};
+  global.MediaRecorder=class {
+    static isTypeSupported(type){return type==='video/mp4';}
+    constructor(stream,options){this.state='inactive';this.stream=stream;this.mimeType=options.mimeType;recorders.push(this);}
+    start(){this.state='recording';this.starts=(this.starts??0)+1;}
+    pause(){this.state='paused';}
+    resume(){this.state='recording';}
+    stop(){this.state='inactive';queueMicrotask(()=>{this.ondataavailable?.({data:new Blob(['movie'])});this.onstop?.();});}
+  };
+  t.after(()=>{for(const [key,value] of Object.entries(originals)){if(value===undefined) delete global[key];else global[key]=value;}});
+  return {recorders,tap,draws,get released(){return released;},settle:()=>new Promise(setImmediate)};
+}
+
+test('the existing walk is recorded once and its completed video is immediately ready without a replay', async t => {
+  const harness=recordingHarness(t),files=[];
+  const {createTrailRecording,recordingSize}=load('trailRecording');
+  const capture=createTrailRecording(390,844,harness.tap,file=>files.push(file));
+  const source={width:312,height:675},viewport={width:390,height:844};
+  assert.ok(capture);
+  assert.equal(harness.recorders[0].starts,undefined,'gate preparation must not record the password screen');
+  capture.frame(source,viewport,[],null,false);
+  capture.frame(source,viewport,[],null,true);
+  assert.equal(harness.recorders[0].starts,1);
+  assert.ok(harness.draws.some(draw=>draw[0]===source),'reuse the live renderer output');
+  capture.pause(true);assert.equal(harness.recorders[0].state,'paused');
+  capture.pause(false);assert.equal(harness.recorders[0].state,'recording');
+  capture.finish();await harness.settle();
+  assert.equal(files.length,1);
+  assert.equal(files[0].type,'video/mp4');
+  assert.equal(await files[0].text(),'movie');
+  assert.ok(harness.recorders[0].stream.getTracks().every(track=>track.stopped));
+  assert.equal(harness.released,1);
+  for(const [w,h] of [[390,844],[1920,1080],[360,780]]) {
+    const size=recordingSize(w,h);
+    assert.ok(size.width<=540 && size.height<=960);
+    assert.equal(size.width%2,0);assert.equal(size.height%2,0);
+    assert.ok(Math.abs(size.width/size.height-w/h)<.006);
+  }
+});
+
+test('disposing a walk cannot publish a stale recording into the next replay', async t => {
+  const harness=recordingHarness(t),files=[];
+  const capture=load('trailRecording').createTrailRecording(390,844,harness.tap,file=>files.push(file));
+  capture.frame({width:312,height:675},{width:390,height:844},[],null,false);
+  capture.dispose();await harness.settle();
+  assert.equal(files.length,0);
+  assert.ok(harness.recorders[0].stream.getTracks().every(track=>track.stopped));
 });
