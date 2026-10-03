@@ -80,7 +80,7 @@ export function createFireworks(scene: THREE.Scene) {
     const x=shell.x*48,y=shell.y*45,z=0;
     rootY=y;
     const palette=palettes[shell.kind].map(color=>new THREE.Color(color));
-    const count=200;
+    const count=170;
     for(let star=0;star<count;star++) {
       // Uniform spherical distribution, with a smaller contrasting inner pistil.
       const inner=star%5===0;
@@ -94,7 +94,7 @@ export function createFireworks(scene: THREE.Scene) {
       const life=shell.life*(.84+random()*.16);
       const seed=random();
       const color=palette[inner?1:0];
-      const trailCount=7;
+      const trailCount=5;
       for(let tail=0;tail<trailCount;tail++) {
         particle(x,y,z,shell.at,vx,vy,vz,life,tail/trailCount,seed,
           tail===0?.66:.42,0,color);
@@ -110,8 +110,8 @@ export function createFireworks(scene: THREE.Scene) {
       const flowerColor=flower.tint===0?palette[1]:flower.tint===1?palette[0]:
         new THREE.Color(shell.kind===3?"#fff0c9":["#9debe4","#c1b6ff","#f6b5d5"][shell.kind]);
       const drift=Math.exp(-FIREWORK_DRAG*flower.delay)*.18;
-      for(let star=0;star<24;star++) {
-        const latitude=1-2*(star+.5)/24;
+      for(let star=0;star<20;star++) {
+        const latitude=1-2*(star+.5)/20;
         const longitude=star*2.39996323+flowerIndex*.4;
         const radius=Math.sqrt(1-latitude*latitude);
         const speed=(3.2+random()*.7)*shell.size;
@@ -120,9 +120,9 @@ export function createFireworks(scene: THREE.Scene) {
         const vz=Math.sin(longitude)*radius*speed+flower.vz*drift;
         const life=flower.life*(.88+random()*.12);
         const sparkle=random();
-        for(let tail=0;tail<4;tail++) {
+        for(let tail=0;tail<3;tail++) {
           particle(flower.x,flower.y,flower.z,flower.at,vx,vy,vz,life,
-            tail/4,sparkle,tail===0?.61:.36,0,flowerColor);
+            tail/3,sparkle,tail===0?.61:.36,0,flowerColor);
         }
       }
     });

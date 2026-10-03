@@ -89,6 +89,8 @@ test('three or four rockets launch together and volleys overlap without long gap
     else groups.push([shell]);
   }
   assert.ok(groups.every(group=>group.length>=3 && group.length<=4));
+  assert.equal(groups.length,6);
+  assert.equal(SHELLS.length,21);
   for(let i=1;i<groups.length;i++) {
     const previous=groups[i-1];
     assert.ok(groups[i][0].at-2.2<Math.max(...previous.map(shell=>shell.at+shell.life)));
@@ -208,7 +210,12 @@ test('fireflies occupy the bushes along the entire walk and remain a single smal
   const swarm=scene.children[0];
   assert.ok(swarm.isPoints);
   const positions=swarm.geometry.attributes.position;
-  assert.ok(positions.count>=100 && positions.count<200);
+  assert.ok(positions.count>=200 && positions.count<400);
+  assert.equal(Array.from(swarm.geometry.attributes.aTail.array).filter(tail=>tail===0).length,72);
+  const paths=swarm.geometry.attributes.aPath;
+  for(let i=0;i<paths.count;i++) {
+    assert.ok(paths.getX(i)>=.65 && paths.getY(i)>=1.4,'each insect travels a visible route');
+  }
   let first=Infinity,last=-Infinity;
   for(let i=0;i<positions.count;i++) {
     const x=positions.getX(i),y=positions.getY(i),z=positions.getZ(i);
@@ -274,7 +281,8 @@ test('music switches at the requested cue, ducks below bursts, and replays from 
   assert.ok(gains[1].events.some(e=>e[0]==='ramp' && e[1]===MUSIC_TRACKS.forest.gain));
   context.currentTime=24;music.scene('fireworks');
   assert.equal(sources.length,2);
-  assert.equal(sources[0].stoppedAt,24.9);
+  assert.equal(sources[0].stoppedAt,26.9);
+  assert.ok(gains[2].events.some(e=>e[0]==='ramp' && e[2]===26.8),'new recording fades in over the same overlap');
   assert.deepEqual(sources[1].started,{at:24,offset:0});
   assert.ok(MUSIC_TRACKS.fireworks.gain<MUSIC_TRACKS.forest.gain*.4);
   music.duck(.52);
@@ -319,4 +327,41 @@ test('music failure stays silent and an unmounted page cannot start a pending tr
   music.dispose();
   resolve({ok:true,arrayBuffer:async()=>new ArrayBuffer(1)});await settle();
   assert.equal(sources.length,0);
+});
+
+test('video export walks the whole route, asks the question, then includes every final ember', () => {
+  const {videoAt,VIDEO_WALK_SECONDS,VIDEO_YES_AT,VIDEO_SECONDS}=load('trailVideoTimeline');
+  assert.equal(videoAt(0).progress,0);
+  assert.equal(videoAt(VIDEO_WALK_SECONDS/2).progress,.5);
+  assert.deepEqual(videoAt(VIDEO_WALK_SECONDS),{progress:1,question:true,ending:null,finished:false});
+  assert.ok(VIDEO_YES_AT-VIDEO_WALK_SECONDS>=5);
+  assert.equal(videoAt(VIDEO_YES_AT).ending,0);
+  assert.equal(videoAt(VIDEO_YES_AT).question,false);
+  assert.ok(celebrationAt(videoAt(VIDEO_SECONDS).ending).finished);
+  assert.ok(VIDEO_SECONDS<120);
+  for(const [start,end] of MESSAGE_WINDOWS) assert.ok((end-start)*VIDEO_WALK_SECONDS>=3.5);
+});
+
+test('video captions preserve authored line breaks and character positions while balancing words', () => {
+  const {captionLines}=load('trailVideoTimeline');
+  const text='A little woodland walk.\nAnd a second line, exactly as written.';
+  const lines=captionLines(text,22,value=>value.length);
+  assert.ok(lines.length>=3);
+  for(const line of lines) {
+    assert.equal(Array.from(text).slice(line.start,line.start+Array.from(line.text).length).join(''),line.text);
+    assert.ok(!line.text.includes('\n'));
+    assert.ok(line.text.length<=22);
+  }
+  assert.ok(lines.some(line=>line.start===text.indexOf('And')));
+  const unicode='A 🌙 and another line';
+  for(const line of captionLines(unicode,12,value=>Array.from(value).length)) {
+    assert.equal(Array.from(unicode).slice(line.start,line.start+Array.from(line.text).length).join(''),line.text);
+  }
+});
+
+test('video export prefers supported MP4, falls back to WebM, and rejects unsupported encoders', () => {
+  const {videoMime}=load('trailVideoTimeline');
+  assert.match(videoMime(type=>type.startsWith('video/mp4')),/^video\/mp4/);
+  assert.match(videoMime(type=>type==='video/webm;codecs=vp8,opus'),/^video\/webm/);
+  assert.equal(videoMime(()=>false),null);
 });

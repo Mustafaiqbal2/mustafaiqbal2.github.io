@@ -9,7 +9,7 @@ import { createFireflies } from "./trailFireflies";
 
 export type WorldRenderer = { draw: (progress: number, time: number, animate: boolean, celebration?: number | null) => void; resize: () => void; dispose: () => void };
 
-export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArtwork): WorldRenderer | null {
+export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArtwork, viewport?: {width:number;height:number}): WorldRenderer | null {
   let renderer: THREE.WebGLRenderer;
   try {
     renderer = new THREE.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: "high-performance" });
@@ -269,7 +269,7 @@ export function createTrailRenderer(canvas: HTMLCanvasElement, artwork: TrailArt
   };
   let renderWidth=0, renderHeight=0;
   const resize = () => {
-    const width=canvas.clientWidth, height=canvas.clientHeight;
+    const width=viewport?.width ?? canvas.clientWidth, height=viewport?.height ?? canvas.clientHeight;
     if (!width || !height) return;
     // Deliberate fine pixels. Cap fill-rate without reducing the walking framerate.
     const ratio=Math.min(.8, Math.sqrt(690000/(width*height)));

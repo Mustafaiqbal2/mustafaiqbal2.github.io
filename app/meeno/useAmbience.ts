@@ -6,23 +6,24 @@ import { createTrailMusic } from "./trailMusic";
 type Soundscape = "ocean" | "forest" | "fireworks";
 
 // Procedural surf/wind, a recorded burst, and the two selected instrumentals.
-function createAmbience() {
+export function createAmbience(record = false) {
   const Audio = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
   if (!Audio) return null;
   const context=new Audio();
   const master=context.createGain();
   master.gain.value=.65;
-  master.connect(context.destination);
+  const recording=record?context.createMediaStreamDestination():null;
+  master.connect(recording ?? context.destination);
   const music=createTrailMusic(context,master);
-  music.preload();
+  const musicReady=music.preload();
   const ocean=context.createGain(),forest=context.createGain(),effects=context.createGain();
   ocean.gain.value=0;forest.gain.value=0;effects.gain.value=.65;
   ocean.connect(master);forest.connect(master);effects.connect(master);
   let burstSample: AudioBuffer | null=null;
-  void fetch('/meeno/firework-burst.mp3').then(response=>{
+  const burstReady=fetch('/meeno/firework-burst.mp3').then(response=>{
     if(!response.ok) throw new Error('Audio unavailable');
     return response.arrayBuffer();
-  }).then(data=>context.decodeAudioData(data)).then(buffer=>{burstSample=buffer;}).catch(()=>{});
+  }).then(data=>context.decodeAudioData(data)).then(buffer=>{burstSample=buffer;return true;}).catch(()=>false);
   // A low, diffuse outdoor tail; no pitched whistle or synthesized sub-thump.
   const echo=context.createDelay(1);echo.delayTime.value=.21;
   const echoTone=context.createBiquadFilter();echoTone.type='lowpass';echoTone.frequency.value=780;
@@ -92,6 +93,8 @@ function createAmbience() {
   }
   return {
     context,
+    recording,
+    ready() { return Promise.all([musicReady,burstReady]).then(loaded=>loaded.every(Boolean)); },
     scene(scene: Soundscape) {
       ramp(ocean,scene==="ocean"?1:0,.7);
       ramp(forest,scene==="forest"?.28:scene==="fireworks"?.07:0,.9);
@@ -133,10 +136,11 @@ export function useAmbience(scene: Soundscape) {
   const audioRef=useRef<ReturnType<typeof createAmbience>>(null);
   const sceneRef=useRef(scene);
   const mutedRef=useRef(false);
+  const exportingRef=useRef(false);
   const [active,setActive]=useState(false);
   useEffect(()=>{sceneRef.current=scene;audioRef.current?.scene(scene);},[scene]);
   const start=useCallback(()=>{
-    if(mutedRef.current) return;
+    if(mutedRef.current || exportingRef.current) return;
     try {
       if(!audioRef.current) {
         audioRef.current=createAmbience();
@@ -159,14 +163,20 @@ export function useAmbience(scene: Soundscape) {
   const burst=useCallback((strength: number,pan = 0)=>{ if(!mutedRef.current) audioRef.current?.burst(strength,pan); },[]);
   const celebrate=useCallback(()=>{sceneRef.current="fireworks";audioRef.current?.scene("fireworks");},[]);
   const replay=useCallback(()=>{sceneRef.current="forest";audioRef.current?.scene("forest");},[]);
+  const exporting=useCallback((paused: boolean)=>{
+    exportingRef.current=paused;
+    document.documentElement.classList.toggle("meeno-exporting",paused);
+    if(paused) void audioRef.current?.context.suspend().catch(()=>{});
+    else if(!mutedRef.current) start();
+  },[start]);
   useEffect(()=>{
     const visibility=()=>{
       if(document.hidden) { void audioRef.current?.context.suspend().catch(()=>{});setActive(false); }
       else if(!mutedRef.current && audioRef.current) start();
     };
     document.addEventListener("visibilitychange",visibility);
-    return ()=>{document.removeEventListener("visibilitychange",visibility);audioRef.current?.dispose();audioRef.current=null;};
+    return ()=>{document.removeEventListener("visibilitychange",visibility);document.documentElement.classList.remove("meeno-exporting");audioRef.current?.dispose();audioRef.current=null;};
   },[start]);
   useEffect(()=>{start();},[start]);
-  return {active,start,toggle,launch,burst,celebrate,replay};
+  return {active,start,toggle,launch,burst,celebrate,replay,exporting};
 }

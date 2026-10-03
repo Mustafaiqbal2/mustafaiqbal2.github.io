@@ -377,8 +377,9 @@ html.meeno-page .lightbox {
   will-change: opacity, transform;
 }
 
-.meeno-typewriter__word { display: inline-block; white-space: nowrap; }
-.meeno-typewriter [data-letter] { visibility: hidden; }
+.meeno-typewriter { display: block; position: relative; }
+.meeno-typewriter [data-type-layout] { display: block; visibility: hidden; }
+.meeno-typewriter__canvas { position: absolute; left: -26px; top: -26px; width: calc(100% + 52px); height: calc(100% + 52px); pointer-events: none; }
 
 .meeno-invitation {
   position: absolute;
@@ -493,6 +494,20 @@ html.meeno-page .lightbox {
 }
 .meeno-return span { font-family: system-ui, sans-serif; font-size: 19px; opacity: .7; }
 .meeno-return:focus-visible { outline: 1px solid #dcebe7; outline-offset: 5px; }
+.meeno-ending-actions { position: absolute; bottom: max(30px, calc(env(safe-area-inset-bottom) + 18px)); left: 0; right: 0; display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.meeno-ending-actions .meeno-return { position: relative; left: auto; bottom: auto; transform: none; }
+.meeno-download { padding: 9px 16px; border: 0; background: transparent; color: #c5d5d4; font: 13px var(--font-sans), sans-serif; text-decoration: none; cursor: pointer; }
+.meeno-download span { margin-left: 12px; }
+.meeno-download:focus-visible { outline: 1px solid #dcebe7; outline-offset: 3px; }
+.meeno-export-error,.meeno-export-ready { max-width: 300px; margin: 0; color: #c5d5d4; font: 12px/1.5 var(--font-sans), sans-serif; text-align: center; }
+.meeno-trail--finished .meeno-fireworks-note { bottom: max(188px, calc(env(safe-area-inset-bottom) + 168px)); }
+.meeno-export { position: fixed; inset: 0; z-index: 80; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; padding: 30px; background: rgba(3, 9, 14, .98); color: #e1e8e5; }
+.meeno-export__preview { width: auto; height: min(38dvh, 300px); aspect-ratio: 9 / 16; background: #03090e; }
+.meeno-export h2 { margin: 0; font: 22px Georgia, serif; }
+.meeno-export p { margin: 0; font: 12px/1.5 var(--font-sans), sans-serif; text-align: center; }
+.meeno-export progress { width: 210px; height: 4px; accent-color: #afd1c2; }
+.meeno-export button { padding: 12px 26px; border: 1px solid #617779; background: transparent; color: inherit; cursor: pointer; }
+.meeno-exporting .meeno-sound,.meeno-exporting .meeno-fullscreen { visibility: hidden; }
 @keyframes meeno-return-arrive { from { opacity: 0; } to { opacity: 1; } }
 
 .meeno-trail__transcript {

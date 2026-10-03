@@ -4,7 +4,8 @@ export type MusicCue = "forest" | "fireworks";
 // The ending is deliberately quieter, and explosions temporarily lower it further.
 export const MUSIC_TRACKS = {
   forest: { url: "/meeno/music-married-life.mp3", gain: .34 },
-  fireworks: { url: "/meeno/music-long-long-time.mp3", gain: .12 }
+  // The local excerpt begins at 2:10 in the supplied Slowed + Reverb recording.
+  fireworks: { url: "/meeno/music-test-drive.mp3", gain: .12 }
 } as const;
 
 export function createTrailMusic(context: AudioContext, destination: AudioNode) {
@@ -51,8 +52,8 @@ export function createTrailMusic(context: AudioContext, destination: AudioNode) 
 
   function retire(voice: Voice, now: number) {
     hold(voice.gain.gain, now);
-    voice.gain.gain.linearRampToValueAtTime(0, now + .85);
-    voice.source.stop(now + .9);
+    voice.gain.gain.linearRampToValueAtTime(0, now + 2.8);
+    voice.source.stop(now + 2.9);
   }
   function play(cue: MusicCue, buffer: AudioBuffer) {
     if (disposed || desired !== cue || current?.cue === cue) return;
@@ -63,7 +64,7 @@ export function createTrailMusic(context: AudioContext, destination: AudioNode) 
     source.loop = true;
     const gain = context.createGain();
     gain.gain.value = 0;
-    gain.gain.linearRampToValueAtTime(MUSIC_TRACKS[cue].gain, now + 1.2);
+    gain.gain.linearRampToValueAtTime(MUSIC_TRACKS[cue].gain, now + 2.8);
     source.connect(gain); gain.connect(bus);
     const voice = { cue, source, gain };
     voices.add(voice); current = voice;
@@ -77,7 +78,7 @@ export function createTrailMusic(context: AudioContext, destination: AudioNode) 
   }
 
   return {
-    preload() { void load("forest"); void load("fireworks"); },
+    preload() { return Promise.all([load("forest"),load("fireworks")]).then(buffers=>buffers.every(Boolean)); },
     scene(cue: MusicCue | null) {
       if (disposed || (desired === cue && (current || !cue))) return;
       desired = cue;

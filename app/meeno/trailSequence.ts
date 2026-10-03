@@ -30,13 +30,15 @@ export const FIREWORK_GRAVITY = .8;
 // Overlapping volleys spread three or four compound shells across the sky.
 const VOLLEYS = [
   { at:2.2, positions:[[-.40,.02],[0,.67],[.40,.12]] },
-  { at:6.5, positions:[[-.43,.39],[-.14,-.22],[.16,.70],[.43,.15]] },
-  { at:10.8, positions:[[-.39,.06],[.02,.66],[.41,.25]] },
-  { at:15.1, positions:[[-.43,.37],[-.15,-.16],[.15,.69],[.43,.15]] }
+  { at:5.1, positions:[[-.43,.39],[-.14,-.22],[.16,.70],[.43,.15]] },
+  { at:8.0, positions:[[-.39,.06],[.02,.66],[.41,.25]] },
+  { at:10.9, positions:[[-.43,.37],[-.15,-.16],[.15,.69],[.43,.15]] },
+  { at:13.8, positions:[[-.40,.02],[0,.67],[.40,.12]] },
+  { at:16.7, positions:[[-.43,.37],[-.15,-.16],[.15,.69],[.43,.15]] }
 ];
 export const SHELLS = VOLLEYS.flatMap((wave,waveIndex)=>wave.positions.map(([x,y],index)=>({
-  at:wave.at+index*.16, x,y, size:waveIndex===3?1.03:.90+index*.025,
-  kind:waveIndex===3?3:(waveIndex+index)%3, life:waveIndex===3?5.6:5.1, flowers:12
+  at:wave.at+index*.16, x,y, size:waveIndex===VOLLEYS.length-1?1.03:.90+index*.025,
+  kind:waveIndex===VOLLEYS.length-1?3:(waveIndex+index)%3, life:waveIndex===VOLLEYS.length-1?5.6:5.1, flowers:12
 })));
 export function sparkDisplacement(vx: number, vy: number, vz: number, seconds: number) {
   const drag = (1-Math.exp(-FIREWORK_DRAG*seconds))/FIREWORK_DRAG;
