@@ -24,9 +24,18 @@ export function createTrailRecording(width:number,height:number,tap:AudioTap|nul
     if(!mime) {tap.dispose();return null;}
     const canvas=document.createElement("canvas"),size=recordingSize(width,height);
     canvas.width=size.width;canvas.height=size.height;
-    const ctx=canvas.getContext("2d",{alpha:false,desynchronized:true});
-    if(!ctx || !canvas.captureStream) {tap.dispose();return null;}
-    stream=canvas.captureStream(24);
+    // Compose offscreen so capture never sees a clear or a partially drawn frame.
+    const composite=document.createElement("canvas");composite.width=size.width;composite.height=size.height;
+    const ctx=composite.getContext("2d",{alpha:false});
+    const output=canvas.getContext("2d",{alpha:false});
+    if(!ctx || !output || !canvas.captureStream) {tap.dispose();return null;}
+    stream=canvas.captureStream(0);
+    let videoTrack=stream.getVideoTracks()[0] as CanvasCaptureMediaStreamTrack;
+    const manualCapture=typeof videoTrack.requestFrame==="function";
+    if(!manualCapture) {
+      videoTrack.stop();stream=canvas.captureStream(24);
+      videoTrack=stream.getVideoTracks()[0] as CanvasCaptureMediaStreamTrack;
+    }
     tap.stream.getAudioTracks().forEach(track=>stream!.addTrack(track));
     recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:1800000,audioBitsPerSecond:128000});
     const shade=document.createElement("canvas");shade.width=canvas.width;shade.height=canvas.height;
@@ -85,7 +94,9 @@ export function createTrailRecording(width:number,height:number,tap:AudioTap|nul
             }
           }
           ctx.restore();
+          output.drawImage(composite,0,0);
           if(!started) {recorder!.start(1000);started=true;}
+          if(manualCapture) videoTrack.requestFrame();
         } catch {stop(true);}
       },
       pause(hidden:boolean) {

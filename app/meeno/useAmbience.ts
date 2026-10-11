@@ -127,7 +127,6 @@ export function createAmbience(record = false) {
       source.onended=()=>{source.disconnect();band.disconnect();gain.disconnect();pan.disconnect();};
     },
     burst(strength: number, panValue = 0) {
-      music.duck(strength);
       if(context.state!=="running" || !burstSample) return;
       const small=strength<.2;
       const source=context.createBufferSource();source.buffer=burstSample;
